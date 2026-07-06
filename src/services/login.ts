@@ -1,7 +1,7 @@
 import { appConfig } from '~/utils/config';
 import { type BaseResponse, request } from './http';
 
-export type UserLoginParams = { phone: string; pass: string };
+export type UserLoginParams = { username: string; password: string };
 
 interface UserCheckResult {
   exists: boolean;
