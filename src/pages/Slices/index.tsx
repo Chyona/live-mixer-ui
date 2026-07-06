@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, DatePicker, Input, Table, Tag } from 'antd';
+import { Button, DatePicker, Input, Table } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import { LuPlay, LuSearch } from 'react-icons/lu';
@@ -9,7 +9,7 @@ import { AppError } from '~/services/http';
 import {
   fetchSliceList,
   updateSliceName,
-  type SliceAuditStatus,
+  // type SliceAuditStatus,
   type VideoSliceItem,
 } from '~/services/slice';
 import { formatToDate } from '~/utils/date';
@@ -20,11 +20,11 @@ import { buildDateRange } from './utils';
 import SlicePreviewModal from './SlicePreviewModal';
 import './index.css';
 
-const AUDIT_STATUS_MAP: Record<SliceAuditStatus, { text: string; color: string }> = {
-  approved: { text: '通过审核', color: 'success' },
-  rejected: { text: '不通过审核', color: 'error' },
-  pending: { text: '待审核', color: 'warning' },
-};
+// const AUDIT_STATUS_MAP: Record<SliceAuditStatus, { text: string; color: string }> = {
+//   approved: { text: '通过审核', color: 'success' },
+//   rejected: { text: '不通过审核', color: 'error' },
+//   pending: { text: '待审核', color: 'warning' },
+// };
 
 interface SliceNameEditorProps {
   value: string;
@@ -187,16 +187,16 @@ const SlicesPage = () => {
         width: 120,
         render: (date: string) => formatToDate(date),
       },
-      {
-        title: '审核',
-        dataIndex: 'auditStatus',
-        key: 'auditStatus',
-        width: 120,
-        render: (status: SliceAuditStatus) => {
-          const config = AUDIT_STATUS_MAP[status];
-          return <Tag color={config.color}>{config.text}</Tag>;
-        },
-      },
+      // {
+      //   title: '审核',
+      //   dataIndex: 'auditStatus',
+      //   key: 'auditStatus',
+      //   width: 120,
+      //   render: (status: SliceAuditStatus) => {
+      //     const config = AUDIT_STATUS_MAP[status];
+      //     return <Tag color={config.color}>{config.text}</Tag>;
+      //   },
+      // },
       {
         title: '预览',
         key: 'preview',
@@ -268,7 +268,7 @@ const SlicesPage = () => {
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 880 }}
         pagination={{
           current: page,
           pageSize,
