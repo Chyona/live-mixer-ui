@@ -4,6 +4,7 @@ import LoginModal from '~/components/LoginModal';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useAuth } from '~/context/AuthContext';
 import { buildReturnPath, openLogin, type LoginFrom } from '~/utils/loginFlow';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 
 import './index.css';
 
@@ -27,7 +28,7 @@ const LoginPage = () => {
   useEffect(() => {
     if (userInfo?.id) {
       const from = (location.state as { from?: LoginFrom })?.from;
-      const returnTo = from?.pathname ? buildReturnPath(from) : '/';
+      const returnTo = from?.pathname ? buildReturnPath(from) : DEFAULT_APP_PATH;
       navigate(returnTo, { replace: true });
     }
   }, [userInfo?.id, location.state, navigate]);

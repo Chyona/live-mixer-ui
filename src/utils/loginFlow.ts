@@ -2,6 +2,7 @@ import type { Location } from 'react-router-dom';
 
 import { getLoginModalStore } from '~/components/LoginModal/store';
 import { isLoginModalMode, isLoginPageMode } from '~/utils/config';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 import { navigateTo } from '~/utils/navigation';
 
 type LoginFrom = Pick<Location, 'pathname' | 'search' | 'hash'>;
@@ -20,7 +21,7 @@ export function openLogin(from?: LoginFrom) {
   if (isLoginModalMode) {
     const returnTo = buildReturnPath(from);
     const store = getLoginModalStore();
-    store.returnTo = returnTo === '/login' ? '/' : returnTo;
+    store.returnTo = returnTo === '/login' ? DEFAULT_APP_PATH : returnTo;
     store.open = true;
     return;
   }
@@ -51,7 +52,7 @@ export function completeLoginRedirect() {
   if (!isLoginModalMode) return;
 
   const store = getLoginModalStore();
-  const returnTo = store.returnTo || '/';
+  const returnTo = store.returnTo || DEFAULT_APP_PATH;
   store.open = false;
   store.returnTo = null;
 

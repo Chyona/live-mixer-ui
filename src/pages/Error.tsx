@@ -1,6 +1,7 @@
 import { Flex, Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 
 const ErrorPage = () => {
   const navigate = useNavigate();
@@ -20,8 +21,8 @@ const ErrorPage = () => {
         title="访问出错"
         subTitle="抱歉，访问出现了错误，请稍后重试。"
         extra={
-          <Button type="primary" onClick={() => navigate('/')}>
-            返回首页
+          <Button type="primary" onClick={() => navigate(DEFAULT_APP_PATH)}>
+            返回
           </Button>
         }
       />

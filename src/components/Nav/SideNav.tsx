@@ -3,6 +3,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Logo_src from '~/assets/images/logo2.png';
 import { appConfig } from '~/utils/config';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 import NavMenuItems from './NavMenuItems';
 import UserActions from './UserActions';
 import { useNavItems } from './useNavItems';
@@ -11,7 +12,7 @@ import './index.css';
 
 const { Sider } = Layout;
 
-const SIDER_WIDTH = 260;
+const SIDER_WIDTH = 248;
 const SIDER_COLLAPSED_WIDTH = 72;
 
 type SideNavProps = {
@@ -34,9 +35,9 @@ const SideNav = ({ collapsed, onCollapse }: SideNavProps) => {
       theme="light"
     >
       <div className="zt-sider-inner">
-        <div className="zt-sider-header">
+        <div className={`zt-sider-header${collapsed ? ' zt-sider-header_collapsed' : ''}`}>
           {!collapsed && (
-            <Link to="/" className="zt-sider-brand">
+            <Link to={DEFAULT_APP_PATH} className="zt-sider-brand">
               <img src={Logo_src} className="zt-sider-logo" alt="logo" />
               <span className="zt-sider-brand-name">{appConfig.title}</span>
             </Link>

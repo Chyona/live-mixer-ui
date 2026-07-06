@@ -56,78 +56,100 @@ const NavMenuItems = ({
     );
   };
 
-  return (
-    <div className={navClassName}>
-      {items.map((item) => {
-        if (item.hideInMenu) return null;
+  const renderMenuItem = (item: RouteCfgType) => {
+    if (item.hideInMenu) return null;
 
-        if (item.links) {
-          const menuProps = {
-            className: 'nav-dropdown-menu',
-            items: item.links.map((link, linkIndex) => ({
-              key: linkIndex,
-              label: (
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2"
-                  onClick={() => setShowMenu(!showMenu)}
-                >
-                  <link.icon size={20} />
-                  {link.text}
-                </a>
-              ),
-            })),
-            onMouseEnter: () => setRotatedItemKey(item.path),
-            onMouseLeave: () => setRotatedItemKey(null),
-          };
-
-          return wrapCollapsedTooltip(
-            item,
-            <Dropdown
-              key={item.path}
-              menu={menuProps}
-              placement={isVertical ? 'bottomRight' : 'bottom'}
-            >
-              <a
-                className={`nav-item ${rotatedItemKey === item.path ? 'hover' : ''}`}
-                onClick={(e) => e.preventDefault()}
-                onMouseEnter={() => setRotatedItemKey(item.path)}
-                onMouseLeave={() => setRotatedItemKey(null)}
-              >
-                {renderIconText(item)}
-              </a>
-            </Dropdown>
-          );
-        }
-
-        if (item.href) {
-          return wrapCollapsedTooltip(
-            item,
+    if (item.links) {
+      const menuProps = {
+        className: 'nav-dropdown-menu',
+        items: item.links.map((link, linkIndex) => ({
+          key: linkIndex,
+          label: (
             <a
-              className="nav-item"
-              href={item.href}
+              href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              key={item.path}
+              className="flex items-center gap-2"
               onClick={() => setShowMenu(!showMenu)}
             >
-              {renderIconText(item)}
+              <link.icon size={18} />
+              {link.text}
             </a>
-          );
-        }
+          ),
+        })),
+        onMouseEnter: () => setRotatedItemKey(item.path),
+        onMouseLeave: () => setRotatedItemKey(null),
+      };
 
-        return wrapCollapsedTooltip(
-          item,
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={() => setShowMenu(!showMenu)}
-            className={`nav-item ${item.active ? 'active' : ''}`}
+      return wrapCollapsedTooltip(
+        item,
+        <Dropdown
+          key={item.path}
+          menu={menuProps}
+          placement={isVertical ? 'bottomRight' : 'bottom'}
+        >
+          <a
+            className={`nav-item ${rotatedItemKey === item.path ? 'hover' : ''}`}
+            onClick={(e) => e.preventDefault()}
+            onMouseEnter={() => setRotatedItemKey(item.path)}
+            onMouseLeave={() => setRotatedItemKey(null)}
           >
             {renderIconText(item)}
-          </Link>
+          </a>
+        </Dropdown>
+      );
+    }
+
+    if (item.href) {
+      return wrapCollapsedTooltip(
+        item,
+        <a
+          className="nav-item"
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          key={item.path}
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          {renderIconText(item)}
+        </a>
+      );
+    }
+
+    return wrapCollapsedTooltip(
+      item,
+      <Link
+        key={item.path}
+        to={item.path}
+        onClick={() => setShowMenu(!showMenu)}
+        className={`nav-item ${item.active ? 'active' : ''}`}
+      >
+        {renderIconText(item)}
+      </Link>
+    );
+  };
+
+  const visibleItems = items.filter((item) => !item.hideInMenu);
+
+  return (
+    <div className={navClassName}>
+      {visibleItems.map((item, index) => {
+        const prevItem = visibleItems[index - 1];
+        const showGroupDivider =
+          isVertical &&
+          !collapsed &&
+          item.group &&
+          index > 0 &&
+          prevItem?.group !== item.group;
+        const showGroupTitle =
+          isVertical && !collapsed && item.group && prevItem?.group !== item.group;
+
+        return (
+          <div key={item.path} className="zt-nav-entry">
+            {showGroupDivider && <div className="zt-nav-divider" />}
+            {showGroupTitle && <div className="zt-nav-group-title">{item.group}</div>}
+            {renderMenuItem(item)}
+          </div>
         );
       })}
     </div>

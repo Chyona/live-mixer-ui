@@ -16,9 +16,10 @@
 
   &.zt-nav_vertical {
     display: flex;
+    align-items: unset;
     flex-direction: column;
     gap: 4px;
-    padding: 8px 12px;
+    padding: 0 8px;
 
     .nav-item {
       width: 100%;
@@ -30,7 +31,7 @@
   }
 
   &.zt-nav_collapsed {
-    padding: 8px;
+    padding: 4px 8px;
 
     .nav-item {
       justify-content: center;
@@ -38,7 +39,9 @@
       gap: 0;
     }
 
-    .nav-item-text {
+    .nav-item-text,
+    .zt-nav-divider,
+    .zt-nav-group-title {
       display: none;
     }
   }
@@ -138,6 +141,7 @@
 .zt-sider {
   background: var(--sidebar-background) !important;
   box-shadow: var(--sidebar-shadow);
+  border-right: 1px solid var(--sidebar-border-color);
   position: fixed !important;
   left: 0;
   top: 0;
@@ -145,6 +149,66 @@
   height: 100vh !important;
   z-index: 100;
   overflow: hidden;
+}
+
+.zt-sider .zt-nav_vertical .nav-item {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: var(--sidebar-nav-font-size);
+  font-weight: 400;
+  color: var(--sidebar-nav-text);
+  gap: 12px;
+  border-radius: 10px;
+  line-height: 1.4;
+  transition: background-color 0.15s ease;
+}
+
+.zt-sider .zt-nav_vertical .nav-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--sidebar-nav-text);
+}
+
+.zt-sider .zt-nav_vertical .nav-item:hover,
+.zt-sider .zt-nav_vertical .nav-item.hover {
+  color: var(--sidebar-nav-text);
+  background-color: var(--sidebar-nav-hover-bg);
+  text-decoration: none;
+}
+
+.zt-sider .zt-nav_vertical .nav-item.active {
+  color: var(--sidebar-nav-active-text);
+  font-weight: 500;
+  background-color: var(--sidebar-nav-active-bg);
+}
+
+.zt-sider .zt-nav_vertical .nav-item.active .nav-item-icon {
+  color: var(--sidebar-nav-active-text);
+}
+
+.zt-sider .zt-nav-divider {
+  height: 1px;
+  margin: 8px 4px;
+  background: var(--sidebar-border-color);
+}
+
+.zt-sider .zt-nav-group-title {
+  padding: 8px 12px 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sidebar-nav-text-secondary);
+  line-height: 1.4;
+}
+
+.zt-sider .zt-nav_vertical .nav-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .zt-sider .ant-layout-sider-children {
@@ -159,18 +223,19 @@
 }
 
 .zt-sider-header {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-shrink: 0;
-  padding: 16px 44px 16px 20px;
-  transition: padding 0.2s ease;
+  padding: 14px 12px;
+  gap: 8px;
+  min-height: 56px;
 }
 
-.zt-app--sider-collapsed .zt-sider-header {
-  padding: 8px;
-  min-height: 48px;
-  display: flex;
+.zt-sider-header_collapsed {
   justify-content: center;
-  align-items: center;
+  padding: 12px 8px;
+  min-height: 48px;
 }
 
 .zt-sider-brand {
@@ -180,30 +245,38 @@
   text-decoration: none;
   background: transparent;
   justify-content: flex-start;
+  min-width: 0;
+  flex: 1;
 }
 
 .zt-sider-logo {
-  height: 32px;
-  width: auto;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .zt-sider-brand-name {
-  font-size: 1.1rem;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--primary-color);
+  letter-spacing: 0;
+  color: var(--sidebar-nav-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .zt-sider-nav {
   flex: 1;
   overflow-y: auto;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .zt-sider-footer {
   margin-top: auto;
-  padding: 16px;
-  border-top: 1px solid var(--border-color);
+  padding: 12px 8px 16px;
+  border-top: 1px solid var(--sidebar-border-color);
   flex-shrink: 0;
 }
 
@@ -214,21 +287,20 @@
 }
 
 .zt-sider-collapse-btn {
-  position: absolute;
-  top: 12px;
-  right: 8px;
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
-  color: var(--text-gray);
+  color: var(--sidebar-nav-text);
+  border-radius: 8px;
 }
 
-.zt-app--sider-collapsed .zt-sider-collapse-btn {
-  position: static;
+.zt-sider-collapse-btn:hover {
+  color: var(--sidebar-nav-text) !important;
+  background: var(--sidebar-nav-active-bg) !important;
 }
 
 .zt-app--sider-collapsed .zt-sider-user-panel {
   justify-content: center;
-  padding: 8px 4px;
 }
 
 .zt-sider-user-panel {
@@ -236,23 +308,43 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 8px;
   border: none;
-  border-radius: 8px;
-  background: var(--primary-color-bg);
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s ease;
 }
 
-.zt-sider-user-panel:hover {
-  background: rgba(var(--primary-color-rgb), 0.12);
+.zt-sider-user-panel_expanded {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--sidebar-user-card-bg);
 }
 
-.zt-sider-user-avatar {
+.zt-sider-user-panel_expanded:hover {
+  background: #e8eaed;
+}
+
+.zt-sider-user-panel_collapsed {
+  padding: 8px 4px;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.zt-sider-user-panel_collapsed:hover {
+  background: var(--sidebar-nav-active-bg);
+}
+
+.zt-sider-user-avatar.ant-avatar {
   flex-shrink: 0;
-  background: var(--gradient-secondary);
-  color: #fff;
+  background: var(--sidebar-avatar-bg) !important;
+  color: var(--sidebar-avatar-icon) !important;
+  border: none;
+  box-shadow: none;
+}
+
+.zt-sider-user-avatar.ant-avatar .ant-avatar-icon,
+.zt-sider-user-avatar.ant-avatar svg {
+  color: var(--sidebar-avatar-icon);
 }
 
 .zt-sider-user-meta {
@@ -261,13 +353,14 @@
 }
 
 .zt-sider-user-name {
-  font-size: 14px;
+  font-size: var(--sidebar-nav-font-size);
   font-weight: 600;
-  color: var(--text-primary);
+  color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+  line-height: 1.4;
 }
 
 .zt-sider-user-id {
@@ -275,16 +368,21 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--text-gray);
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: #8c8c8c;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+  line-height: 1.4;
 }
 
 .zt-sider-user-id-copy {
   font-size: 12px;
+  color: #8c8c8c;
+}
+
+.zt-sider-user-id-copy .ant-typography-copy {
+  color: #8c8c8c;
 }
 
 .nav-dropdown-menu {

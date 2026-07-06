@@ -7,7 +7,7 @@ import { isLoginPageMode } from '~/utils/config';
 import { AuthLayout, MainLayout } from '~/layouts';
 import GtmRouterTracker from './gtmRouterTracker';
 import NotFound from '~/pages/404';
-import { LoginRoute, ErrorPage, RoutesCfg, isAppRoute } from './const';
+import { LoginRoute, ErrorPage, RoutesCfg, isAppRoute, DEFAULT_APP_PATH } from './const';
 
 const PageFallback = () => (
   <div className="flex size-full items-center justify-center">
@@ -37,10 +37,11 @@ const AppRoutes = () => {
               <Route path="/login" element={<LoginRoute />} />
             </Route>
           ) : (
-            <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/login" element={<Navigate to={DEFAULT_APP_PATH} replace />} />
           )}
 
           <Route element={<MainLayout />}>
+            <Route path="/" element={<Navigate to={DEFAULT_APP_PATH} replace />} />
             {publicRoutes.map((route) => {
               const Page = route.element;
               return <Route key={route.path} path={route.path} element={<Page />} />;

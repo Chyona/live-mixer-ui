@@ -144,9 +144,19 @@
   --active-bg-color: rgba(var(--primary-color), 0.1);
   --hover-bg-color: rgba(var(--primary-color), 0.05);
 
-  --sidebar-background: #fff;
-  --sidebar-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  --sidebar-width: 260px;
+  --sidebar-background: #f7f8fa;
+  --sidebar-border-color: #ebebeb;
+  --sidebar-shadow: none;
+  --sidebar-nav-text: #1a1a1a;
+  --sidebar-nav-text-secondary: #999;
+  --sidebar-nav-hover-bg: #eceef1;
+  --sidebar-nav-active-bg: #eef3ff;
+  --sidebar-nav-active-text: #356bfd;
+  --sidebar-nav-font-size: 14px;
+  --sidebar-avatar-bg: #ebedf0;
+  --sidebar-avatar-icon: #a0a7b4;
+  --sidebar-user-card-bg: #f0f2f5;
+  --sidebar-width: 248px;
   --sidebar-collapsed-width: 72px;
   --content-padding: 30px;
 

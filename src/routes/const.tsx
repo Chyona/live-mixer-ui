@@ -1,6 +1,8 @@
 import { lazy, type ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { FaHome } from 'react-icons/fa';
+import { LuListTodo, LuScissors, LuVideo } from 'react-icons/lu';
+
+export const DEFAULT_APP_PATH = '/source-videos';
 
 export interface RouteCfgType {
   path: string;
@@ -8,6 +10,7 @@ export interface RouteCfgType {
   icon: IconType;
   element: ComponentType | null;  /** 加入公开白名单，未登录可访问；未标记则默认需登录 */
   public?: boolean;
+  group?: string;
   href?: string;
   active?: boolean;
   hideInMenu?: boolean;
@@ -31,16 +34,32 @@ export function isAppRoute(route: RouteCfgType): route is AppRouteCfg {
 }
 
 export const LoginRoute = lazy(() => import('~/pages/Login'));
-export const HomePage = lazy(() => import('~/pages/Home'));
+export const SourceVideosPage = lazy(() => import('~/pages/SourceVideos'));
+export const SlicesPage = lazy(() => import('~/pages/Slices'));
+export const TasksPage = lazy(() => import('~/pages/Tasks'));
 export const ErrorPage = lazy(() => import('~/pages/Error'));
 
 /** 导航菜单 & 受保护路由配置，新增页面在此追加 */
 export const RoutesCfg: RouteCfgType[] = [
   {
-    path: '/',
-    text: '首页',
-    icon: FaHome,
-    element: HomePage,
-    public: true,
+    path: '/source-videos',
+    text: '源视频管理',
+    icon: LuVideo,
+    element: SourceVideosPage,
+    iconProps: { strokeWidth: 1.75 },
+  },
+  {
+    path: '/slices',
+    text: '切片管理',
+    icon: LuScissors,
+    element: SlicesPage,
+    iconProps: { strokeWidth: 1.75 },
+  },
+  {
+    path: '/tasks',
+    text: '任务管理',
+    icon: LuListTodo,
+    element: TasksPage,
+    iconProps: { strokeWidth: 1.75 },
   },
 ];

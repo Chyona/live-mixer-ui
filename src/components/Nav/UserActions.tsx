@@ -58,10 +58,11 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
   if (userInfo?.id) {
     if (compact) {
       const userPanel = (
-        <button type="button" className="zt-sider-user-panel">
-          <Avatar size={40} className="zt-sider-user-avatar">
-            {userInfo.name?.slice(0, 1) || <FaUser size={18} />}
-          </Avatar>
+        <button
+          type="button"
+          className={`zt-sider-user-panel ${collapsed ? 'zt-sider-user-panel_collapsed' : 'zt-sider-user-panel_expanded'}`}
+        >
+          <Avatar size={40} className="zt-sider-user-avatar" icon={<FaUser size={18} />} />
           {!collapsed && (
             <Flex vertical align="flex-start" className="zt-sider-user-meta">
               <span className="zt-sider-user-name">{userInfo.name || '未登录'}</span>

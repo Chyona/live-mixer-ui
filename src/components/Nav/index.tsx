@@ -10,7 +10,7 @@ import { defaultHomeActive, useNavItems } from './useNavItems';
 
 import './index.css';
 
-const mobileNavPaths = ['/'];
+const mobileNavPaths = ['/source-videos', '/slices', '/tasks'];
 
 export const MobileBottomNav = () => {
   const location = useLocation();

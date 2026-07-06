@@ -1,6 +1,7 @@
 import { Flex, Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 
 const NotFoundPage = () => {
   const navigate = useNavigate();
@@ -20,8 +21,8 @@ const NotFoundPage = () => {
         title="404"
         subTitle="抱歉，你访问的页面不存在。"
         extra={
-          <Button type="primary" onClick={() => navigate('/')}>
-            返回首页
+          <Button type="primary" onClick={() => navigate(DEFAULT_APP_PATH)}>
+            返回
           </Button>
         }
       />

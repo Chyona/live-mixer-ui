@@ -28,7 +28,7 @@ function extractRoutesFromTsFile() {
     return routes;
   } catch (error) {
     console.error('读取路由配置文件失败:', error);
-    return [{ path: '/' }];
+    return [{ path: '/source-videos' }];
   }
 }
 

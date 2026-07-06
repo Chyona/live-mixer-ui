@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button, Result } from 'antd';
+import { DEFAULT_APP_PATH } from '~/routes/const';
 
 type Props = { children: ReactNode };
 type State = { hasError: boolean };
@@ -17,7 +18,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = () => {
     this.setState({ hasError: false });
-    window.location.assign('/');
+    window.location.assign(DEFAULT_APP_PATH);
   };
 
   render() {
