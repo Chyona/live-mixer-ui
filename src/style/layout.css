@@ -12,6 +12,11 @@
 
 .zt-app--left-nav .zt-app-main_with-sider {
   margin-left: var(--sidebar-width);
+  transition: margin-left 0.2s ease;
+}
+
+.zt-app--left-nav.zt-app--sider-collapsed .zt-app-main_with-sider {
+  margin-left: var(--sidebar-collapsed-width);
 }
 
 .zt-app-main {

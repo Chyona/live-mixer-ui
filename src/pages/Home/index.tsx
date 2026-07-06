@@ -1,9 +1,8 @@
-import Footer from './Footer';
-
-import './index.css';
+import Footer from '~/components/Footer';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { appConfig } from '~/utils/config';
 
+import './index.css';
 const HomePage = () => {
   useAppSEO({
     title: '首页',

@@ -29,6 +29,20 @@
     }
   }
 
+  &.zt-nav_collapsed {
+    padding: 8px;
+
+    .nav-item {
+      justify-content: center;
+      padding: 10px;
+      gap: 0;
+    }
+
+    .nav-item-text {
+      display: none;
+    }
+  }
+
   &-ct {
     padding-right: 8px;
     padding-left: 24px;
@@ -144,14 +158,28 @@
   min-height: 100vh;
 }
 
+.zt-sider-header {
+  position: relative;
+  flex-shrink: 0;
+  padding: 16px 44px 16px 20px;
+  transition: padding 0.2s ease;
+}
+
+.zt-app--sider-collapsed .zt-sider-header {
+  padding: 8px;
+  min-height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .zt-sider-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 20px;
   text-decoration: none;
   background: transparent;
-  flex-shrink: 0;
+  justify-content: flex-start;
 }
 
 .zt-sider-logo {
@@ -177,6 +205,30 @@
   padding: 16px;
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
+}
+
+.zt-app--sider-collapsed .zt-sider-footer {
+  padding: 12px 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.zt-sider-collapse-btn {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  color: var(--text-gray);
+}
+
+.zt-app--sider-collapsed .zt-sider-collapse-btn {
+  position: static;
+}
+
+.zt-app--sider-collapsed .zt-sider-user-panel {
+  justify-content: center;
+  padding: 8px 4px;
 }
 
 .zt-sider-user-panel {

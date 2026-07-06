@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Layout } from 'antd';
 import { Outlet } from 'react-router-dom';
 
@@ -10,9 +11,19 @@ import { appConfig, isLeftNavLayout, isLoginModalMode } from '~/utils/config';
 
 const { Content } = Layout;
 
+const SIDER_COLLAPSED_KEY = 'sider_collapsed';
+
 /** 带导航、悬浮客服等应用主壳布局 */
 const MainLayout = () => {
   const { isPhone } = useResponsive();
+  const [siderCollapsed, setSiderCollapsed] = useState(
+    () => localStorage.getItem(SIDER_COLLAPSED_KEY) === 'true'
+  );
+
+  const handleSiderCollapse = (collapsed: boolean) => {
+    setSiderCollapsed(collapsed);
+    localStorage.setItem(SIDER_COLLAPSED_KEY, String(collapsed));
+  };
 
   const contentClassName = [
     'zt-app-main',
@@ -41,9 +52,11 @@ const MainLayout = () => {
 
   if (isLeftNavLayout) {
     return (
-      <Layout className="zt-app zt-app--left-nav">
+      <Layout
+        className={`zt-app zt-app--left-nav${siderCollapsed ? ' zt-app--sider-collapsed' : ''}`}
+      >
         <Layout hasSider className="zt-app-body">
-          <SideNav />
+          <SideNav collapsed={siderCollapsed} onCollapse={handleSiderCollapse} />
           <Layout>{mainContent}</Layout>
         </Layout>
       </Layout>

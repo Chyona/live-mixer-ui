@@ -147,6 +147,7 @@
   --sidebar-background: #fff;
   --sidebar-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
   --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
   --content-padding: 30px;
 
   --bs-header-height: 54px;

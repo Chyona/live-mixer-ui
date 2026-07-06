@@ -1,4 +1,5 @@
-import { Dropdown } from 'antd';
+import { Dropdown, Tooltip } from 'antd';
+import type { ReactNode } from 'react';
 import { FaCaretDown } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { type RouteCfgType } from '~/routes/const';
@@ -6,6 +7,7 @@ import { type RouteCfgType } from '~/routes/const';
 type NavMenuItemsProps = {
   items: RouteCfgType[];
   variant?: 'horizontal' | 'vertical';
+  collapsed?: boolean;
   rotatedItemKey?: string | null;
   setRotatedItemKey?: (key: string | null) => void;
   showMenu?: boolean;
@@ -15,19 +17,28 @@ type NavMenuItemsProps = {
 const NavMenuItems = ({
   items,
   variant = 'horizontal',
+  collapsed = false,
   rotatedItemKey = null,
   setRotatedItemKey = () => {},
   showMenu = false,
   setShowMenu = () => {},
 }: NavMenuItemsProps) => {
   const isVertical = variant === 'vertical';
-  const navClassName = isVertical ? 'zt-nav zt-nav_vertical' : 'zt-nav';
+  const navClassName = [
+    'zt-nav',
+    isVertical ? 'zt-nav_vertical' : '',
+    collapsed ? 'zt-nav_collapsed' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const renderIconText = (item: RouteCfgType) => (
     <>
-      <item.icon size={20} {...item.iconProps} />
-      {item.text}
-      {item.links && (
+      <span className="nav-item-icon">
+        <item.icon size={20} {...item.iconProps} />
+      </span>
+      <span className="nav-item-text">{item.text}</span>
+      {item.links && !collapsed && (
         <FaCaretDown
           size={14}
           className={`ml-1 ${rotatedItemKey === item.path ? 'rotate-icon' : ''}`}
@@ -35,6 +46,15 @@ const NavMenuItems = ({
       )}
     </>
   );
+
+  const wrapCollapsedTooltip = (item: RouteCfgType, node: ReactNode) => {
+    if (!collapsed) return node;
+    return (
+      <Tooltip key={item.path} title={item.text} placement="right">
+        {node}
+      </Tooltip>
+    );
+  };
 
   return (
     <div className={navClassName}>
@@ -63,7 +83,8 @@ const NavMenuItems = ({
             onMouseLeave: () => setRotatedItemKey(null),
           };
 
-          return (
+          return wrapCollapsedTooltip(
+            item,
             <Dropdown
               key={item.path}
               menu={menuProps}
@@ -82,7 +103,8 @@ const NavMenuItems = ({
         }
 
         if (item.href) {
-          return (
+          return wrapCollapsedTooltip(
+            item,
             <a
               className="nav-item"
               href={item.href}
@@ -96,7 +118,8 @@ const NavMenuItems = ({
           );
         }
 
-        return (
+        return wrapCollapsedTooltip(
+          item,
           <Link
             key={item.path}
             to={item.path}

@@ -1,4 +1,5 @@
-import { Layout } from 'antd';
+import { Button, Layout, Tooltip } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Logo_src from '~/assets/images/logo2.png';
 import { appConfig } from '~/utils/config';
@@ -10,26 +11,56 @@ import './index.css';
 
 const { Sider } = Layout;
 
-const SideNav = () => {
+const SIDER_WIDTH = 260;
+const SIDER_COLLAPSED_WIDTH = 72;
+
+type SideNavProps = {
+  collapsed: boolean;
+  onCollapse: (collapsed: boolean) => void;
+};
+
+const SideNav = ({ collapsed, onCollapse }: SideNavProps) => {
   const { navItems, rotatedItemKey, setRotatedItemKey } = useNavItems();
 
   return (
-    <Sider className="zt-sider" width={260} theme="light">
+    <Sider
+      className="zt-sider"
+      width={SIDER_WIDTH}
+      collapsedWidth={SIDER_COLLAPSED_WIDTH}
+      collapsible
+      collapsed={collapsed}
+      onCollapse={onCollapse}
+      trigger={null}
+      theme="light"
+    >
       <div className="zt-sider-inner">
-        <Link to="/" className="zt-sider-brand">
-          <img src={Logo_src} className="zt-sider-logo" alt="logo" />
-          <span className="zt-sider-brand-name">{appConfig.title}</span>
-        </Link>
+        <div className="zt-sider-header">
+          {!collapsed && (
+            <Link to="/" className="zt-sider-brand">
+              <img src={Logo_src} className="zt-sider-logo" alt="logo" />
+              <span className="zt-sider-brand-name">{appConfig.title}</span>
+            </Link>
+          )}
+          <Tooltip title={collapsed ? '展开导航' : '收起导航'} placement="right">
+            <Button
+              type="text"
+              className="zt-sider-collapse-btn"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => onCollapse(!collapsed)}
+            />
+          </Tooltip>
+        </div>
         <div className="zt-sider-nav">
           <NavMenuItems
             items={navItems}
             variant="vertical"
+            collapsed={collapsed}
             rotatedItemKey={rotatedItemKey}
             setRotatedItemKey={setRotatedItemKey}
           />
         </div>
         <div className="zt-sider-footer">
-          <UserActions compact />
+          <UserActions compact collapsed={collapsed} />
         </div>
       </div>
     </Sider>

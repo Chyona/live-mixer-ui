@@ -1,4 +1,4 @@
-import { Avatar, Button, Divider, Dropdown, Flex, Typography } from 'antd';
+import { Avatar, Button, Divider, Dropdown, Flex, Tooltip, Typography } from 'antd';
 import { FaSignOutAlt, FaUser } from 'react-icons/fa';
 import { useAuth } from '~/context/AuthContext';
 import type { UserLoginResult } from '~/services/login';
@@ -6,6 +6,7 @@ import { openLogin } from '~/utils/loginFlow';
 
 type UserActionsProps = {
   compact?: boolean;
+  collapsed?: boolean;
 };
 
 const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void) => ({
@@ -51,17 +52,17 @@ const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void
   ],
 });
 
-const UserActions = ({ compact }: UserActionsProps) => {
+const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
   const { userInfo = {}, logout } = useAuth();
 
   if (userInfo?.id) {
     if (compact) {
-      return (
-        <Dropdown menu={userDropdownMenu(userInfo, logout)} trigger={['click']}>
-          <button type="button" className="zt-sider-user-panel">
-            <Avatar size={40} className="zt-sider-user-avatar">
-              {userInfo.name?.slice(0, 1) || <FaUser size={18} />}
-            </Avatar>
+      const userPanel = (
+        <button type="button" className="zt-sider-user-panel">
+          <Avatar size={40} className="zt-sider-user-avatar">
+            {userInfo.name?.slice(0, 1) || <FaUser size={18} />}
+          </Avatar>
+          {!collapsed && (
             <Flex vertical align="flex-start" className="zt-sider-user-meta">
               <span className="zt-sider-user-name">{userInfo.name || '未登录'}</span>
               <span className="zt-sider-user-id">
@@ -73,7 +74,19 @@ const UserActions = ({ compact }: UserActionsProps) => {
                 />
               </span>
             </Flex>
-          </button>
+          )}
+        </button>
+      );
+
+      return (
+        <Dropdown menu={userDropdownMenu(userInfo, logout)} trigger={['click']}>
+          {collapsed ? (
+            <Tooltip title={userInfo.name || '用户'} placement="right">
+              {userPanel}
+            </Tooltip>
+          ) : (
+            userPanel
+          )}
         </Dropdown>
       );
     }
@@ -87,16 +100,27 @@ const UserActions = ({ compact }: UserActionsProps) => {
     );
   }
 
-  return (
+  const loginButton = (
     <Button
       type="primary"
       className={`login-btn ${compact ? 'login-btn_compact' : ''}`}
-      block={compact}
+      block={compact && !collapsed}
+      icon={collapsed ? <FaUser size={16} /> : undefined}
       onClick={() => openLogin()}
     >
-      登录
+      {collapsed ? null : '登录'}
     </Button>
   );
+
+  if (collapsed) {
+    return (
+      <Tooltip title="登录" placement="right">
+        {loginButton}
+      </Tooltip>
+    );
+  }
+
+  return loginButton;
 };
 
 export default UserActions;
