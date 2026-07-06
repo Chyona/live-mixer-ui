@@ -4,7 +4,10 @@
 
 import type { ConfigType } from 'dayjs';
 import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
 import { G_EmptyStr } from './const';
+
+dayjs.locale('zh-cn');
 
 export const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 export const DATE_TIME_MIN_FORMAT = 'YYYY-MM-DD HH:mm';

@@ -6,7 +6,7 @@ import { RoutesCfg } from '~/routes/const';
 import { useResponsive } from '~/hooks/useResponsive';
 import NavMenuItems from './NavMenuItems';
 import UserActions from './UserActions';
-import { defaultHomeActive, useNavItems } from './useNavItems';
+import { getNavActive, useNavItems } from './useNavItems';
 
 import './index.css';
 
@@ -22,7 +22,7 @@ export const MobileBottomNav = () => {
   return (
     <div className="mobile-bottom-nav">
       {navItems.map((item) => {
-        const isActive = defaultHomeActive(item.path, location.pathname);
+        const isActive = getNavActive(item.path, location.pathname);
 
         if (item.links) {
           return (
