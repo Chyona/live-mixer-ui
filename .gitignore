@@ -1,0 +1,24 @@
+# dependencies
+**/node_modules
+
+# production
+/dist*
+/public/sitemap.xml
+sitemap.xml
+
+# env（保留示例文件）
+# .env
+.env.local
+.env.*.local
+
+# misc
+/coverage
+.idea
+npm-debug.log*
+yarn-error.log*
+*.log
+*bak
+.history
+.eslintcache
+build
+.temp/**

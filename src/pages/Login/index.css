@@ -1,0 +1,61 @@
+.login-page {
+  background: linear-gradient(135deg, #e0f7fa, #f5f5f5, #e3f2fd);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 波浪效果 */
+.waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" fill="%2342a5f5"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".1" /></svg>');
+  background-size: 1200px 100%;
+  animation: wave 20s linear infinite;
+}
+
+.waves:nth-child(2) {
+  opacity: 0.4;
+  animation: waveReverse 25s linear infinite;
+  background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" fill="%232965e0"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".1" /></svg>');
+}
+
+/* 动态渐变层 */
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(66, 165, 245, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 20% 70%, rgba(41, 121, 255, 0.1) 0%, transparent 40%);
+  animation: pulse 15s infinite alternate;
+}
+
+/* 动画关键帧 */
+@keyframes wave {
+  0% {
+    background-position-x: 0;
+  }
+
+  100% {
+    background-position-x: 1200px;
+  }
+}
+
+@keyframes waveReverse {
+  0% {
+    background-position-x: 1200px;
+  }
+
+  100% {
+    background-position-x: 0;
+  }
+}

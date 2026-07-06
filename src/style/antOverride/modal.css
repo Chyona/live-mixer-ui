@@ -1,0 +1,24 @@
+.ant-modal .ant-modal-content .ant-modal-close {
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.ant-modal .ant-modal-content .ant-modal-close:hover {
+  transform: rotate(90deg);
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content {
+  padding: 0;
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-header {
+  padding: 20px 24px;
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-body {
+  padding: 0 24px;
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-footer {
+  padding: 0 24px 20px;
+}

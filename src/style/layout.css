@@ -1,0 +1,33 @@
+.zt-app {
+  min-height: 100vh;
+}
+
+.zt-app--top-nav .zt-app-main:not(.zt-app-main_full):not(.zt-app-main_with-sider) {
+  padding-top: var(--bs-header-height);
+}
+
+.zt-app--left-nav .zt-app-body {
+  min-height: 100vh;
+}
+
+.zt-app--left-nav .zt-app-main_with-sider {
+  margin-left: var(--sidebar-width);
+}
+
+.zt-app-main {
+  min-height: calc(100vh - var(--bs-header-height));
+}
+
+.zt-app-main_full {
+  min-height: 100vh;
+  padding-top: 0 !important;
+}
+
+.zt-app-main_with-sider {
+  min-height: 100vh;
+  padding-top: 0;
+}
+
+.zt-app-main_mobile {
+  padding-bottom: var(--bs-header-height);
+}
