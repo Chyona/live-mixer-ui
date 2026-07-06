@@ -9,7 +9,11 @@ import { appConfig } from '~/utils/config';
 
 import './index.css';
 
-const LoginModal = () => {
+interface LoginModalProps {
+  closeIcon?: boolean;
+}
+
+const LoginModal = (props?: LoginModalProps) => {
   const { open } = useLoginModalStore();
 
   return (
@@ -19,6 +23,7 @@ const LoginModal = () => {
       width={420}
       open={open}
       centered
+      closeIcon={props?.closeIcon === false ? null : true}
       maskClosable={false}
       onCancel={() => closeLogin()}
       footer={null}

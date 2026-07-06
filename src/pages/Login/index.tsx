@@ -35,9 +35,8 @@ const LoginPage = () => {
 
   return (
     <div className="login-page relative">
-      <LoginMask />
       <div className="gradient-overlay" />
-      <LoginModal />
+      <LoginModal closeIcon={false} />
     </div>
   );
 };
