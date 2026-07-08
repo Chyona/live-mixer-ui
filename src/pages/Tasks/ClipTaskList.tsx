@@ -1,32 +1,290 @@
-import { useCallback, useState } from 'react';
-import type { ClipTaskItem } from '~/services/task';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Input, Popconfirm, Progress, Space, Table, Tag, Tooltip } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { LuCopy, LuDownload, LuEye, LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
+
+import EllipsisTooltip from '~/components/EllipsisTooltip';
+import { AppError } from '~/services/http';
+import {
+  deleteClipTask,
+  updateClipTaskName,
+  type ClipTaskItem,
+  type ClipTaskItemStatus,
+} from '~/services/task';
+import { formatToDateTime } from '~/utils/date';
+import { showAppError, toast } from '~/utils/toast';
+
+import ClipTaskDetailModal from './ClipTaskDetailModal';
+import ClipPreviewModal from './ClipPreviewModal';
+import { copyTextToClipboard, getClipTaskStatusLabel } from './utils';
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
+  onChanged: () => Promise<void>;
+  onRefreshTask: (taskId: string) => Promise<void>;
 }
 
-function ClipTaskList({ tasks }: ClipTaskListProps) {
-  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+interface ClipNameEditorProps {
+  value: string;
+  onSave: (value: string) => Promise<void>;
+}
+
+function ClipNameEditor({ value, onSave }: ClipNameEditorProps) {
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const handleBlur = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setDraft(value);
+      return;
+    }
+    if (trimmed === value) return;
+
+    setSaving(true);
+    try {
+      await onSave(trimmed);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Input
+      className="tasks-name-input"
+      value={draft}
+      maxLength={64}
+      disabled={saving}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => void handleBlur()}
+      onPressEnter={(event) => event.currentTarget.blur()}
+    />
+  );
+}
+
+function getStatusTagColor(status: ClipTaskItemStatus) {
+  switch (status) {
+    case 'success':
+      return 'success';
+    case 'failed':
+      return 'error';
+    case 'processing':
+    case 'running':
+      return 'processing';
+    default:
+      return 'default';
+  }
+}
+
+function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
+  const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
+
+  const handleNameSave = useCallback(
+    async (taskId: string, clipName: string) => {
+      try {
+        const response = await updateClipTaskName(taskId, clipName);
+        if (response.code !== 0) {
+          toast.notify.error(response.message || '成片名称保存失败');
+          return;
+        }
+        await onChanged();
+        toast.notify.success('成片名称已保存');
+      } catch (error) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('成片名称保存失败');
+        }
+      }
+    },
+    [onChanged]
+  );
+
+  const handleDelete = useCallback(
+    async (taskId: string) => {
+      setDeletingId(taskId);
+      try {
+        const response = await deleteClipTask(taskId);
+        if (response.code !== 0) {
+          toast.notify.error(response.message || '删除失败');
+          return;
+        }
+        await onChanged();
+        toast.notify.success('任务已删除');
+      } catch (error) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('删除失败');
+        }
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [onChanged]
+  );
 
   const handleCopyDraft = useCallback(async (url: string) => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = url;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-      alert('草稿链接已复制，请打开「剪映小助手」粘贴导入');
-    } catch {
-      alert('复制失败，请手动复制链接');
+    const copied = await copyTextToClipboard(url);
+    if (copied) {
+      toast.notify.success('草稿地址已复制', '请打开「剪映小助手」粘贴导入');
+      return;
     }
+    toast.notify.error('复制失败，请手动复制链接');
   }, []);
+
+  const handleRefresh = useCallback(
+    async (taskId: string) => {
+      setRefreshingId(taskId);
+      try {
+        await onRefreshTask(taskId);
+      } finally {
+        setRefreshingId(null);
+      }
+    },
+    [onRefreshTask]
+  );
+
+  const columns = useMemo<ColumnsType<ClipTaskItem>>(
+    () => [
+      {
+        title: '成片名称',
+        dataIndex: 'clipName',
+        key: 'clipName',
+        width: 220,
+        render: (_, record) => (
+          <ClipNameEditor
+            value={record.clipName}
+            onSave={(name) => handleNameSave(record.taskId, name)}
+          />
+        ),
+      },
+      {
+        title: '源视频名称',
+        dataIndex: 'sourceVideoName',
+        key: 'sourceVideoName',
+        width: 160,
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />,
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 110,
+        render: (status: ClipTaskItemStatus, record) => {
+          const tag = <Tag color={getStatusTagColor(status)}>{getClipTaskStatusLabel(status)}</Tag>;
+          if (status === 'failed' && record.message) {
+            return <Tooltip title={record.message}>{tag}</Tooltip>;
+          }
+          return tag;
+        },
+      },
+      {
+        title: '进度',
+        dataIndex: 'progress',
+        key: 'progress',
+        width: 160,
+        render: (progress: number, record) => (
+          <Progress
+            percent={progress}
+            size="small"
+            status={record.status === 'failed' ? 'exception' : record.status === 'success' ? 'success' : 'active'}
+          />
+        ),
+      },
+      {
+        title: '创建时间',
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        width: 170,
+        render: (value: string) => formatToDateTime(value),
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        fixed: 'right',
+        width: 320,
+        render: (_, record) => {
+          const videoUrl = record.videoUrls[0];
+          const draftUrl = record.draftUrls[0];
+
+          return (
+            <div className="tasks-actions">
+              <Space size={4} className="tasks-actions-row">
+                <Button type="link" size="small" icon={<LuInfo size={14} />} onClick={() => setDetailTask(record)}>
+                  任务详情
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuRefreshCw size={14} />}
+                  loading={refreshingId === record.taskId}
+                  onClick={() => void handleRefresh(record.taskId)}
+                >
+                  同步状态
+                </Button>
+                <Popconfirm
+                  title="确定删除该任务吗？"
+                  okText="删除"
+                  cancelText="取消"
+                  onConfirm={() => void handleDelete(record.taskId)}
+                >
+                  <Button
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<LuTrash2 size={14} />}
+                    loading={deletingId === record.taskId}
+                  >
+                    删除
+                  </Button>
+                </Popconfirm>
+              </Space>
+              <Space size={4} className="tasks-actions-row">
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuEye size={14} />}
+                  disabled={!videoUrl}
+                  onClick={() => setPreviewUrl(videoUrl ?? null)}
+                >
+                  成片预览
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuDownload size={14} />}
+                  disabled={!videoUrl}
+                  href={videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  下载成片
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuCopy size={14} />}
+                  disabled={!draftUrl}
+                  onClick={() => draftUrl && void handleCopyDraft(draftUrl)}
+                >
+                  复制草稿地址
+                </Button>
+              </Space>
+            </div>
+          );
+        },
+      },
+    ],
+    [deletingId, handleCopyDraft, handleDelete, handleNameSave, handleRefresh, refreshingId]
+  );
 
   if (!tasks.length) {
     return <div className="tasks-empty">暂无剪辑任务，请从源视频管理进入切片页提交任务。</div>;
@@ -34,118 +292,22 @@ function ClipTaskList({ tasks }: ClipTaskListProps) {
 
   return (
     <>
-      <div className="tasks-result-list">
-        {tasks.map((task, index) => (
-          <div key={task.taskId} className={`tasks-result-item tasks-result-${task.status}`}>
-            <div className="tasks-result-head">
-              <span className="tasks-result-taskid">任务 #{tasks.length - index}</span>
-              <span className="tasks-result-status">
-                {(task.status === 'pending' ||
-                  task.status === 'processing' ||
-                  task.status === 'running') &&
-                  `生成中 ${task.progress}%`}
-                {task.status === 'success' && '已完成'}
-                {task.status === 'failed' && `失败：${task.message || '未知错误'}`}
-              </span>
-            </div>
-            <div className="tasks-result-meta">
-              <span>源视频：{task.sourceVideoName || '-'}</span>
-            </div>
-            {(task.status === 'pending' ||
-              task.status === 'processing' ||
-              task.status === 'running') && (
-              <div className="tasks-result-progress">
-                <div className="tasks-result-progress-bar" style={{ width: `${task.progress}%` }} />
-              </div>
-            )}
-            {task.status === 'success' && (
-              <div className="tasks-result-body">
-                {task.videoUrls.length > 0 && (
-                  <div className="tasks-result-block">
-                    <div className="tasks-result-block-title">成品视频：</div>
-                    <div className="tasks-result-links">
-                      {task.videoUrls.map((url, i) => (
-                        <div key={url + i} className="tasks-result-link-row">
-                          <span className="tasks-result-url" title={url}>
-                            {url}
-                          </span>
-                          <div className="tasks-result-actions">
-                            <button
-                              type="button"
-                              className="tasks-result-action"
-                              onClick={() => setPreviewVideoUrl(url)}
-                            >
-                              预览
-                            </button>
-                            <a
-                              className="tasks-result-action"
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              download
-                            >
-                              下载
-                            </a>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {task.draftUrls.length > 0 && (
-                  <div className="tasks-result-block">
-                    <div className="tasks-result-block-title">剪映草稿：</div>
-                    <div className="tasks-result-draft-tip">
-                      草稿链接需在{' '}
-                      <a
-                        href="https://jcaigc.cn/download"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="tasks-result-draft-link"
-                        title="去下载剪映小助手"
-                      >
-                        剪映小助手
-                      </a>{' '}
-                      中导入使用，请先安装后复制下方链接导入。
-                    </div>
-                    <div className="tasks-result-links">
-                      {task.draftUrls.map((url, i) => (
-                        <div key={url + i} className="tasks-result-link-row">
-                          <span className="tasks-result-url" title={url}>
-                            {url}
-                          </span>
-                          <button
-                            type="button"
-                            className="tasks-result-action"
-                            onClick={() => void handleCopyDraft(url)}
-                          >
-                            复制链接
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <Table
+        className="tasks-table"
+        rowKey="taskId"
+        columns={columns}
+        dataSource={tasks}
+        pagination={false}
+        scroll={{ x: 1100 }}
+      />
 
-      {previewVideoUrl && (
-        <div className="tasks-modal-mask" onClick={() => setPreviewVideoUrl(null)}>
-          <div className="tasks-preview-modal" onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              className="tasks-preview-close"
-              onClick={() => setPreviewVideoUrl(null)}
-            >
-              关闭
-            </button>
-            <video className="tasks-preview-video" src={previewVideoUrl} controls autoPlay />
-          </div>
-        </div>
-      )}
+      <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />
+
+      <ClipPreviewModal
+        open={Boolean(previewUrl)}
+        url={previewUrl}
+        onClose={() => setPreviewUrl(null)}
+      />
     </>
   );
 }

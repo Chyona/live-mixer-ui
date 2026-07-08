@@ -24,6 +24,12 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:3000',
           changeOrigin: true,
         },
+        '/tos-media': {
+          target: 'https://arkclaw-wxbpd.tos-cn-shanghai.volces.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/tos-media/, ''),
+        },
       },
     },
     build: {

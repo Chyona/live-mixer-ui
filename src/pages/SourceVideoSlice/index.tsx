@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb, Descriptions, Empty, Modal, Spin, Typography } from 'antd';
-import Hls from 'hls.js';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
+import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import tipIcon from '~/assets/videos/tip-icon.png';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
@@ -10,7 +10,8 @@ import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo
 import { submitClip } from '~/services/slice';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDate } from '~/utils/date';
-import { formatVideoDuration, isPlayableStreamUrl } from '../SourceVideos/utils';
+import { formatVideoDuration } from '../SourceVideos/utils';
+import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
 
 import './index.css';
@@ -28,12 +29,11 @@ const SourceVideoSlicePage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedRanges, setSelectedRanges] = useState<TimeRange[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [autoPlayOnSelect, setAutoPlayOnSelect] = useState(false);
+  const [autoPlayOnSelect, setAutoPlayOnSelect] = useState(true);
   const [timelineZoomLevel, setTimelineZoomLevel] = useState(1);
   const [activeRangeId, setActiveRangeId] = useState<string | null>(null);
-  const [streamReady, setStreamReady] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const playerRef = useRef<StreamVideoPlayerHandle>(null);
   const rafRef = useRef<number>(0);
 
   useAppSEO({
@@ -42,8 +42,10 @@ const SourceVideoSlicePage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const streamUrl = video?.liveUrl ?? '';
-  const canPlayStream = useMemo(() => isPlayableStreamUrl(streamUrl), [streamUrl]);
+  const streamUrl = video?.liveUrl?.trim() ?? '';
+  const hasVideoUrl = Boolean(streamUrl);
+  const canPreview = hasVideoUrl && isPlayableVideoUrl(streamUrl);
+  const videoFormatLabel = useMemo(() => getVideoFormatLabel(streamUrl), [streamUrl]);
 
   const loadVideo = useCallback(async () => {
     if (!id) return;
@@ -73,75 +75,34 @@ const SourceVideoSlicePage = () => {
     void loadVideo();
   }, [loadVideo]);
 
-  const initStream = useCallback(() => {
-    if (!streamUrl || !canPlayStream) return;
-
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
+  useEffect(() => {
     setVideoDuration(0);
     setCurrentTime(0);
     setSelectedRanges([]);
     setActiveRangeId(null);
-    setStreamReady(false);
-
-    if (/\.m3u8(\?|$)/i.test(streamUrl) && Hls.isSupported()) {
-      const hls = new Hls();
-      hlsRef.current = hls;
-      hls.loadSource(streamUrl);
-      if (videoRef.current) {
-        hls.attachMedia(videoRef.current);
-      }
-      hls.on(Hls.Events.MANIFEST_LOADED, () => {
-        if (videoRef.current) {
-          const duration = videoRef.current.duration;
-          if (Number.isFinite(duration) && duration > 0) {
-            setVideoDuration(duration);
-          }
-        }
-        setStreamReady(true);
-      });
-      return;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.src = streamUrl;
-      videoRef.current.load();
-      setStreamReady(true);
-    }
-  }, [canPlayStream, streamUrl]);
-
-  useEffect(() => {
-    initStream();
-
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [initStream]);
+    setVideoError(null);
+  }, [streamUrl]);
 
   const isFiniteDuration = Number.isFinite(videoDuration) && videoDuration > 0;
 
-  const handleDurationChange = () => {
-    if (videoRef.current) {
-      const duration = videoRef.current.duration;
-      setVideoDuration(Number.isFinite(duration) ? duration : 0);
-    }
-  };
+  const handleDurationChange = useCallback((duration: number) => {
+    setVideoDuration(duration);
+  }, []);
+
+  const handlePlaybackError = useCallback((message: string) => {
+    setVideoError(message);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
-      if (videoRef.current && Number.isFinite(videoRef.current.duration)) {
-        setCurrentTime(videoRef.current.currentTime || 0);
+      const video = playerRef.current?.video;
+      if (video && Number.isFinite(video.duration)) {
+        setCurrentTime(video.currentTime || 0);
       }
       rafRef.current = requestAnimationFrame(updateTime);
     };
 
-    if (streamReady && isFiniteDuration) {
+    if (isFiniteDuration) {
       rafRef.current = requestAnimationFrame(updateTime);
     }
 
@@ -150,13 +111,14 @@ const SourceVideoSlicePage = () => {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [isFiniteDuration, streamReady]);
+  }, [isFiniteDuration]);
 
   const handleTimeChange = useCallback((time: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-      if (videoRef.current.paused) {
-        void videoRef.current.play().catch(() => undefined);
+    const video = playerRef.current?.video;
+    if (video) {
+      video.currentTime = time;
+      if (video.paused) {
+        void video.play().catch(() => undefined);
       }
     }
     setCurrentTime(time);
@@ -280,7 +242,6 @@ const SourceVideoSlicePage = () => {
 
       <div className="slice-video-info">
         <div>
-          <h1 className="slice-video-title">{video.name}</h1>
           <button
             type="button"
             className="slice-view-source-btn"
@@ -300,21 +261,24 @@ const SourceVideoSlicePage = () => {
         </div>
       </div>
 
-      {!canPlayStream ? (
-        <Empty className="slice-empty" description="当前源视频地址暂不支持浏览器预览，请检查直播地址格式" />
+      {!hasVideoUrl ? (
+        <Empty className="slice-empty" description="当前源视频暂无播放地址" />
+      ) : !canPreview ? (
+        <Empty className="slice-empty" description="当前播放地址格式不受支持，请使用 m3u8、mp4 等可播放链接" />
       ) : (
         <>
           <div className="slice-video-section">
-            <video
-              ref={videoRef}
+            <StreamVideoPlayer
+              ref={playerRef}
+              url={streamUrl}
               className="slice-video"
-              controls
-              onLoadedMetadata={handleDurationChange}
+              errorClassName="slice-video-error"
               onDurationChange={handleDurationChange}
+              onPlaybackError={handlePlaybackError}
             />
           </div>
 
-          {streamReady && videoDuration > 0 && (
+          {videoDuration > 0 && !videoError && (
             <div className="slice-timeline-section">
               <SelectedSegmentsPanel
                 videoDuration={videoDuration}
@@ -381,7 +345,7 @@ const SourceVideoSlicePage = () => {
             </Descriptions.Item>
             <Descriptions.Item label="日期">{formatToDate(video.date)}</Descriptions.Item>
             <Descriptions.Item label="预览状态">
-              {canPlayStream ? '支持浏览器预览' : '暂不支持浏览器预览'}
+              {canPreview ? `支持浏览器预览（${videoFormatLabel}）` : hasVideoUrl ? '格式不受支持' : '暂无播放地址'}
             </Descriptions.Item>
           </Descriptions>
         </div>

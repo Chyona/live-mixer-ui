@@ -58,8 +58,7 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
   if (userInfo?.id) {
     if (compact) {
       const userPanel = (
-        <button
-          type="button"
+        <div
           className={`zt-sider-user-panel ${collapsed ? 'zt-sider-user-panel_collapsed' : 'zt-sider-user-panel_expanded'}`}
         >
           <Avatar size={40} className="zt-sider-user-avatar" icon={<FaUser size={18} />} />
@@ -76,7 +75,7 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
               </span>
             </Flex>
           )}
-        </button>
+        </div>
       );
 
       return (

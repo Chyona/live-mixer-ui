@@ -5,6 +5,7 @@ export type ClipTaskItemStatus = 'pending' | 'processing' | 'running' | 'success
 
 export interface ClipTaskItem {
   taskId: string;
+  clipName: string;
   sourceVideoId: string;
   sourceVideoName: string;
   m3u8Url: string;
@@ -21,8 +22,39 @@ export interface ClipTaskListResult {
   total: number;
 }
 
-export async function fetchClipTaskList(): Promise<BaseResponse<ClipTaskListResult>> {
+export interface ClipTaskListParams {
+  date?: string;
+  dateEnd?: string;
+  keyword?: string;
+}
+
+export async function fetchClipTaskList(
+  params?: ClipTaskListParams
+): Promise<BaseResponse<ClipTaskListResult>> {
   return await request('/v1/clip-tasks', {
     method: 'get',
+    params,
+  });
+}
+
+export async function fetchClipTaskDetail(taskId: string): Promise<BaseResponse<ClipTaskItem>> {
+  return await request(`/v1/clip-tasks/${taskId}`, {
+    method: 'get',
+  });
+}
+
+export async function updateClipTaskName(
+  taskId: string,
+  clipName: string
+): Promise<BaseResponse<ClipTaskItem>> {
+  return await request(`/v1/clip-tasks/${taskId}/name`, {
+    method: 'put',
+    data: { clipName },
+  });
+}
+
+export async function deleteClipTask(taskId: string): Promise<BaseResponse<null>> {
+  return await request(`/v1/clip-tasks/${taskId}`, {
+    method: 'delete',
   });
 }
