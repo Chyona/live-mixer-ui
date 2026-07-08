@@ -1,4 +1,8 @@
+import { Spin } from 'antd';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import ClipTaskList from './ClipTaskList';
+import { useClipTasks } from './useClipTasks';
+import './index.css';
 
 const TasksPage = () => {
   useAppSEO({
@@ -7,10 +11,29 @@ const TasksPage = () => {
     robots: 'noindex, nofollow',
   });
 
+  const { tasks, loading, reload } = useClipTasks();
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-[var(--text-primary)]">任务管理</h1>
-      <p className="mt-2 text-[var(--text-gray)]">查看切片、转码与发布任务的执行状态。</p>
+    <div className="tasks-page">
+      <div className="tasks-header">
+        <div>
+          <h1 className="tasks-title">任务管理</h1>
+          <p className="tasks-desc">查看切片生成任务的执行进度与结果。</p>
+        </div>
+        <button type="button" className="tasks-refresh-btn" onClick={() => void reload()}>
+          刷新
+        </button>
+      </div>
+
+      <div className="tasks-panel">
+        {loading ? (
+          <div className="tasks-loading">
+            <Spin />
+          </div>
+        ) : (
+          <ClipTaskList tasks={tasks} />
+        )}
+      </div>
     </div>
   );
 };

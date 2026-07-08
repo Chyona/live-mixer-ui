@@ -1,0 +1,237 @@
+.tasks-page {
+  padding: var(--content-padding);
+  min-height: 100%;
+}
+
+.tasks-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.tasks-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tasks-desc {
+  margin: 8px 0 0;
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.tasks-refresh-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.tasks-refresh-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tasks-panel {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.tasks-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.tasks-empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-gray);
+}
+
+.tasks-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tasks-result-item {
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.tasks-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tasks-result-taskid {
+  font-size: 14px;
+  color: #999;
+  font-weight: 500;
+}
+
+.tasks-result-meta {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-gray);
+}
+
+.tasks-result-pending .tasks-result-status,
+.tasks-result-processing .tasks-result-status,
+.tasks-result-running .tasks-result-status {
+  color: #1890ff;
+}
+
+.tasks-result-success .tasks-result-status {
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.tasks-result-failed .tasks-result-status {
+  color: #ff4d4f;
+}
+
+.tasks-result-progress {
+  height: 4px;
+  background: #f0f0f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tasks-result-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1890ff, #52c41a);
+  transition: width 0.5s ease;
+}
+
+.tasks-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tasks-result-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.tasks-result-draft-tip {
+  font-size: 12px;
+  color: #ad6800;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+  padding: 6px 10px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.tasks-result-draft-link {
+  color: #1890ff;
+}
+
+.tasks-result-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tasks-result-link-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.tasks-result-url {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #555;
+  font-size: 12px;
+}
+
+.tasks-result-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tasks-result-action {
+  padding: 5px 14px;
+  background: #fff;
+  border: 1px solid #1890ff;
+  color: #1890ff;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tasks-result-action:hover {
+  background: #1890ff;
+  color: #fff;
+}
+
+.tasks-modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tasks-preview-modal {
+  position: relative;
+  width: min(80vw, 900px);
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.tasks-preview-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tasks-preview-video {
+  width: 100%;
+  max-height: 85vh;
+  display: block;
+}
+
+@media (max-width: 992px) {
+  .tasks-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

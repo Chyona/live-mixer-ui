@@ -49,3 +49,56 @@ export async function updateSliceName(
     data: { name },
   });
 }
+
+export interface ClipRange {
+  start: number;
+  end: number;
+}
+
+export interface SubmitClipParams {
+  m3u8_url: string;
+  clips: ClipRange[];
+  prompt: string;
+  water_text: string;
+  count: number;
+  source_video_id?: string;
+  source_video_name?: string;
+}
+
+export interface ClipSubmitResult {
+  task_id: string;
+}
+
+export type ClipTaskStatus =
+  | 'pending'
+  | 'processing'
+  | 'running'
+  | 'success'
+  | 'completed'
+  | 'failed'
+  | 'error';
+
+export interface ClipTaskResult {
+  task_id: string;
+  status: ClipTaskStatus;
+  progress: number;
+  video_urls: string[];
+  draft_urls: string[];
+  error: string | null;
+}
+
+export async function submitClip(
+  params: SubmitClipParams
+): Promise<BaseResponse<ClipSubmitResult>> {
+  return await request('/clipflow-ai/v2/video/process', {
+    method: 'post',
+    data: params,
+  });
+}
+
+export async function getClip(taskId: string): Promise<BaseResponse<ClipTaskResult>> {
+  return await request('/clipflow-ai/v1/task', {
+    method: 'get',
+    params: { task_id: taskId },
+  });
+}

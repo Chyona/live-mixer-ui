@@ -27,3 +27,7 @@ export function buildSourceVideoSliceLink(sourceVideoId: string) {
   return `/source-videos/${sourceVideoId}/slice`;
 }
 
+export function isPlayableStreamUrl(url: string) {
+  return /\.(mp4|m3u8|flv|avi|mkv)(\?|$)/i.test(url);
+}
+

@@ -39,6 +39,9 @@ const MOCK_LIVE_TEMPLATES = [
   { name: '城市夜景直播', remarkName: '夜景素材' },
 ];
 
+const DEMO_M3U8 =
+  'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+
 function buildMockSourceVideos(): MockSourceVideo[] {
   return MOCK_LIVE_TEMPLATES.map((item, index) => {
     const id = String(index + 1).padStart(3, '0');
@@ -47,7 +50,7 @@ function buildMockSourceVideos(): MockSourceVideo[] {
     return {
       id: `sv-${id}`,
       name: item.name,
-      liveUrl: `rtmp://live.example.com/stream/${id}`,
+      liveUrl: DEMO_M3U8,
       remarkName: item.remarkName,
       duration: 3600 + index * 317,
       date: `2026-06-${day}`,

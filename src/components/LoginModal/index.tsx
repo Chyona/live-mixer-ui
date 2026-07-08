@@ -1,6 +1,6 @@
 import { Modal } from 'antd';
-import { FaBolt, FaShieldAlt, FaRocket } from 'react-icons/fa';
-import FeatureTag from './FeatureTag';
+// import { FaBolt, FaShieldAlt, FaRocket } from 'react-icons/fa';
+// import FeatureTag from './FeatureTag';
 import Logo_src from '~/assets/images/logo.png';
 import PasswordLogin from './password';
 import { closeLogin } from '~/utils/loginFlow';
