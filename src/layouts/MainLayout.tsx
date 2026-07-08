@@ -3,7 +3,7 @@ import { Layout } from 'antd';
 import { Outlet } from 'react-router-dom';
 
 import Header from '~/components/Header';
-import FloatCom from '~/components/Float';
+// import FloatCom from '~/components/Float';
 import LoginModal from '~/components/LoginModal';
 import { MobileBottomNav, SideNav } from '~/components/Nav';
 import { useResponsive } from '~/hooks';
@@ -36,7 +36,7 @@ const MainLayout = () => {
   const mainContent = (
     <Content className={contentClassName}>
       <Outlet />
-      {appConfig.enableFloat && <FloatCom />}
+      {/* {appConfig.enableFloat && <FloatCom />} */}
       {isLoginModalMode && <LoginModal />}
     </Content>
   );

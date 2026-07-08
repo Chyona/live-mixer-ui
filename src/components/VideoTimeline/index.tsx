@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type FC, useMemo } from 'react';
+import { toast } from '~/utils/toast';
 import './index.less';
 
 export interface TimeRange {
@@ -266,7 +267,6 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragEnd, setDragEnd] = useState<number | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [resizingId, setResizingId] = useState<string | null>(null);
@@ -360,13 +360,6 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       wrapperWidth
     );
   }, [duration, tickInterval, subInterval, safeScale, scrollOffset]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
 
   const getTimeFromX = useCallback(
     (clientX: number): number => {
@@ -473,9 +466,9 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       const additionalDuration = newDuration - originalDuration;
 
       if (hasOverlap) {
-        setErrorMessage('调整后时间段与已选区域重叠，已恢复原始位置');
+        toast.notify.warning('调整后时间段与已选区域重叠，已恢复原始位置');
       } else if (!checkMaxDuration(additionalDuration)) {
-        setErrorMessage(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
+        toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
       } else if (resizePreview.end - resizePreview.start >= 0.5) {
         onRangeUpdate({
           id: resizingId,
@@ -499,9 +492,9 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
       if (end - start >= 0.5) {
         if (checkOverlap(start, end)) {
-          setErrorMessage('该时间段与已选区域重叠，请重新选择');
+          toast.notify.warning('该时间段与已选区域重叠，请重新选择');
         } else if (!checkMaxDuration(end - start)) {
-          setErrorMessage(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
+          toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
         } else {
           const newRangeId = `range-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
           onRangeSelect({
@@ -669,7 +662,6 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       className={`video-timeline${resizingId ? ' is-resizing' : ''}${isDragging ? ' is-selecting' : ''}`}
       ref={containerRef}
     >
-      {errorMessage && <div className="timeline-error">{errorMessage}</div>}
       <div className={`timeline-wrapper ${zoomLevel > 1 ? 'has-scroll' : ''}`} ref={wrapperRef}>
         <div
           className="timeline-content"

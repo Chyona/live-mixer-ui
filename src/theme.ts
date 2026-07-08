@@ -13,7 +13,7 @@ import { ThemeConfig } from 'antd';
 export const theme = {
   token: {
     colorPrimary: '#356bfd',
-    fontSize: 16,
+    fontSize: 14,
     colorBorder: '#e2e8f0',
   },
   components: {

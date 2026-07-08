@@ -81,10 +81,10 @@ const SelectedSegmentsPanel = ({
         </div>
 
         <div className="slice-selected-header-right">
-          <label className="slice-selected-autoplay">
+          {/* <label className="slice-selected-autoplay">
             <span>选中后自动播放</span>
             <Switch size="small" checked={autoPlayOnSelect} onChange={onAutoPlayChange} />
-          </label>
+          </label> */}
           <button
             type="button"
             className="slice-submit-btn"
