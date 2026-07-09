@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space, Table } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
-import { LuPlus, LuScissors, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
+import { LuCirclePlay, LuPlus, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -184,26 +184,26 @@ const SourceVideosPage = () => {
         ellipsis: true,
         render: (name: string) => <EllipsisTooltip text={name} className="source-videos-cell-ellipsis" />,
       },
-      {
-        title: '直播地址',
-        dataIndex: 'liveUrl',
-        key: 'liveUrl',
-        width: 220,
-        ellipsis: true,
-        render: (liveUrl: string) =>
-          liveUrl ? (
-            <a
-              href={liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="source-videos-live-url"
-            >
-              <EllipsisTooltip text={liveUrl} className="source-videos-cell-ellipsis" />
-            </a>
-          ) : (
-            '-'
-          ),
-      },
+      // {
+      //   title: '直播地址',
+      //   dataIndex: 'liveUrl',
+      //   key: 'liveUrl',
+      //   width: 220,
+      //   ellipsis: true,
+      //   render: (liveUrl: string) =>
+      //     liveUrl ? (
+      //       <a
+      //         href={liveUrl}
+      //         target="_blank"
+      //         rel="noopener noreferrer"
+      //         className="source-videos-live-url"
+      //       >
+      //         <EllipsisTooltip text={liveUrl} className="source-videos-cell-ellipsis" />
+      //       </a>
+      //     ) : (
+      //       '-'
+      //     ),
+      // },
       {
         title: '备注名称',
         dataIndex: 'remarkName',
@@ -247,8 +247,8 @@ const SourceVideosPage = () => {
         render: (_, record) => (
           <Space size={8}>
             <Link to={buildSourceVideoSliceLink(record.id)} className="source-videos-slice-link">
-              <LuScissors size={14} />
-              一键成片
+              <LuCirclePlay size={14} />
+              进入
             </Link>
             <Link to={buildManualVideoSliceLink(record.id)} className="source-videos-slice-link">
               <LuTextSelect size={14} />
