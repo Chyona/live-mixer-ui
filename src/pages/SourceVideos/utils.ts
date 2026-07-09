@@ -27,6 +27,10 @@ export function buildSourceVideoSliceLink(sourceVideoId: string) {
   return `/source-videos/${sourceVideoId}/slice`;
 }
 
+export function buildManualVideoSliceLink(sourceVideoId: string) {
+  return `/source-videos/${sourceVideoId}/manual-slice`;
+}
+
 export function isPlayableStreamUrl(url: string) {
   return /\.(mp4|m3u8|webm|ogg|mov|m4v|flv|avi|mkv)(\?|$)/i.test(url) || /^https?:\/\//i.test(url.trim());
 }

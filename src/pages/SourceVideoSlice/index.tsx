@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Breadcrumb, Descriptions, Empty, Modal, Spin, Typography } from 'antd';
+import { Button, Descriptions, Empty, Modal, Spin, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
-import tipIcon from '~/assets/videos/tip-icon.png';
+import SlicePageHeader from '~/components/SlicePageHeader';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
@@ -221,9 +221,13 @@ const SourceVideoSlicePage = () => {
   if (!video) {
     return (
       <div className="slice-page">
-        <Breadcrumb
-          className="slice-breadcrumb"
-          items={[{ title: <Link to="/source-videos">源视频管理</Link> }, { title: '视频切片' }]}
+        <SlicePageHeader
+          breadcrumbItems={[
+            { title: <Link to="/source-videos">源视频管理</Link> },
+            { title: '视频切片' },
+          ]}
+          title="视频切片"
+          description="源视频不存在或无权访问。"
         />
         <Empty className="slice-empty" description="源视频不存在或无权访问" />
       </div>
@@ -232,34 +236,26 @@ const SourceVideoSlicePage = () => {
 
   return (
     <div className="slice-page">
-      <Breadcrumb
-        className="slice-breadcrumb"
-        items={[
+      <SlicePageHeader
+        breadcrumbItems={[
           { title: <Link to="/source-videos">源视频管理</Link> },
           { title: `${video.name} - 切片` },
         ]}
+        title={`${video.name} - 视频切片`}
+        description="在时间轴上拖拽标记片段，支持缩放预览、片段管理与一键成片。"
+        actions={
+          <>
+            <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
+            <Link to={`/source-videos/${id}/manual-slice`}>
+              <Button type="primary">切换到人工切片</Button>
+            </Link>
+          </>
+        }
+        tip={{
+          text: '请自觉遵守平台链接导入规范',
+          onClick: () => setTipVisible(true),
+        }}
       />
-
-      <div className="slice-video-info">
-        <div>
-          <button
-            type="button"
-            className="slice-view-source-btn"
-            onClick={() => setSourceModalVisible(true)}
-          >
-            查看播放源
-          </button>
-        </div>
-        <div className="slice-video-tip">
-          请自觉遵守平台链接导入规范
-          <img
-            src={tipIcon}
-            className="slice-tip-icon"
-            alt="提示"
-            onClick={() => setTipVisible(true)}
-          />
-        </div>
-      </div>
 
       {!hasVideoUrl ? (
         <Empty className="slice-empty" description="当前源视频暂无播放地址" />

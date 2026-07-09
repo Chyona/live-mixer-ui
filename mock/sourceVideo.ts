@@ -1,5 +1,6 @@
 import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
+import { LIVE_URL } from './_Live_URL';
 
 type MockSourceVideo = {
   id: string;
@@ -42,6 +43,7 @@ const MOCK_LIVE_TEMPLATES = [
 const DEMO_VIDEO_URLS = [
   'http://vjs.zencdn.net/v/oceans.mp4',
   'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+  ...LIVE_URL,
 ];
 
 function buildMockSourceVideos(): MockSourceVideo[] {

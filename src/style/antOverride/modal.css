@@ -16,7 +16,7 @@
 }
 
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-body {
-  padding: 0 24px;
+  padding: 16px 24px;
 }
 
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-footer {

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space, Table } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
-import { LuPlus, LuScissors, LuSearch, LuTrash2 } from 'react-icons/lu';
+import { LuPlus, LuScissors, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -17,7 +17,7 @@ import {
 import { formatToDate } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
 
-import { buildDateRange, buildSourceVideoSliceLink, formatVideoDuration } from './utils';
+import { buildDateRange, buildManualVideoSliceLink, buildSourceVideoSliceLink, formatVideoDuration } from './utils';
 import AddSourceVideoModal from './AddSourceVideoModal';
 import './index.css';
 
@@ -242,13 +242,17 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 160,
+        width: 220,
         fixed: 'right',
         render: (_, record) => (
           <Space size={8}>
             <Link to={buildSourceVideoSliceLink(record.id)} className="source-videos-slice-link">
               <LuScissors size={14} />
-              切片
+              一键成片
+            </Link>
+            <Link to={buildManualVideoSliceLink(record.id)} className="source-videos-slice-link">
+              <LuTextSelect size={14} />
+              人工切片
             </Link>
             <Popconfirm
               title="确认删除该源视频？"

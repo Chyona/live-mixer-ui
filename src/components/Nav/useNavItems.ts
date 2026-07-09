@@ -3,7 +3,9 @@ import { useLocation } from 'react-router-dom';
 import { RoutesCfg, type RouteCfgType } from '~/routes/const';
 
 export const getNavActive = (path: string, currentPath: string) => {
-  const isSliceEditor = currentPath.includes('/source-videos/') && currentPath.endsWith('/slice');
+  const isSliceEditor =
+    currentPath.includes('/source-videos/') &&
+    (currentPath.endsWith('/slice') || currentPath.endsWith('/manual-slice'));
 
   if (isSliceEditor) {
     return path === '/source-videos';
