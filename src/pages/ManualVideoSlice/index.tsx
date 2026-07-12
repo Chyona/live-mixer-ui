@@ -12,7 +12,9 @@ import { fetchVideoTranscript } from '~/services/transcript';
 import { submitClip } from '~/services/slice';
 import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
-import type { ManualSliceEntryFrom } from '../SourceVideos/utils';
+import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
+import type { SliceEditorEntryFrom } from '~/routes/links';
+import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import KeywordSearchBar from './components/KeywordSearchBar';
 import TranscriptPanel from './components/TranscriptPanel';
 import SelectedCopyPanel from './components/SelectedCopyPanel';
@@ -29,10 +31,8 @@ import {
   sanitizeDownloadFilename,
 } from './utils';
 
-import './index.css';
-
 interface ManualSliceLocationState {
-  from?: ManualSliceEntryFrom;
+  from?: SliceEditorEntryFrom;
   aiSelectedSegments?: SelectedCopySegment[];
 }
 
@@ -441,38 +441,22 @@ const ManualVideoSlicePage = () => {
     }
   };
 
-  const entryFrom = useMemo(() => {
-    const state = location.state as ManualSliceLocationState | null;
-    return state?.from ?? 'source-videos';
-  }, [location.state]);
+  const entryFrom = useSliceEntryFrom();
 
-  const breadcrumbItems = useMemo(() => {
-    const currentTitle = video ? `${video.name} - 人工切片` : '人工切片';
-
-    if (entryFrom === 'slices') {
-      return [
-        { title: <Link to="/slices">项目管理</Link> },
-        { title: currentTitle },
-      ];
-    }
-
-    if (entryFrom === 'tasks') {
-      return [
-        { title: <Link to="/tasks">任务管理</Link> },
-        { title: currentTitle },
-      ];
-    }
-
-    return [
-      { title: <Link to="/source-videos">源视频管理</Link> },
-      { title: <Link to={`/source-videos/${id}/slice`}>时间轴切片</Link> },
-      { title: currentTitle },
-    ];
-  }, [entryFrom, id, video]);
+  const breadcrumbItems = useMemo(
+    () =>
+      buildSliceBreadcrumbItems({
+        entryFrom,
+        sourceVideoId: id,
+        pageKind: 'manual',
+        videoName: video?.name,
+      }),
+    [entryFrom, id, video?.name]
+  );
 
   if (loading) {
     return (
-      <div className="manual-slice-page manual-slice-page_loading">
+      <div className="slice-page slice-page_loading">
         <Spin size="large" />
       </div>
     );
@@ -480,7 +464,7 @@ const ManualVideoSlicePage = () => {
 
   if (!video) {
     return (
-      <div className="manual-slice-page">
+      <div className="slice-page">
         <SlicePageHeader
           breadcrumbItems={breadcrumbItems}
           title="视频人工切片"
@@ -492,7 +476,7 @@ const ManualVideoSlicePage = () => {
   }
 
   return (
-    <div className="manual-slice-page">
+    <div className="slice-page">
       <SlicePageHeader
         breadcrumbItems={breadcrumbItems}
         title={`${video.name} - 视频人工切片`}
@@ -514,14 +498,14 @@ const ManualVideoSlicePage = () => {
       {!canPreview ? (
         <Empty description="当前源视频暂无可用播放地址" />
       ) : (
-        <div className="manual-slice-layout">
-          <div className="manual-slice-left">
-            <div className="manual-slice-video-panel">
-              <div className="manual-slice-panel-title">视频预览</div>
+        <div className="slice-editor-layout">
+          <div className="slice-editor-main">
+            <div className="slice-editor-panel slice-editor-panel_video">
+              <div className="slice-editor-panel-title">视频预览</div>
               <StreamVideoPlayer
                 ref={playerRef}
                 url={streamUrl}
-                className="manual-slice-video"
+                className="slice-editor-video"
                 onDurationChange={setVideoDuration}
               />
             </div>

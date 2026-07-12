@@ -1,0 +1,126 @@
+.list-page {
+  padding: var(--content-padding);
+  min-height: 100%;
+}
+
+.list-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.list-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.list-page__desc {
+  margin: 8px 0 0;
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.list-page__toolbar {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.list-page__toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.list-page__date-picker {
+  min-width: 260px;
+}
+
+.list-page__search-input {
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.list-page__body {
+  min-height: 0;
+}
+
+.list-page__table {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.list-page__table .ant-table {
+  background: transparent;
+}
+
+.list-page__table .ant-table-thead > tr > th,
+.list-page__table .ant-table-header .ant-table-thead > tr > th {
+  background: #f8faff;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.list-page__table_tasks .ant-table-thead > tr > th,
+.list-page__table_tasks .ant-table-header .ant-table-thead > tr > th {
+  background: rgba(var(--primary-color-rgb), 0.04);
+  color: var(--text-gray);
+}
+
+.list-page__cell-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-page__action-btn {
+  padding-inline: 0;
+}
+
+.list-page__panel {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.disabled-action-wrap {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+@media (max-width: 992px) {
+  .list-page__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .list-page__toolbar-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .list-page__date-picker,
+  .list-page__search-input {
+    width: 100%;
+    max-width: none;
+  }
+}

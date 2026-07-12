@@ -14,7 +14,7 @@ import {
 } from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
-import { buildManualVideoSliceLink } from '../SourceVideos/utils';
+import { buildManualVideoSliceLink } from '~/routes/links';
 
 import ClipTaskDetailModal from './ClipTaskDetailModal';
 import ClipPreviewModal from './ClipPreviewModal';

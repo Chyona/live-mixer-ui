@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { LuX } from 'react-icons/lu';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
-import { formatVideoDuration } from '../SourceVideos/utils';
+import { formatVideoDuration } from '~/utils/duration';
 import '~/components/VideoTimeline/index.less';
 
 function formatClipTime(seconds: number): string {

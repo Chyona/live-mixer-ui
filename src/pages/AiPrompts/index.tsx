@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Input, Popconfirm, Table } from 'antd';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuPlus, LuSearch, LuTrash2 } from 'react-icons/lu';
+import { Button, Popconfirm, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import ListPageLayout from '~/components/ListPageLayout';
+import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useListFilters } from '~/hooks/useListFilters';
 import { AppError } from '~/services/http';
 import {
   deleteAiPrompt,
@@ -14,6 +17,7 @@ import {
   type AiPrompt,
 } from '~/services/aiPrompt';
 import { formatToDateTime } from '~/utils/date';
+import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, toast } from '~/utils/toast';
 
 import AddAiPromptModal from './AddAiPromptModal';
@@ -26,8 +30,7 @@ const AiPromptsPage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const [keyword, setKeyword] = useState('');
-  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const { keyword, setKeyword, appliedKeyword, applySearch: applyKeywordSearch } = useListFilters();
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<AiPrompt[]>([]);
   const [total, setTotal] = useState(0);
@@ -69,7 +72,7 @@ const AiPromptsPage = () => {
   }, [loadList]);
 
   const applySearch = () => {
-    setAppliedKeyword(keyword.trim());
+    applyKeywordSearch();
     setPage(1);
   };
 
@@ -130,7 +133,7 @@ const AiPromptsPage = () => {
         key: 'name',
         width: 220,
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name} className="ai-prompts-cell-ellipsis" />,
+        render: (name: string) => <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />,
       },
       {
         title: '提示词信息',
@@ -138,7 +141,7 @@ const AiPromptsPage = () => {
         key: 'content',
         ellipsis: true,
         render: (content: string) => (
-          <EllipsisTooltip text={content} className="ai-prompts-cell-ellipsis" />
+          <EllipsisTooltip text={content} className="list-page__cell-ellipsis" />
         ),
       },
       {
@@ -195,7 +198,7 @@ const AiPromptsPage = () => {
             <Button
               type="link"
               danger
-              className="ai-prompts-action-btn"
+              className="list-page__action-btn"
               icon={<LuTrash2 size={14} />}
               loading={deletingId === record.id}
             >
@@ -208,46 +211,32 @@ const AiPromptsPage = () => {
     [deletingId]
   );
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    if (pagination.current) {
-      setPage(pagination.current);
-    }
-    if (pagination.pageSize) {
-      setPageSize(pagination.pageSize);
-    }
-  };
-
   return (
-    <div className="ai-prompts-page">
-      <div className="ai-prompts-header">
-        <div>
-          <h1 className="ai-prompts-title">提示词管理</h1>
-          <p className="ai-prompts-desc">管理 AI 切片使用的提示词，支持添加、搜索、备注与删除。</p>
-        </div>
+    <ListPageLayout
+      className="ai-prompts-page"
+      title="提示词管理"
+      description="管理 AI 切片使用的提示词，支持添加、搜索、备注与删除。"
+      action={
         <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
           添加提示词
         </Button>
-      </div>
-
-      <div className="ai-prompts-toolbar">
-        <div className="ai-prompts-toolbar-filters">
-          <Input
-            className="ai-prompts-search-input"
-            allowClear
-            prefix={<LuSearch size={14} />}
-            placeholder="搜索：名称 / 提示词 / 备注（支持 关键词A+关键词B）"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={applySearch}
-          />
-          <Button type="primary" onClick={applySearch}>
-            搜索
-          </Button>
-        </div>
-      </div>
-
+      }
+      toolbar={
+        <ListSearchToolbar
+          searches={[
+            {
+              key: 'keyword',
+              placeholder: '搜索：名称 / 提示词 / 备注（支持 关键词A+关键词B）',
+              value: keyword,
+              onChange: setKeyword,
+            },
+          ]}
+          onSearch={applySearch}
+        />
+      }
+    >
       <Table<AiPrompt>
-        className="ai-prompts-table"
+        className="list-page__table"
         rowKey="id"
         loading={loading}
         columns={columns}
@@ -257,10 +246,9 @@ const AiPromptsPage = () => {
           current: page,
           pageSize,
           total,
-          showSizeChanger: true,
-          showTotal: (count) => `共 ${count} 条`,
+          ...DEFAULT_TABLE_PAGINATION,
         }}
-        onChange={handleTableChange}
+        onChange={(pagination) => handleTablePaginationChange(pagination, setPage, setPageSize, pageSize)}
       />
 
       <AddAiPromptModal
@@ -274,7 +262,7 @@ const AiPromptsPage = () => {
           }
         }}
       />
-    </div>
+    </ListPageLayout>
   );
 };
 

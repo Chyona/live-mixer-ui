@@ -64,9 +64,9 @@ const TranscriptPanel = ({
   };
 
   return (
-    <div className="manual-slice-transcript">
-      <div className="manual-slice-panel-title">文案分段</div>
-      <div className="manual-slice-transcript-body">
+    <div className="slice-editor-panel slice-editor-panel_transcript">
+      <div className="slice-editor-panel-title">文案分段</div>
+      <div className="slice-editor-transcript-body">
         {paragraphs.map((paragraph) => {
           const color = getSpeakerColor(paragraph.speakerId, speakerIds);
           const isActiveParagraph = activeParagraphId === paragraph.id;
@@ -81,7 +81,7 @@ const TranscriptPanel = ({
               key={paragraph.id}
               data-paragraph-id={paragraph.id}
               className={[
-                'manual-slice-paragraph',
+                'slice-editor-paragraph',
                 isActiveParagraph ? 'active' : '',
                 isKeywordMatch ? 'matched' : '',
                 isCurrentKeywordMatch ? 'matched-current' : '',
@@ -91,16 +91,16 @@ const TranscriptPanel = ({
               onClick={() => handleParagraphClick(paragraph)}
               onDoubleClick={() => handleParagraphDoubleClick(paragraph)}
             >
-              <div className="manual-slice-paragraph-head">
-                <span className="manual-slice-speaker" style={{ color }}>
+              <div className="slice-editor-paragraph-head">
+                <span className="slice-editor-speaker" style={{ color }}>
                   {paragraph.speakerName}
                 </span>
-                <span className="manual-slice-paragraph-time">
+                <span className="slice-editor-paragraph-time">
                   {getParagraphRange(paragraph).start.toFixed(1)}s
                 </span>
               </div>
               <div
-                className="manual-slice-paragraph-text"
+                className="slice-editor-paragraph-text"
                 onMouseUp={(event) => handleTextSelection(event, paragraph)}
               >
                 {keyword.trim() ? (
@@ -131,7 +131,7 @@ const TranscriptPanel = ({
           );
         })}
       </div>
-      <p className="manual-slice-transcript-tip">
+      <p className="slice-editor-transcript-tip">
         单击定位视频，双击选中整段；拖拽选中部分文字可提取对应片段。
       </p>
     </div>

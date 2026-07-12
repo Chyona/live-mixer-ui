@@ -1,63 +1,88 @@
-.manual-slice-page {
+/* 切片页公共壳层 */
+.slice-page {
   padding: var(--content-padding);
   min-height: 100%;
 }
 
-.manual-slice-page_loading {
+.slice-page_timeline {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slice-page_loading {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.manual-slice-layout {
+.slice-page_timeline > .slice-page-header,
+.slice-page_timeline > .slice-timeline-section,
+.slice-page_timeline > .slice-timeline-loading {
+  flex-shrink: 0;
+}
+
+/* 人工切片编辑器布局 */
+.slice-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
   gap: 16px;
   align-items: start;
 }
 
-.manual-slice-left {
+.slice-editor-main {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
 }
 
-.manual-slice-panel-title {
+.slice-editor-panel-title {
   margin-bottom: 10px;
   font-size: 14px;
   font-weight: 600;
 }
 
-.manual-slice-video-panel,
-.manual-slice-transcript,
-.manual-slice-copy-panel,
-.manual-slice-search {
+.slice-editor-panel,
+.slice-editor-search {
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 12px;
   background: #fff;
 }
 
-.manual-slice-video-panel {
+.slice-editor-panel {
   padding: 14px;
 }
 
-.manual-slice-video {
+.slice-editor-panel_transcript {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+}
+
+.slice-editor-panel_copy {
+  position: sticky;
+  top: 12px;
+}
+
+.slice-editor-video {
   width: 100%;
   max-height: 380px;
   border-radius: 8px;
   background: #000;
 }
 
-.manual-slice-search {
+.slice-editor-search {
   padding: 12px 14px;
 }
 
-.manual-slice-search-input-wrap {
+.slice-editor-search-input-wrap {
   position: relative;
 }
 
-.manual-slice-search-icon {
+.slice-editor-search-icon {
   position: absolute;
   top: 50%;
   left: 12px;
@@ -66,11 +91,11 @@
   color: var(--text-gray);
 }
 
-.manual-slice-search-input-wrap .ant-input {
+.slice-editor-search-input-wrap .ant-input {
   padding-left: 34px;
 }
 
-.manual-slice-search-meta {
+.slice-editor-search-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -79,7 +104,7 @@
   font-size: 12px;
 }
 
-.manual-slice-search-meta button {
+.slice-editor-search-meta button {
   padding: 2px 8px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 6px;
@@ -89,26 +114,19 @@
   cursor: pointer;
 }
 
-.manual-slice-search-meta button:disabled {
+.slice-editor-search-meta button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.manual-slice-transcript {
-  display: flex;
-  flex-direction: column;
-  min-height: 420px;
-  padding: 14px;
-}
-
-.manual-slice-transcript-body {
+.slice-editor-transcript-body {
   flex: 1;
   overflow: auto;
   max-height: 520px;
   padding-right: 4px;
 }
 
-.manual-slice-paragraph {
+.slice-editor-paragraph {
   margin-bottom: 12px;
   padding: 10px 12px;
   border: 1px solid transparent;
@@ -120,20 +138,20 @@
     background 0.2s ease;
 }
 
-.manual-slice-paragraph:hover,
-.manual-slice-paragraph.active,
-.manual-slice-paragraph.matched-current {
+.slice-editor-paragraph:hover,
+.slice-editor-paragraph.active,
+.slice-editor-paragraph.matched-current {
   border-color: rgba(22, 119, 255, 0.35);
   background: rgba(22, 119, 255, 0.04);
 }
 
-.manual-slice-paragraph.matched mark {
+.slice-editor-paragraph.matched mark {
   padding: 0 2px;
   border-radius: 3px;
   background: #ffe58f;
 }
 
-.manual-slice-paragraph-head {
+.slice-editor-paragraph-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -141,43 +159,37 @@
   margin-bottom: 6px;
 }
 
-.manual-slice-speaker {
+.slice-editor-speaker {
   font-size: 12px;
   font-weight: 600;
 }
 
-.manual-slice-paragraph-time,
-.manual-slice-copy-time {
+.slice-editor-paragraph-time,
+.slice-editor-copy-time {
   color: var(--text-gray);
   font-size: 12px;
 }
 
-.manual-slice-paragraph-text {
+.slice-editor-paragraph-text {
   color: var(--text-color);
   font-size: 14px;
   line-height: 1.7;
   user-select: text;
 }
 
-.manual-slice-paragraph-text .segment-active {
+.slice-editor-paragraph-text .segment-active {
   padding: 0 1px;
   border-radius: 3px;
   background: rgba(22, 119, 255, 0.18);
 }
 
-.manual-slice-transcript-tip {
+.slice-editor-transcript-tip {
   margin: 10px 0 0;
   color: var(--text-gray);
   font-size: 12px;
 }
 
-.manual-slice-copy-panel {
-  position: sticky;
-  top: 12px;
-  padding: 14px;
-}
-
-.manual-slice-copy-header {
+.slice-editor-copy-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -185,24 +197,24 @@
   margin-bottom: 12px;
 }
 
-.manual-slice-copy-stats {
+.slice-editor-copy-stats {
   margin: 4px 0 0;
   color: var(--text-gray);
   font-size: 12px;
 }
 
-.manual-slice-over-limit {
+.slice-over-limit {
   color: #cf1322;
 }
 
-.manual-slice-mode-tabs {
+.slice-editor-mode-tabs {
   display: inline-flex;
   padding: 2px;
   border-radius: 8px;
   background: #f5f7fb;
 }
 
-.manual-slice-mode-tabs button {
+.slice-editor-mode-tabs button {
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
@@ -212,20 +224,20 @@
   cursor: pointer;
 }
 
-.manual-slice-mode-tabs button.active {
+.slice-editor-mode-tabs button.active {
   background: #fff;
   color: var(--primary-color);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.manual-slice-copy-toolbar {
+.slice-editor-copy-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.manual-slice-copy-toolbar button {
+.slice-editor-copy-toolbar button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -238,22 +250,22 @@
   cursor: pointer;
 }
 
-.manual-slice-copy-toolbar button.primary {
+.slice-editor-copy-toolbar button.primary {
   border-color: var(--primary-color);
   background: var(--primary-color);
   color: #fff;
 }
 
-.manual-slice-copy-toolbar button.danger {
+.slice-editor-copy-toolbar button.danger {
   color: #cf1322;
 }
 
-.manual-slice-copy-toolbar button:disabled {
+.slice-editor-copy-toolbar button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.manual-slice-copy-list {
+.slice-editor-copy-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -261,7 +273,7 @@
   overflow: auto;
 }
 
-.manual-slice-copy-empty {
+.slice-editor-copy-empty {
   padding: 28px 16px;
   border: 1px dashed var(--border-color, #eef0f4);
   border-radius: 10px;
@@ -270,7 +282,7 @@
   text-align: center;
 }
 
-.manual-slice-copy-item {
+.slice-editor-copy-item {
   padding: 12px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 10px;
@@ -278,12 +290,12 @@
   cursor: pointer;
 }
 
-.manual-slice-copy-item.active {
+.slice-editor-copy-item.active {
   border-color: rgba(22, 119, 255, 0.45);
   background: rgba(22, 119, 255, 0.04);
 }
 
-.manual-slice-copy-item-head {
+.slice-editor-copy-item-head {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -291,21 +303,21 @@
   margin-bottom: 8px;
 }
 
-.manual-slice-copy-drag {
+.slice-editor-copy-drag {
   color: var(--text-gray);
   cursor: grab;
 }
 
-.manual-slice-copy-drag:active {
+.slice-editor-copy-drag:active {
   cursor: grabbing;
 }
 
-.manual-slice-copy-index {
+.slice-editor-copy-index {
   font-size: 12px;
   font-weight: 600;
 }
 
-.manual-slice-copy-text {
+.slice-editor-copy-text {
   margin: 0;
   font-size: 13px;
   line-height: 1.7;
@@ -313,28 +325,28 @@
   cursor: text;
 }
 
-.manual-slice-copy-text_active {
+.slice-editor-copy-text_active {
   padding: 8px 10px;
   border-radius: 8px;
   background: #fff;
   border: 1px dashed rgba(22, 119, 255, 0.35);
 }
 
-.manual-slice-copy-tip {
+.slice-editor-copy-tip {
   margin: 10px 0 0;
   color: var(--text-gray);
   font-size: 12px;
   line-height: 1.6;
 }
 
-.manual-slice-copy-actions {
+.slice-editor-copy-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
 }
 
-.manual-slice-copy-actions button {
+.slice-editor-copy-actions button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -346,11 +358,11 @@
   cursor: pointer;
 }
 
-.manual-slice-copy-actions button.danger {
+.slice-editor-copy-actions button.danger {
   color: #cf1322;
 }
 
-.manual-slice-copy-actions-delete-group {
+.slice-editor-copy-actions-delete-group {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -359,37 +371,37 @@
   border-left: 1px solid var(--border-color, #eef0f4);
 }
 
-.manual-slice-preview-modal {
+.slice-editor-preview-modal {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.manual-slice-preview-video {
+.slice-editor-preview-video {
   width: 100%;
   max-height: 420px;
   border-radius: 8px;
   background: #000;
 }
 
-.manual-slice-preview-meta {
+.slice-editor-preview-meta {
   display: flex;
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
 }
 
-.manual-slice-preview-meta p {
+.slice-editor-preview-meta p {
   margin: 0;
   line-height: 1.6;
 }
 
 @media (max-width: 1100px) {
-  .manual-slice-layout {
+  .slice-editor-layout {
     grid-template-columns: 1fr;
   }
 
-  .manual-slice-copy-panel {
+  .slice-editor-panel_copy {
     position: static;
   }
 }

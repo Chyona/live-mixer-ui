@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { LuPlay } from 'react-icons/lu';
 
 import type { VideoSliceItem } from '~/services/slice';
-import { formatVideoDuration } from '../SourceVideos/utils';
+import { formatVideoDuration } from '~/utils/duration';
 import './SlicePreviewModal.css';
 
 interface SlicePreviewModalProps {

@@ -2,12 +2,9 @@
  * 时间格式化工具函数
  */
 
-import type { ConfigType } from 'dayjs';
 import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
+import type { ConfigType, Dayjs } from 'dayjs';
 import { G_EmptyStr } from './const';
-
-dayjs.locale('zh-cn');
 
 export const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 export const DATE_TIME_MIN_FORMAT = 'YYYY-MM-DD HH:mm';
@@ -48,3 +45,14 @@ export function toTimeStamp(date?: ConfigType) {
 }
 
 export const dateUtil = dayjs;
+
+export function buildDateRange(dateRange: [Dayjs | null, Dayjs | null] | null) {
+  if (!dateRange?.[0]) {
+    return { date: undefined, dateEnd: undefined };
+  }
+
+  return {
+    date: dateRange[0].format('YYYY-MM-DD'),
+    dateEnd: (dateRange[1] ?? dateRange[0]).format('YYYY-MM-DD'),
+  };
+}

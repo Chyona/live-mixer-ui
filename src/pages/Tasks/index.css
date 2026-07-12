@@ -1,84 +1,13 @@
-.tasks-page {
-  padding: var(--content-padding);
-  min-height: 100%;
-}
-
-.tasks-header {
-  margin-bottom: 20px;
-}
-
-.tasks-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.tasks-desc {
-  margin: 8px 0 0;
-  color: var(--text-gray);
-  font-size: 14px;
-}
-
 .tasks-polling-hint {
   margin-left: 8px;
   color: var(--primary-color);
   font-size: 13px;
 }
 
-.tasks-panel {
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.tasks-toolbar {
-  margin-bottom: 16px;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-}
-
-.tasks-toolbar-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}
-
-.tasks-date-picker {
-  min-width: 260px;
-}
-
-.tasks-search-input {
-  flex: 1 1 280px;
-  min-width: 240px;
-  max-width: 420px;
-}
-
-.tasks-loading {
-  display: flex;
-  justify-content: center;
-  padding: 48px 0;
-}
-
 .tasks-empty {
   padding: 48px 16px;
   text-align: center;
   color: var(--text-gray);
-}
-
-.tasks-table .ant-table-thead > tr > th {
-  background: rgba(var(--primary-color-rgb), 0.04);
-  color: var(--text-gray);
-  font-weight: 500;
-}
-
-.tasks-cell-ellipsis {
-  display: block;
-  max-width: 100%;
 }
 
 .tasks-type-label {
@@ -190,17 +119,4 @@
   padding: 48px 0;
   text-align: center;
   color: var(--text-gray);
-}
-
-@media (max-width: 992px) {
-  .tasks-toolbar-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .tasks-date-picker,
-  .tasks-search-input {
-    width: 100%;
-    max-width: none;
-  }
 }

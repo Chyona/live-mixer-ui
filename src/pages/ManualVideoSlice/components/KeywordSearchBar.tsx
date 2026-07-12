@@ -19,9 +19,9 @@ const KeywordSearchBar = ({
   onNextMatch,
 }: KeywordSearchBarProps) => {
   return (
-    <div className="manual-slice-search">
-      <div className="manual-slice-search-input-wrap">
-        <LuSearch size={16} className="manual-slice-search-icon" />
+    <div className="slice-editor-search">
+      <div className="slice-editor-search-input-wrap">
+        <LuSearch size={16} className="slice-editor-search-icon" />
         <Input
           allowClear
           value={value}
@@ -31,7 +31,7 @@ const KeywordSearchBar = ({
         />
       </div>
       {value.trim() && (
-        <div className="manual-slice-search-meta">
+        <div className="slice-editor-search-meta">
           <span>
             {matchCount > 0 ? `${activeMatchIndex + 1}/${matchCount}` : '无匹配'}
           </span>

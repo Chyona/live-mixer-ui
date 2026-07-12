@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, DatePicker, Input, Space, Table } from 'antd';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import type { Dayjs } from 'dayjs';
-import { LuCirclePlay, LuSearch, LuTextSelect } from 'react-icons/lu';
+import { Button, Space, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { LuSearch, LuTextSelect } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import ListPageLayout from '~/components/ListPageLayout';
+import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useListFilters } from '~/hooks/useListFilters';
+import { buildSliceProjectEditLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
   fetchSliceProjectList,
@@ -15,10 +18,9 @@ import {
   type SliceProject,
 } from '~/services/sliceProject';
 import { formatToDateTime } from '~/utils/date';
+import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, toast } from '~/utils/toast';
-import { buildSliceProjectEditLink } from '../SourceVideos/utils';
 
-import { buildDateRange } from './utils';
 import './index.css';
 
 const SlicesPage = () => {
@@ -30,9 +32,15 @@ const SlicesPage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
-  const [keyword, setKeyword] = useState('');
-  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const {
+    keyword,
+    setKeyword,
+    appliedKeyword,
+    applySearch: applyKeywordSearch,
+    dateRange,
+    handleDateChange,
+    dateFilters,
+  } = useListFilters();
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<SliceProject[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,10 +51,9 @@ const SlicesPage = () => {
     setLoading(true);
 
     try {
-      const { date, dateEnd } = buildDateRange(dateRange);
       const response = await fetchSliceProjectList({
-        date,
-        dateEnd,
+        date: dateFilters.date,
+        dateEnd: dateFilters.dateEnd,
         keyword: appliedKeyword || undefined,
         page,
         pageSize,
@@ -68,19 +75,19 @@ const SlicesPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [appliedKeyword, dateRange, page, pageSize]);
+  }, [appliedKeyword, dateFilters, page, pageSize]);
 
   useEffect(() => {
     void loadList();
   }, [loadList]);
 
   const applySearch = () => {
-    setAppliedKeyword(keyword.trim());
+    applyKeywordSearch();
     setPage(1);
   };
 
-  const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
-    setDateRange(value);
+  const onDateChange = (value: Parameters<typeof handleDateChange>[0]) => {
+    handleDateChange(value);
     setPage(1);
   };
 
@@ -124,14 +131,14 @@ const SlicesPage = () => {
         dataIndex: 'sourceVideoName',
         key: 'sourceVideoName',
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="slices-cell-ellipsis" />,
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="list-page__cell-ellipsis" />,
       },
       {
         title: '备注名称',
         dataIndex: 'remarkName',
         key: 'remarkName',
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="slices-cell-ellipsis" />,
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="list-page__cell-ellipsis" />,
       },
       {
         title: '片段数',
@@ -157,7 +164,7 @@ const SlicesPage = () => {
             <Button
               type="link"
               size="small"
-              className="slices-action-btn"
+              className="list-page__action-btn"
               icon={<LuTextSelect size={14} />}
               onClick={() =>
                 navigate(buildSliceProjectEditLink(record.sourceVideoId, record.projectSource), {
@@ -174,50 +181,30 @@ const SlicesPage = () => {
     [navigate]
   );
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    if (pagination.current) {
-      setPage(pagination.current);
-    }
-    if (pagination.pageSize) {
-      setPageSize(pagination.pageSize);
-    }
-  };
-
   return (
-    <div className="slices-page">
-      <div className="slices-header">
-        <h1 className="slices-title">项目管理</h1>
-        <p className="slices-desc">
-          管理每个源视频对应的剪辑项目，单视频对应一个可二次编辑的切片项目。
-        </p>
-      </div>
-
-      <div className="slices-toolbar">
-        <div className="slices-toolbar-filters">
-          <DatePicker.RangePicker
-            className="slices-date-picker"
-            value={dateRange}
-            allowClear
-            placeholder={['开始日期', '结束日期']}
-            onChange={handleDateChange}
-          />
-          <Input
-            className="slices-search-input"
-            allowClear
-            prefix={<LuSearch size={14} />}
-            placeholder="标题搜索：项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={applySearch}
-          />
-          <Button type="primary" onClick={applySearch}>
-            搜索
-          </Button>
-        </div>
-      </div>
-
+    <ListPageLayout
+      className="slices-page"
+      title="项目管理"
+      description="管理每个源视频对应的剪辑项目，单视频对应一个可二次编辑的切片项目。"
+      toolbar={
+        <ListSearchToolbar
+          showDateRange
+          dateRange={dateRange}
+          onDateChange={onDateChange}
+          searches={[
+            {
+              key: 'keyword',
+              placeholder: '标题搜索：项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）',
+              value: keyword,
+              onChange: setKeyword,
+            },
+          ]}
+          onSearch={applySearch}
+        />
+      }
+    >
       <Table<SliceProject>
-        className="slices-table"
+        className="list-page__table"
         rowKey="id"
         loading={loading}
         columns={columns}
@@ -227,12 +214,11 @@ const SlicesPage = () => {
           current: page,
           pageSize,
           total,
-          showSizeChanger: true,
-          showTotal: (count) => `共 ${count} 条`,
+          ...DEFAULT_TABLE_PAGINATION,
         }}
-        onChange={handleTableChange}
+        onChange={(pagination) => handleTablePaginationChange(pagination, setPage, setPageSize, pageSize)}
       />
-    </div>
+    </ListPageLayout>
   );
 };
 

@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, DatePicker, Input, Popconfirm, Space, Table, Tooltip } from 'antd';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import type { Dayjs } from 'dayjs';
+import { Button, Input, Popconfirm, Space, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { LuCirclePlay, LuPlus, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
+import DisabledActionWrap from '~/components/DisabledActionWrap';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import ListPageLayout from '~/components/ListPageLayout';
+import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useListFilters } from '~/hooks/useListFilters';
+import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
   deleteSourceVideo,
@@ -17,23 +21,14 @@ import {
   type SourceVideo,
 } from '~/services/sourceVideo';
 import { formatToDate } from '~/utils/date';
+import { formatVideoDuration } from '~/utils/duration';
+import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, toast } from '~/utils/toast';
 
-import { buildDateRange, buildManualVideoSliceLink, buildSourceVideoSliceLink, formatVideoDuration } from './utils';
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
 import { getAsrActionDisabledReason } from './asrUtils';
 import './index.css';
-
-function wrapAsrDisabledAction(content: ReactNode, disabledReason: string | null) {
-  if (!disabledReason) return content;
-
-  return (
-    <Tooltip title={disabledReason}>
-      <span className="source-videos-action-wrap">{content}</span>
-    </Tooltip>
-  );
-}
 
 function renderSliceAction(options: {
   to: string;
@@ -46,7 +41,7 @@ function renderSliceAction(options: {
     <Button
       type="link"
       size="small"
-      className="source-videos-action-btn"
+      className="list-page__action-btn"
       icon={options.icon}
       disabled={!!options.disabledReason}
       onClick={() => options.onNavigate(options.to)}
@@ -55,7 +50,7 @@ function renderSliceAction(options: {
     </Button>
   );
 
-  return wrapAsrDisabledAction(button, options.disabledReason);
+  return <DisabledActionWrap disabledReason={options.disabledReason}>{button}</DisabledActionWrap>;
 }
 
 const SourceVideosPage = () => {
@@ -67,10 +62,16 @@ const SourceVideosPage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
-  const [keyword, setKeyword] = useState('');
+  const {
+    keyword,
+    setKeyword,
+    appliedKeyword,
+    applySearch: applyKeywordSearch,
+    dateRange,
+    handleDateChange,
+    dateFilters,
+  } = useListFilters();
   const [globalKeyword, setGlobalKeyword] = useState('');
-  const [appliedKeyword, setAppliedKeyword] = useState('');
   const [appliedGlobalKeyword, setAppliedGlobalKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<SourceVideo[]>([]);
@@ -87,10 +88,9 @@ const SourceVideosPage = () => {
     }
 
     try {
-      const { date, dateEnd } = buildDateRange(dateRange);
       const response = await fetchSourceVideoList({
-        date,
-        dateEnd,
+        date: dateFilters.date,
+        dateEnd: dateFilters.dateEnd,
         keyword: appliedKeyword || undefined,
         globalKeyword: appliedGlobalKeyword || undefined,
         page,
@@ -119,7 +119,7 @@ const SourceVideosPage = () => {
         setLoading(false);
       }
     }
-  }, [appliedGlobalKeyword, appliedKeyword, dateRange, page, pageSize]);
+  }, [appliedGlobalKeyword, appliedKeyword, dateFilters, page, pageSize]);
 
   useEffect(() => {
     void loadList();
@@ -141,13 +141,13 @@ const SourceVideosPage = () => {
   }, [hasProcessingAsr, loadList]);
 
   const applySearch = () => {
-    setAppliedKeyword(keyword.trim());
+    applyKeywordSearch();
     setAppliedGlobalKeyword(globalKeyword.trim());
     setPage(1);
   };
 
-  const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
-    setDateRange(value);
+  const onDateChange = (value: Parameters<typeof handleDateChange>[0]) => {
+    handleDateChange(value);
     setPage(1);
   };
 
@@ -227,7 +227,7 @@ const SourceVideosPage = () => {
         dataIndex: 'name',
         key: 'name',
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name} className="source-videos-cell-ellipsis" />,
+        render: (name: string) => <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />,
       },
       // {
       //   title: '直播地址',
@@ -336,7 +336,7 @@ const SourceVideosPage = () => {
                 <Button
                   type="link"
                   danger
-                  className="source-videos-action-btn"
+                  className="list-page__action-btn"
                   icon={<LuTrash2 size={14} />}
                   loading={deletingId === record.id}
                 >
@@ -351,62 +351,50 @@ const SourceVideosPage = () => {
     [deletingId, navigate, retryingAsrId]
   );
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    if (pagination.current) {
-      setPage(pagination.current);
-    }
-    if (pagination.pageSize) {
-      setPageSize(pagination.pageSize);
-    }
+  const handleTableChange = (pagination: Parameters<typeof handleTablePaginationChange>[0]) => {
+    handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
 
   return (
-    <div className="source-videos-page">
-      <div className="source-videos-header">
-        <div>
-          <h1 className="source-videos-title">源视频管理</h1>
-          <p className="source-videos-desc">管理直播源视频，支持添加、筛选、备注与删除。</p>
-        </div>
+    <ListPageLayout
+      className="source-videos-page"
+      title="源视频管理"
+      description="管理直播源视频，支持添加、筛选、备注与删除。"
+      action={
         <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
           添加源视频
         </Button>
-      </div>
-
-      <div className="source-videos-toolbar">
-        <div className="source-videos-toolbar-filters">
-          <DatePicker.RangePicker
-            className="source-videos-date-picker"
-            value={dateRange}
-            allowClear
-            placeholder={['开始日期', '结束日期']}
-            onChange={handleDateChange}
-          />
-          <Input
-            className="source-videos-search-input"
-            allowClear
-            prefix={<LuSearch size={14} />}
-            placeholder="标题搜索：源视频名称 / 备注名称（支持 关键词A+关键词B）"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={applySearch}
-          />
-          <Input
-            className="source-videos-search-input"
-            allowClear
-            prefix={<LuSearch size={14} />}
-            placeholder="全局搜索：匹配所有文本字段"
-            value={globalKeyword}
-            onChange={(event) => setGlobalKeyword(event.target.value)}
-            onPressEnter={applySearch}
-          />
-          <Button type="primary" onClick={applySearch}>
-            搜索
-          </Button>
-        </div>
-      </div>
-
+      }
+      toolbar={
+        <ListSearchToolbar
+          showDateRange
+          dateRange={dateRange}
+          onDateChange={onDateChange}
+          searches={[
+            {
+              key: 'keyword',
+              placeholder: '标题搜索：源视频名称 / 备注名称（支持 关键词A+关键词B）',
+              value: keyword,
+              onChange: setKeyword,
+            },
+          ]}
+          onSearch={applySearch}
+          extra={
+            <Input
+              className="list-page__search-input"
+              allowClear
+              prefix={<LuSearch size={14} />}
+              placeholder="全局搜索：匹配所有文本字段"
+              value={globalKeyword}
+              onChange={(event) => setGlobalKeyword(event.target.value)}
+              onPressEnter={applySearch}
+            />
+          }
+        />
+      }
+    >
       <Table<SourceVideo>
-        className="source-videos-table"
+        className="list-page__table"
         rowKey="id"
         loading={loading}
         columns={columns}
@@ -416,8 +404,7 @@ const SourceVideosPage = () => {
           current: page,
           pageSize,
           total,
-          showSizeChanger: true,
-          showTotal: (count) => `共 ${count} 条`,
+          ...DEFAULT_TABLE_PAGINATION,
         }}
         onChange={handleTableChange}
       />
@@ -433,7 +420,7 @@ const SourceVideosPage = () => {
           }
         }}
       />
-    </div>
+    </ListPageLayout>
   );
 };
 

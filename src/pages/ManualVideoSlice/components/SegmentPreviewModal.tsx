@@ -71,10 +71,10 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
       destroyOnClose
       onCancel={onClose}
     >
-      <div className="manual-slice-preview-modal">
-        <StreamVideoPlayer ref={playerRef} url={url} className="manual-slice-preview-video" />
+      <div className="slice-editor-preview-modal">
+        <StreamVideoPlayer ref={playerRef} url={url} className="slice-editor-preview-video" />
         {currentSegment && (
-          <div className="manual-slice-preview-meta">
+          <div className="slice-editor-preview-meta">
             <span>
               正在播放片段 {currentIndex + 1}/{segments.length}
             </span>

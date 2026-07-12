@@ -16,7 +16,7 @@ import {
   getTotalSelectedDuration,
   reorderSegments,
 } from '../utils';
-import { formatVideoDuration } from '../../SourceVideos/utils';
+import { formatVideoDuration } from '~/utils/duration';
 
 interface SelectedCopyPanelProps {
   mode: ManualSliceMode;
@@ -83,20 +83,20 @@ const SelectedCopyPanel = ({
   };
 
   return (
-    <div className="manual-slice-copy-panel">
-      <div className="manual-slice-copy-header">
+    <div className="slice-editor-panel slice-editor-panel_copy">
+      <div className="slice-editor-copy-header">
         <div>
-          <div className="manual-slice-panel-title">文案预览</div>
-          <p className="manual-slice-copy-stats">
+          <div className="slice-editor-panel-title">文案预览</div>
+          <p className="slice-editor-copy-stats">
             已选 {segments.length} 段 · 总时长 {formatVideoDuration(Math.round(totalDuration))}
             {isOverLimit && (
-              <span className="manual-slice-over-limit">
+              <span className="slice-over-limit">
                 （超出 {maxTotalDuration / 60} 分钟限制）
               </span>
             )}
           </p>
         </div>
-        <div className="manual-slice-mode-tabs">
+        <div className="slice-editor-mode-tabs">
           <button
             type="button"
             className={mode === 'select' ? 'active' : ''}
@@ -114,7 +114,7 @@ const SelectedCopyPanel = ({
         </div>
       </div>
 
-      <div className="manual-slice-copy-toolbar">
+      <div className="slice-editor-copy-toolbar">
         <button type="button" onClick={onPreview} disabled={segments.length === 0}>
           <LuPlay size={14} />
           连续预览
@@ -141,9 +141,9 @@ const SelectedCopyPanel = ({
         </button>
       </div>
 
-      <div className="manual-slice-copy-list">
+      <div className="slice-editor-copy-list">
         {segments.length === 0 ? (
-          <div className="manual-slice-copy-empty">
+          <div className="slice-editor-copy-empty">
             请从左侧文案中选择整段或部分文字，选中内容会出现在这里。
           </div>
         ) : (
@@ -154,7 +154,7 @@ const SelectedCopyPanel = ({
             return (
               <div
                 key={segment.id}
-                className={`manual-slice-copy-item${isActive ? ' active' : ''}`}
+                className={`slice-editor-copy-item${isActive ? ' active' : ''}`}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={() => handleDrop(index)}
                 onClick={() => {
@@ -165,10 +165,10 @@ const SelectedCopyPanel = ({
                   onSeek(segment.start);
                 }}
               >
-                <div className="manual-slice-copy-item-head">
+                <div className="slice-editor-copy-item-head">
                   {mode === 'edit' && (
                     <span
-                      className="manual-slice-copy-drag"
+                      className="slice-editor-copy-drag"
                       draggable
                       onDragStart={(event) => {
                         setDragIndex(index);
@@ -181,17 +181,17 @@ const SelectedCopyPanel = ({
                       <LuGripVertical size={14} />
                     </span>
                   )}
-                  <span className="manual-slice-copy-index">片段 {index + 1}</span>
-                  <span className="manual-slice-speaker" style={{ color }}>
+                  <span className="slice-editor-copy-index">片段 {index + 1}</span>
+                  <span className="slice-editor-speaker" style={{ color }}>
                     {segment.speakerName}
                   </span>
-                  <span className="manual-slice-copy-time">
+                  <span className="slice-editor-copy-time">
                     {formatSliceTime(segment.start)} - {formatSliceTime(segment.end)}
                   </span>
                 </div>
 
                 <p
-                  className={`manual-slice-copy-text${isActive ? ' manual-slice-copy-text_active' : ''}`}
+                  className={`slice-editor-copy-text${isActive ? ' slice-editor-copy-text_active' : ''}`}
                   data-copy-text-id={segment.id}
                   onMouseDown={(event) => event.stopPropagation()}
                   onMouseUp={(event) => {
@@ -207,7 +207,7 @@ const SelectedCopyPanel = ({
                 </p>
 
                 {mode === 'edit' && isActive && (
-                  <div className="manual-slice-copy-actions">
+                  <div className="slice-editor-copy-actions">
                     <button
                       type="button"
                       onClick={(event) => {
@@ -270,7 +270,7 @@ const SelectedCopyPanel = ({
                       <LuCopy size={14} />
                       复制
                     </button>
-                    <div className="manual-slice-copy-actions-delete-group">
+                    <div className="slice-editor-copy-actions-delete-group">
                       <button
                         type="button"
                         className="danger"
@@ -278,7 +278,7 @@ const SelectedCopyPanel = ({
                         onClick={(event) => {
                           event.stopPropagation();
                           const textElement = event.currentTarget
-                            .closest('.manual-slice-copy-item')
+                            .closest('.slice-editor-copy-item')
                             ?.querySelector<HTMLElement>(`[data-copy-text-id="${segment.id}"]`) ?? null;
                           const savedSelection =
                             textSelectionRef.current?.segmentId === segment.id
@@ -310,7 +310,7 @@ const SelectedCopyPanel = ({
         )}
       </div>
       {segments.length > 0 && mode === 'edit' ? (
-        <p className="manual-slice-copy-tip">在片段文案中拖选文字后，点击「删除选中区」可移除选中内容及其对应时长。</p>
+        <p className="slice-editor-copy-tip">在片段文案中拖选文字后，点击「删除选中区」可移除选中内容及其对应时长。</p>
       ) : null}
     </div>
   );

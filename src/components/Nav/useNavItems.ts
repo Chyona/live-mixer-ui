@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { ManualSliceEntryFrom } from '~/pages/SourceVideos/utils';
+import { getSliceEditorEntryFrom, type SliceEditorEntryFrom } from '~/routes/links';
 import { RoutesCfg, type RouteCfgType } from '~/routes/const';
-
-function getManualSliceEntryFrom(state: unknown): ManualSliceEntryFrom | undefined {
-  return (state as { from?: ManualSliceEntryFrom } | null)?.from;
-}
 
 export const getNavActive = (
   path: string,
   currentPath: string,
-  entryFrom?: ManualSliceEntryFrom
+  entryFrom?: SliceEditorEntryFrom
 ) => {
   const isSliceEditor =
     currentPath.includes('/source-videos/') &&
@@ -37,7 +33,7 @@ export const getNavActive = (
 
 export function useNavItems() {
   const location = useLocation();
-  const entryFrom = getManualSliceEntryFrom(location.state);
+  const entryFrom = getSliceEditorEntryFrom(location.state);
 
   const [navItems, setNavItems] = useState<RouteCfgType[]>(() =>
     RoutesCfg.map((item) => ({
@@ -48,7 +44,7 @@ export function useNavItems() {
   const [rotatedItemKey, setRotatedItemKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const nextEntryFrom = getManualSliceEntryFrom(location.state);
+    const nextEntryFrom = getSliceEditorEntryFrom(location.state);
 
     setNavItems((prev) =>
       prev.map((item) => ({
