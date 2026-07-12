@@ -45,7 +45,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || '添加失败');
+        toast.notify.error(response.message || '添加失败');
         return;
       }
 
@@ -56,7 +56,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('添加失败');
+        toast.notify.error('添加失败');
       }
     } finally {
       setSubmitting(false);

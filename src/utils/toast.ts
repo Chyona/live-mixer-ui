@@ -101,5 +101,5 @@ export const toast = {
 
 /** 展示 HTTP / 业务层 AppError */
 export function showAppError(error: AppError) {
-  toast.error(error.errorMessage);
+  toast.notify.error(error.errorMessage);
 }

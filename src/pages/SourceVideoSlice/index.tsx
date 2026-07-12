@@ -62,7 +62,7 @@ const SourceVideoSlicePage = () => {
     try {
       const response = await fetchSourceVideoDetail(id);
       if (response.code !== 0) {
-        toast.error(response.message || '加载源视频失败');
+        toast.notify.error(response.message || '加载源视频失败');
         setVideo(null);
         return;
       }
@@ -72,7 +72,7 @@ const SourceVideoSlicePage = () => {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('加载源视频失败');
+        toast.notify.error('加载源视频失败');
       }
     } finally {
       setLoading(false);
@@ -174,12 +174,12 @@ const SourceVideoSlicePage = () => {
     if (!video || !streamUrl) return;
 
     if (selectedRanges.length === 0) {
-      toast.warning('请先选择至少一个时间段');
+      toast.notify.warning('请先选择至少一个时间段');
       return;
     }
 
     if (!selectedPrompt?.content.trim()) {
-      toast.warning('请先选择一个 AI 提示词');
+      toast.notify.warning('请先选择一个 AI 提示词');
       return;
     }
 
@@ -201,20 +201,20 @@ const SourceVideoSlicePage = () => {
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || '提交失败');
+        toast.notify.error(response.message || '提交失败');
         return;
       }
 
       if (!response.data?.task_id) {
-        toast.error('提交成功但未返回任务 ID');
+        toast.notify.error('提交成功但未返回任务 ID');
         return;
       }
 
-      toast.success('任务已提交，正在跳转到任务管理');
+      toast.notify.success('任务已提交，正在跳转到任务管理');
       navigate('/tasks');
     } catch (error) {
       const msg = error instanceof AppError ? error.errorMessage : '提交失败';
-      toast.error(msg);
+      toast.notify.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -224,12 +224,12 @@ const SourceVideoSlicePage = () => {
     if (!video || !id) return;
 
     if (selectedRanges.length === 0) {
-      toast.warning('请先选择至少一个时间段');
+      toast.notify.warning('请先选择至少一个时间段');
       return;
     }
 
     if (!selectedPrompt?.content.trim()) {
-      toast.warning('请先选择一个 AI 提示词');
+      toast.notify.warning('请先选择一个 AI 提示词');
       return;
     }
 
@@ -248,17 +248,17 @@ const SourceVideoSlicePage = () => {
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || 'AI 选片任务提交失败');
+        toast.notify.error(response.message || 'AI 选片任务提交失败');
         return;
       }
 
-      toast.success('AI 选片任务已提交，正在前往任务管理');
+      toast.notify.success('AI 选片任务已提交，正在前往任务管理');
       navigate('/tasks');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('AI 选片失败');
+        toast.notify.error('AI 选片失败');
       }
     } finally {
       setAiSelecting(false);

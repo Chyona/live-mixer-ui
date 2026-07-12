@@ -27,12 +27,12 @@ const PasswordLogin = () => {
         updateAuthInfo(data);
         return;
       }
-      toast.error(message || '登录失败');
+      toast.notify.error(message || '登录失败');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('登录失败，请稍后重试');
+        toast.notify.error('登录失败，请稍后重试');
       }
     } finally {
       setLoading(false);

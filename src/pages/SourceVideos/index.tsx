@@ -99,7 +99,7 @@ const SourceVideosPage = () => {
 
       if (response.code !== 0) {
         if (!options?.silent) {
-          toast.error(response.message || '加载源视频列表失败');
+          toast.notify.error(response.message || '加载源视频列表失败');
         }
         return;
       }
@@ -111,7 +111,7 @@ const SourceVideosPage = () => {
         if (error instanceof AppError) {
           showAppError(error);
         } else {
-          toast.error('加载源视频列表失败');
+          toast.notify.error('加载源视频列表失败');
         }
       }
     } finally {
@@ -155,19 +155,19 @@ const SourceVideosPage = () => {
     try {
       const response = await updateSourceVideoRemark(id, remarkName);
       if (response.code !== 0) {
-        toast.error(response.message || '备注保存失败');
+        toast.notify.error(response.message || '备注保存失败');
         return;
       }
 
       setList((prev) =>
         prev.map((item) => (item.id === id ? { ...item, remarkName: response.data.remarkName } : item))
       );
-      toast.success('备注已保存');
+      toast.notify.success('备注已保存');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('备注保存失败');
+        toast.notify.error('备注保存失败');
       }
     }
   };
@@ -199,11 +199,11 @@ const SourceVideosPage = () => {
     try {
       const response = await deleteSourceVideo(id);
       if (response.code !== 0) {
-        toast.error(response.message || '删除失败');
+        toast.notify.error(response.message || '删除失败');
         return;
       }
 
-      toast.success('已删除源视频');
+      toast.notify.success('已删除源视频');
       if (list.length === 1 && page > 1) {
         setPage((prev) => prev - 1);
       } else {
@@ -213,7 +213,7 @@ const SourceVideosPage = () => {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('删除失败');
+        toast.notify.error('删除失败');
       }
     } finally {
       setDeletingId(null);
