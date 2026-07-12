@@ -49,7 +49,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
         return;
       }
 
-      toast.success('源视频已添加');
+      toast.notify.success('源视频已添加，正在进行 ASR 转写');
       handleClose();
       onSuccess();
     } catch (error) {

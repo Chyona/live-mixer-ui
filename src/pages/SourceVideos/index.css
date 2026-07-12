@@ -72,6 +72,38 @@
   white-space: nowrap;
 }
 
+.source-videos-asr {
+  min-width: 140px;
+  cursor: default;
+}
+
+.source-videos-asr_failed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.source-videos-asr-failed-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #ff4d4f;
+  line-height: 1.4;
+  cursor: default;
+}
+
+.source-videos-asr-progress {
+  cursor: default;
+}
+
+.source-videos-asr-retry-btn {
+  flex-shrink: 0;
+  height: auto;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .source-videos-count-link {
   color: var(--primary-color);
   font-weight: 500;
@@ -97,16 +129,9 @@
   padding-inline: 0;
 }
 
-.source-videos-slice-link {
+.source-videos-action-wrap {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.source-videos-slice-link:hover {
-  color: var(--primary-dark);
+  cursor: not-allowed;
 }
 
 .source-videos-form-date {

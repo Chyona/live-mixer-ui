@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, DatePicker, Input, Popconfirm, Space, Table } from 'antd';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button, DatePicker, Input, Popconfirm, Space, Table, Tooltip } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import { LuCirclePlay, LuPlus, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
@@ -12,6 +12,7 @@ import { AppError } from '~/services/http';
 import {
   deleteSourceVideo,
   fetchSourceVideoList,
+  retrySourceVideoAsr,
   updateSourceVideoRemark,
   type SourceVideo,
 } from '~/services/sourceVideo';
@@ -20,9 +21,46 @@ import { showAppError, toast } from '~/utils/toast';
 
 import { buildDateRange, buildManualVideoSliceLink, buildSourceVideoSliceLink, formatVideoDuration } from './utils';
 import AddSourceVideoModal from './AddSourceVideoModal';
+import AsrProgressCell from './AsrProgressCell';
+import { getAsrActionDisabledReason } from './asrUtils';
 import './index.css';
 
+function wrapAsrDisabledAction(content: ReactNode, disabledReason: string | null) {
+  if (!disabledReason) return content;
+
+  return (
+    <Tooltip title={disabledReason}>
+      <span className="source-videos-action-wrap">{content}</span>
+    </Tooltip>
+  );
+}
+
+function renderSliceAction(options: {
+  to: string;
+  icon: ReactNode;
+  label: string;
+  disabledReason: string | null;
+  onNavigate: (to: string) => void;
+}) {
+  const button = (
+    <Button
+      type="link"
+      size="small"
+      className="source-videos-action-btn"
+      icon={options.icon}
+      disabled={!!options.disabledReason}
+      onClick={() => options.onNavigate(options.to)}
+    >
+      {options.label}
+    </Button>
+  );
+
+  return wrapAsrDisabledAction(button, options.disabledReason);
+}
+
 const SourceVideosPage = () => {
+  const navigate = useNavigate();
+
   useAppSEO({
     title: '源视频管理',
     path: '/source-videos',
@@ -40,10 +78,13 @@ const SourceVideosPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [retryingAsrId, setRetryingAsrId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const loadList = useCallback(async () => {
-    setLoading(true);
+  const loadList = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
 
     try {
       const { date, dateEnd } = buildDateRange(dateRange);
@@ -57,26 +98,47 @@ const SourceVideosPage = () => {
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || '加载源视频列表失败');
+        if (!options?.silent) {
+          toast.error(response.message || '加载源视频列表失败');
+        }
         return;
       }
 
       setList(response.data.list);
       setTotal(response.data.total);
     } catch (error) {
-      if (error instanceof AppError) {
-        showAppError(error);
-      } else {
-        toast.error('加载源视频列表失败');
+      if (!options?.silent) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.error('加载源视频列表失败');
+        }
       }
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, [appliedGlobalKeyword, appliedKeyword, dateRange, page, pageSize]);
 
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  const hasProcessingAsr = useMemo(
+    () => list.some((item) => item.asrStatus === 'pending' || item.asrStatus === 'processing'),
+    [list]
+  );
+
+  useEffect(() => {
+    if (!hasProcessingAsr) return;
+
+    const timer = window.setInterval(() => {
+      void loadList({ silent: true });
+    }, 2000);
+
+    return () => window.clearInterval(timer);
+  }, [hasProcessingAsr, loadList]);
 
   const applySearch = () => {
     setAppliedKeyword(keyword.trim());
@@ -107,6 +169,28 @@ const SourceVideosPage = () => {
       } else {
         toast.error('备注保存失败');
       }
+    }
+  };
+
+  const handleRetryAsr = async (id: string) => {
+    setRetryingAsrId(id);
+    try {
+      const response = await retrySourceVideoAsr(id);
+      if (response.code !== 0) {
+        toast.notify.error(response.message || '重新解析失败');
+        return;
+      }
+
+      setList((prev) => prev.map((item) => (item.id === id ? response.data : item)));
+      toast.notify.success('已提交重新解析，请稍候');
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('重新解析失败');
+      }
+    } finally {
+      setRetryingAsrId(null);
     }
   };
 
@@ -142,7 +226,6 @@ const SourceVideosPage = () => {
         title: '源视频名称',
         dataIndex: 'name',
         key: 'name',
-        width: 200,
         ellipsis: true,
         render: (name: string) => <EllipsisTooltip text={name} className="source-videos-cell-ellipsis" />,
       },
@@ -170,7 +253,6 @@ const SourceVideosPage = () => {
         title: '备注名称',
         dataIndex: 'remarkName',
         key: 'remarkName',
-        width: 220,
         render: (remarkName: string, record) => (
           <RemarkEditor value={remarkName} onSave={(value) => handleRemarkSave(record.id, value)} />
         ),
@@ -179,21 +261,39 @@ const SourceVideosPage = () => {
         title: '时长',
         dataIndex: 'duration',
         key: 'duration',
-        width: 80,
+        width: 100,
         render: (duration: number) => formatVideoDuration(duration),
       },
       {
         title: '时间',
         dataIndex: 'date',
         key: 'date',
-        width: 100,
+        width: 160,
         render: (date: string) => formatToDate(date),
+      },
+      {
+        title: 'ASR解析进度',
+        key: 'asrProgress',
+        width: 160,
+        render: (_, record) => (
+          <AsrProgressCell
+            status={record.asrStatus}
+            progress={record.asrProgress}
+            message={record.asrMessage}
+            retrying={retryingAsrId === record.id}
+            onRetry={
+              record.asrStatus === 'failed'
+                ? () => void handleRetryAsr(record.id)
+                : undefined
+            }
+          />
+        ),
       },
       {
         title: '切片数量',
         dataIndex: 'clipCount',
         key: 'clipCount',
-        width: 80,
+        width: 100,
         align: 'center',
         render: (count: number, record) => (
           <Link className="source-videos-count-link" to={buildSourceVideoSliceLink(record.id)}>
@@ -204,41 +304,51 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 120,
+        width: 240,
         fixed: 'right',
-        render: (_, record) => (
-          <Space size={8}>
-            <Link to={buildSourceVideoSliceLink(record.id)} className="source-videos-slice-link">
-              <LuCirclePlay size={14} />
-              进入
-            </Link>
-            <Link to={buildManualVideoSliceLink(record.id)} className="source-videos-slice-link">
-              <LuTextSelect size={14} />
-              人工切片
-            </Link>
-            <Popconfirm
-              title="确认删除该源视频？"
-              description="删除后不可恢复，仅删除您自己的源视频数据。"
-              okText="删除"
-              cancelText="取消"
-              okButtonProps={{ danger: true, loading: deletingId === record.id }}
-              onConfirm={() => void handleDelete(record.id)}
-            >
-              <Button
-                type="link"
-                danger
-                className="source-videos-action-btn"
-                icon={<LuTrash2 size={14} />}
-                loading={deletingId === record.id}
+        render: (_, record) => {
+          const asrDisabledReason = getAsrActionDisabledReason(record.asrStatus, record.asrMessage);
+
+          return (
+            <Space size={8}>
+              {renderSliceAction({
+                to: buildSourceVideoSliceLink(record.id),
+                icon: <LuCirclePlay size={14} />,
+                label: '进入',
+                disabledReason: asrDisabledReason,
+                onNavigate: navigate,
+              })}
+              {renderSliceAction({
+                to: buildManualVideoSliceLink(record.id),
+                icon: <LuTextSelect size={14} />,
+                label: '人工切片',
+                disabledReason: asrDisabledReason,
+                onNavigate: navigate,
+              })}
+              <Popconfirm
+                title="确认删除该源视频？"
+                description="删除后不可恢复，仅删除您自己的源视频数据。"
+                okText="删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true, loading: deletingId === record.id }}
+                onConfirm={() => void handleDelete(record.id)}
               >
-                删除
-              </Button>
-            </Popconfirm>
-          </Space>
-        ),
+                <Button
+                  type="link"
+                  danger
+                  className="source-videos-action-btn"
+                  icon={<LuTrash2 size={14} />}
+                  loading={deletingId === record.id}
+                >
+                  删除
+                </Button>
+              </Popconfirm>
+            </Space>
+          );
+        },
       },
     ],
-    [deletingId]
+    [deletingId, navigate, retryingAsrId]
   );
 
   const handleTableChange = (pagination: TablePaginationConfig) => {
@@ -301,7 +411,7 @@ const SourceVideosPage = () => {
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 1160 }}
+        scroll={{ x: 1320 }}
         pagination={{
           current: page,
           pageSize,

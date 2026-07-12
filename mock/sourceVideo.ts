@@ -13,6 +13,9 @@ type MockSourceVideo = {
   clipCount: number;
   sourceType: 'live' | 'import';
   ownerId: string;
+  asrStatus: 'pending' | 'processing' | 'success' | 'failed';
+  asrProgress: number;
+  asrMessage?: string;
 };
 
 const CURRENT_USER_ID = '222';
@@ -60,6 +63,9 @@ function buildMockSourceVideos(): MockSourceVideo[] {
       clipCount: 8 + (index % 20),
       sourceType: 'live',
       ownerId: CURRENT_USER_ID,
+      asrStatus: index % 4 === 0 ? 'failed' : 'success',
+      asrProgress: index % 4 === 0 ? 36 : 100,
+      asrMessage: index % 4 === 0 ? '转写服务超时，请稍后重试' : undefined,
     };
   });
 }
@@ -77,6 +83,8 @@ const sourceVideos: MockSourceVideo[] = [
     clipCount: 4,
     sourceType: 'live',
     ownerId: 'other-user',
+    asrStatus: 'success',
+    asrProgress: 100,
   },
 ];
 
@@ -97,6 +105,36 @@ function matchKeywords(text: string, keywords: string[]) {
 function toPublicItem(item: MockSourceVideo) {
   const { ownerId: _ownerId, ...rest } = item;
   return rest;
+}
+
+function advanceAsrProgress(item: MockSourceVideo) {
+  if (item.asrStatus === 'success' || item.asrStatus === 'failed') return;
+
+  if (item.asrStatus === 'pending') {
+    item.asrStatus = 'processing';
+    item.asrProgress = 8;
+    return;
+  }
+
+  item.asrProgress = Math.min(100, item.asrProgress + 10 + Math.floor(Math.random() * 10));
+
+  if (item.asrProgress >= 100) {
+    item.asrProgress = 100;
+    item.asrStatus = 'success';
+    if (item.segmentCount === 0) {
+      item.segmentCount = 8 + Math.floor(Math.random() * 12);
+    }
+    if (item.duration === 0) {
+      item.duration = 1800 + Math.floor(Math.random() * 3600);
+    }
+  }
+}
+
+function tickAllAsrJobs() {
+  sourceVideos.forEach((item) => {
+    if (item.ownerId !== CURRENT_USER_ID) return;
+    advanceAsrProgress(item);
+  });
 }
 
 function filterList(query: Record<string, string | string[] | undefined>) {
@@ -128,6 +166,7 @@ export default [
     url: `${API_PREFIX}/v1/source-videos`,
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
+      tickAllAsrJobs();
       const page = Number(query.page || 1);
       const pageSize = Number(query.pageSize || 10);
       const filtered = filterList(query);
@@ -178,6 +217,8 @@ export default [
         clipCount: 0,
         sourceType,
         ownerId: CURRENT_USER_ID,
+        asrStatus: 'pending',
+        asrProgress: 0,
       };
 
       sourceVideos.unshift(item);
@@ -189,6 +230,7 @@ export default [
     url: `${API_PREFIX}/v1/source-videos/:id`,
     method: 'get',
     response: ({ query }: { query: { id: string } }) => {
+      tickAllAsrJobs();
       const item = sourceVideos.find(
         (video) => video.id === query.id && video.ownerId === CURRENT_USER_ID
       );
@@ -222,6 +264,27 @@ export default [
       }
       sourceVideos.splice(index, 1);
       return { code: 0, message: '', data: null };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/source-videos/:id/asr/retry`,
+    method: 'post',
+    response: ({ query }: { query: { id: string } }) => {
+      const item = sourceVideos.find(
+        (video) => video.id === query.id && video.ownerId === CURRENT_USER_ID
+      );
+      if (!item) {
+        return { code: 404, message: '源视频不存在', data: null };
+      }
+      if (item.asrStatus !== 'failed') {
+        return { code: 400, message: '当前 ASR 状态不可重新解析', data: null };
+      }
+
+      item.asrStatus = 'pending';
+      item.asrProgress = 0;
+      delete item.asrMessage;
+
+      return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
 ] as MockMethod[];

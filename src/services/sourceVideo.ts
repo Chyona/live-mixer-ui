@@ -3,6 +3,8 @@ import { request } from './http';
 
 export type SourceVideoType = 'live' | 'import';
 
+export type AsrStatus = 'pending' | 'processing' | 'success' | 'failed';
+
 export interface SourceVideo {
   id: string;
   name: string;
@@ -13,6 +15,9 @@ export interface SourceVideo {
   segmentCount: number;
   clipCount: number;
   sourceType: SourceVideoType;
+  asrStatus: AsrStatus;
+  asrProgress: number;
+  asrMessage?: string;
 }
 
 export interface SourceVideoListParams {
@@ -74,5 +79,11 @@ export async function createSourceVideo(
   return await request('/v1/source-videos', {
     method: 'post',
     data: { ...params, sourceType: 'live' },
+  });
+}
+
+export async function retrySourceVideoAsr(id: string): Promise<BaseResponse<SourceVideo>> {
+  return await request(`/v1/source-videos/${id}/asr/retry`, {
+    method: 'post',
   });
 }
