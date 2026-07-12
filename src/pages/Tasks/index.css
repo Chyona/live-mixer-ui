@@ -76,10 +76,6 @@
   font-weight: 500;
 }
 
-.tasks-name-input {
-  max-width: 200px;
-}
-
 .tasks-cell-ellipsis {
   display: block;
   max-width: 100%;

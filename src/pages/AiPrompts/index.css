@@ -1,0 +1,90 @@
+.ai-prompts-page {
+  padding: var(--content-padding);
+  min-height: 100%;
+}
+
+.ai-prompts-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ai-prompts-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ai-prompts-desc {
+  margin: 8px 0 0;
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.ai-prompts-toolbar {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.ai-prompts-toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.ai-prompts-search-input {
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.ai-prompts-table {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ai-prompts-table .ant-table {
+  background: transparent;
+}
+
+.ai-prompts-table .ant-table-thead > tr > th {
+  background: #f8faff;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ai-prompts-cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-prompts-action-btn {
+  padding-inline: 0;
+}
+
+@media (max-width: 992px) {
+  .ai-prompts-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-prompts-toolbar-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-prompts-search-input {
+    width: 100%;
+    max-width: none;
+  }
+}

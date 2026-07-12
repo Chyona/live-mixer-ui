@@ -13,6 +13,7 @@ import { formatToDate } from '~/utils/date';
 import { formatVideoDuration } from '../SourceVideos/utils';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
+import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
 
 import './index.css';
 
@@ -83,7 +84,8 @@ const SourceVideoSlicePage = () => {
     setVideoError(null);
   }, [streamUrl]);
 
-  const isFiniteDuration = Number.isFinite(videoDuration) && videoDuration > 0;
+  const isTimelineReady = videoDuration > 0 && !videoError;
+  const isTimelineLoading = canPreview && !videoError && videoDuration === 0;
 
   const handleDurationChange = useCallback((duration: number) => {
     setVideoDuration(duration);
@@ -102,7 +104,7 @@ const SourceVideoSlicePage = () => {
       rafRef.current = requestAnimationFrame(updateTime);
     };
 
-    if (isFiniteDuration) {
+    if (isTimelineReady) {
       rafRef.current = requestAnimationFrame(updateTime);
     }
 
@@ -111,7 +113,7 @@ const SourceVideoSlicePage = () => {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [isFiniteDuration]);
+  }, [isTimelineReady]);
 
   const handleTimeChange = useCallback((time: number) => {
     const video = playerRef.current?.video;
@@ -206,10 +208,6 @@ const SourceVideoSlicePage = () => {
     }
   }, [navigate, selectedRanges, streamUrl, video]);
 
-  const handleBatchDownload = useCallback(() => {
-    toast.info('批量下载功能开发中');
-  }, []);
-
   if (loading) {
     return (
       <div className="slice-page slice-page_loading">
@@ -274,7 +272,9 @@ const SourceVideoSlicePage = () => {
             />
           </div>
 
-          {videoDuration > 0 && !videoError && (
+          {isTimelineLoading && <TimelineLoadingSkeleton />}
+
+          {isTimelineReady && (
             <div className="slice-timeline-section">
               <SelectedSegmentsPanel
                 videoDuration={videoDuration}
@@ -290,7 +290,6 @@ const SourceVideoSlicePage = () => {
                 activeRangeId={activeRangeId}
                 onActiveRangeSelect={handleActiveRangeSelect}
                 onSubmit={() => void handleSubmit()}
-                onBatchDownload={handleBatchDownload}
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
               />

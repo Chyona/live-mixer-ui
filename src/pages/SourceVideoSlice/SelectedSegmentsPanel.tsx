@@ -31,7 +31,6 @@ interface SelectedSegmentsPanelProps {
   activeRangeId: string | null;
   onActiveRangeSelect: (rangeId: string, start: number) => void;
   onSubmit: () => void;
-  onBatchDownload: () => void;
   onClearAll: () => void;
   onRangeDelete: (rangeId: string) => void;
 }
@@ -50,7 +49,6 @@ const SelectedSegmentsPanel = ({
   activeRangeId,
   onActiveRangeSelect,
   onSubmit,
-  onBatchDownload,
   onClearAll,
   onRangeDelete,
 }: SelectedSegmentsPanelProps) => {
@@ -92,14 +90,6 @@ const SelectedSegmentsPanel = ({
             disabled={submitting || selectedRanges.length === 0 || isOverLimit}
           >
             {submitting ? '处理中...' : '一键成片'}
-          </button>
-          <button
-            type="button"
-            className="slice-secondary-btn"
-            onClick={onBatchDownload}
-            disabled={selectedRanges.length === 0}
-          >
-            批量下载
           </button>
           <button
             type="button"

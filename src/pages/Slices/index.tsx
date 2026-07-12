@@ -5,6 +5,7 @@ import type { Dayjs } from 'dayjs';
 import { LuPlay, LuSearch } from 'react-icons/lu';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
+import RemarkEditor from '~/components/RemarkEditor';
 import { AppError } from '~/services/http';
 import {
   fetchSliceList,
@@ -19,51 +20,6 @@ import { formatVideoDuration } from '../SourceVideos/utils';
 import { buildDateRange } from './utils';
 import SlicePreviewModal from './SlicePreviewModal';
 import './index.css';
-
-// const AUDIT_STATUS_MAP: Record<SliceAuditStatus, { text: string; color: string }> = {
-//   approved: { text: '通过审核', color: 'success' },
-//   rejected: { text: '不通过审核', color: 'error' },
-//   pending: { text: '待审核', color: 'warning' },
-// };
-
-interface SliceNameEditorProps {
-  value: string;
-  onSave: (value: string) => Promise<void>;
-}
-
-function SliceNameEditor({ value, onSave }: SliceNameEditorProps) {
-  const [draft, setDraft] = useState(value);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  const handleBlur = async () => {
-    const trimmed = draft.trim();
-    if (trimmed === value) return;
-
-    setSaving(true);
-    try {
-      await onSave(trimmed);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Input
-      className="slices-name-input"
-      value={draft}
-      placeholder="输入切片名称"
-      maxLength={64}
-      disabled={saving}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => void handleBlur()}
-      onPressEnter={(event) => event.currentTarget.blur()}
-    />
-  );
-}
 
 const SlicesPage = () => {
   useAppSEO({
@@ -156,7 +112,11 @@ const SlicesPage = () => {
         key: 'name',
         width: 220,
         render: (name: string, record) => (
-          <SliceNameEditor value={name} onSave={(value) => handleNameSave(record.id, value)} />
+          <RemarkEditor
+            value={name}
+            placeholder="输入切片名称"
+            onSave={(value) => handleNameSave(record.id, value)}
+          />
         ),
       },
       {

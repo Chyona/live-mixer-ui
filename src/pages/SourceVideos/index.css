@@ -72,10 +72,6 @@
   white-space: nowrap;
 }
 
-.source-videos-remark-input {
-  max-width: 180px;
-}
-
 .source-videos-count-link {
   color: var(--primary-color);
   font-weight: 500;
@@ -122,6 +118,7 @@
     flex-direction: column;
     align-items: stretch;
   }
+
   .source-videos-toolbar-filters {
     flex-direction: column;
     align-items: stretch;

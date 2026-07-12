@@ -6,6 +6,7 @@ import type { Dayjs } from 'dayjs';
 import { LuCirclePlay, LuPlus, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import {
@@ -20,45 +21,6 @@ import { showAppError, toast } from '~/utils/toast';
 import { buildDateRange, buildManualVideoSliceLink, buildSourceVideoSliceLink, formatVideoDuration } from './utils';
 import AddSourceVideoModal from './AddSourceVideoModal';
 import './index.css';
-
-interface RemarkEditorProps {
-  value: string;
-  onSave: (value: string) => Promise<void>;
-}
-
-function RemarkEditor({ value, onSave }: RemarkEditorProps) {
-  const [draft, setDraft] = useState(value);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  const handleBlur = async () => {
-    const trimmed = draft.trim();
-    if (trimmed === value) return;
-
-    setSaving(true);
-    try {
-      await onSave(trimmed);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Input
-      className="source-videos-remark-input"
-      value={draft}
-      placeholder="添加备注"
-      maxLength={64}
-      disabled={saving}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => void handleBlur()}
-      onPressEnter={(event) => event.currentTarget.blur()}
-    />
-  );
-}
 
 const SourceVideosPage = () => {
   useAppSEO({
@@ -208,7 +170,7 @@ const SourceVideosPage = () => {
         title: '备注名称',
         dataIndex: 'remarkName',
         key: 'remarkName',
-        width: 180,
+        width: 220,
         render: (remarkName: string, record) => (
           <RemarkEditor value={remarkName} onSave={(value) => handleRemarkSave(record.id, value)} />
         ),
@@ -217,21 +179,21 @@ const SourceVideosPage = () => {
         title: '时长',
         dataIndex: 'duration',
         key: 'duration',
-        width: 100,
+        width: 80,
         render: (duration: number) => formatVideoDuration(duration),
       },
       {
         title: '时间',
         dataIndex: 'date',
         key: 'date',
-        width: 120,
+        width: 100,
         render: (date: string) => formatToDate(date),
       },
       {
         title: '切片数量',
         dataIndex: 'clipCount',
         key: 'clipCount',
-        width: 100,
+        width: 80,
         align: 'center',
         render: (count: number, record) => (
           <Link className="source-videos-count-link" to={buildSourceVideoSliceLink(record.id)}>
@@ -242,7 +204,7 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 220,
+        width: 120,
         fixed: 'right',
         render: (_, record) => (
           <Space size={8}>

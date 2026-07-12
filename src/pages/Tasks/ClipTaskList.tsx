@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Input, Popconfirm, Progress, Space, Table, Tag, Tooltip } from 'antd';
+import { Button, Popconfirm, Progress, Space, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuCopy, LuDownload, LuEye, LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import RemarkEditor from '~/components/RemarkEditor';
 import { AppError } from '~/services/http';
 import {
   deleteClipTask,
@@ -22,48 +23,6 @@ interface ClipTaskListProps {
   tasks: ClipTaskItem[];
   onChanged: () => Promise<void>;
   onRefreshTask: (taskId: string) => Promise<void>;
-}
-
-interface ClipNameEditorProps {
-  value: string;
-  onSave: (value: string) => Promise<void>;
-}
-
-function ClipNameEditor({ value, onSave }: ClipNameEditorProps) {
-  const [draft, setDraft] = useState(value);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  const handleBlur = async () => {
-    const trimmed = draft.trim();
-    if (!trimmed) {
-      setDraft(value);
-      return;
-    }
-    if (trimmed === value) return;
-
-    setSaving(true);
-    try {
-      await onSave(trimmed);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Input
-      className="tasks-name-input"
-      value={draft}
-      maxLength={64}
-      disabled={saving}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => void handleBlur()}
-      onPressEnter={(event) => event.currentTarget.blur()}
-    />
-  );
 }
 
 function getStatusTagColor(status: ClipTaskItemStatus) {
@@ -158,19 +117,12 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
         title: '成片名称',
         dataIndex: 'clipName',
         key: 'clipName',
-        width: 220,
-        render: (_, record) => (
-          <ClipNameEditor
-            value={record.clipName}
-            onSave={(name) => handleNameSave(record.taskId, name)}
-          />
-        ),
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />,
       },
       {
         title: '源视频名称',
         dataIndex: 'sourceVideoName',
         key: 'sourceVideoName',
-        width: 160,
         render: (name: string) => <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />,
       },
       {
@@ -203,14 +155,14 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
         title: '创建时间',
         dataIndex: 'createdAt',
         key: 'createdAt',
-        width: 170,
+        width: 160,
         render: (value: string) => formatToDateTime(value),
       },
       {
         title: '操作',
         key: 'actions',
         fixed: 'right',
-        width: 320,
+        width: 300,
         render: (_, record) => {
           const videoUrl = record.videoUrls[0];
           const draftUrl = record.draftUrls[0];

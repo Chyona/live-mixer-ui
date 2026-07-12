@@ -1,6 +1,6 @@
 import { lazy, type ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { LuListTodo, LuScissors, LuVideo } from 'react-icons/lu';
+import { LuListTodo, LuMessageSquareText, LuScissors, LuVideo } from 'react-icons/lu';
 
 export const DEFAULT_APP_PATH = '/source-videos';
 
@@ -35,6 +35,7 @@ export function isAppRoute(route: RouteCfgType): route is AppRouteCfg {
 
 export const LoginRoute = lazy(() => import('~/pages/Login'));
 export const SourceVideosPage = lazy(() => import('~/pages/SourceVideos'));
+export const AiPromptsPage = lazy(() => import('~/pages/AiPrompts'));
 export const SourceVideoSlicePage = lazy(() => import('~/pages/SourceVideoSlice'));
 export const ManualVideoSlicePage = lazy(() => import('~/pages/ManualVideoSlice'));
 export const SlicesPage = lazy(() => import('~/pages/Slices'));
@@ -48,6 +49,13 @@ export const RoutesCfg: RouteCfgType[] = [
     text: '源视频管理',
     icon: LuVideo,
     element: SourceVideosPage,
+    iconProps: { strokeWidth: 1.75 },
+  },
+  {
+    path: '/ai-prompts',
+    text: '提示词管理',
+    icon: LuMessageSquareText,
+    element: AiPromptsPage,
     iconProps: { strokeWidth: 1.75 },
   },
   {
