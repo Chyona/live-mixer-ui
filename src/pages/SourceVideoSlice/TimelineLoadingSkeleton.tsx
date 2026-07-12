@@ -17,12 +17,18 @@ const TimelineLoadingSkeleton = () => {
         </div>
 
         <div className="slice-timeline-loading__toolbar">
-          <div className="slice-timeline-loading__hint">
-            <span className="slice-timeline-loading__dot" />
-            视频加载中，时间轴准备就绪…
+          <div className="slice-timeline-loading__tags">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="slice-timeline-loading__tag-pill"
+                style={{ animationDelay: `${index * 0.12}s` }}
+              />
+            ))}
           </div>
           <div className="slice-timeline-loading__pill slice-timeline-loading__pill_sm" />
         </div>
+        <p className="slice-timeline-loading__status">视频加载中，时间轴准备就绪…</p>
       </div>
 
       <div className="slice-timeline-loading__timeline">

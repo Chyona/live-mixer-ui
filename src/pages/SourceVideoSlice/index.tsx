@@ -317,7 +317,6 @@ const SourceVideoSlicePage = () => {
 
   const pageToolbarProps = {
     title: `${video.name} - 视频切片`,
-    description: '在时间轴上拖拽标记片段，支持缩放预览、片段管理与一键成片。',
     actions: (
       <>
         <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>

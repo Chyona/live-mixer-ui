@@ -527,6 +527,11 @@
   box-shadow: none;
 }
 
+.slice-workspace-card > .slice-timeline-loading {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
 .slice-timeline-section .video-timeline {
   width: 100%;
   border: none;

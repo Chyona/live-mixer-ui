@@ -47,6 +47,8 @@ function formatTimeMs(seconds: number): string {
 const MIN_TICK_SPACING_PX = 50;
 const TIMELINE_EDGE_GUTTER = 20;
 const TIMELINE_LABEL_EDGE_THRESHOLD = 40;
+const NARROW_RANGE_DELETE_WIDTH = 44;
+const MIN_RANGE_DURATION = 1;
 
 function toTimelineX(time: number, scale: number) {
   return TIMELINE_EDGE_GUTTER + time * scale;
@@ -496,6 +498,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, id: string, edge: 'start' | 'end') => {
       e.stopPropagation();
+      e.preventDefault();
       if (e.button !== 0) return;
       const range = selectedRanges.find((r) => r.id === id);
       if (!range) return;
@@ -547,13 +550,15 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
         toast.notify.warning('调整后时间段与已选区域重叠，已恢复原始位置');
       } else if (!checkMaxDuration(additionalDuration)) {
         toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
-      } else if (resizePreview.end - resizePreview.start >= 0.5) {
+      } else if (resizePreview.end - resizePreview.start >= MIN_RANGE_DURATION) {
         onRangeUpdate({
           id: resizingId,
           start: Math.round(resizePreview.start * 100) / 100,
           end: Math.round(resizePreview.end * 100) / 100,
         });
         onTimeChange(resizePreview.start);
+      } else {
+        toast.notify.warning(`片段时长不能少于 ${MIN_RANGE_DURATION} 秒`);
       }
 
       setResizingId(null);
@@ -564,14 +569,15 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
     if (!isDragging) return;
 
-    if (hasDragged && dragStart !== null && dragEnd !== null) {
+    if (dragStart !== null && dragEnd !== null) {
       const start = Math.min(dragStart, dragEnd);
       const end = Math.max(dragStart, dragEnd);
+      const rangeDuration = end - start;
 
-      if (end - start >= 0.5) {
+      if (rangeDuration >= MIN_RANGE_DURATION) {
         if (checkOverlap(start, end)) {
           toast.notify.warning('该时间段与已选区域重叠，请重新选择');
-        } else if (!checkMaxDuration(end - start)) {
+        } else if (!checkMaxDuration(rangeDuration)) {
           toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
         } else {
           const newRangeId = `range-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -583,10 +589,12 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
           setActiveRangeId(newRangeId);
           onTimeChange(start);
         }
+      } else if (hasDragged && rangeDuration > 0) {
+        toast.notify.warning(`片段时长不能少于 ${MIN_RANGE_DURATION} 秒`);
+      } else if (!hasDragged) {
+        setActiveRangeId(null);
+        onTimeChange(dragStart);
       }
-    } else if (!hasDragged && dragStart !== null) {
-      setActiveRangeId(null);
-      onTimeChange(dragStart);
     }
 
     setIsDragging(false);
@@ -619,10 +627,15 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
         setResizePreview((prev) => {
           if (!prev) return null;
           if (resizeEdge === 'start') {
-            return { ...prev, start: Math.min(time, prev.end - 0.5) };
-          } else {
-            return { ...prev, end: Math.max(time, prev.start + 0.5) };
+            return {
+              ...prev,
+              start: Math.max(0, Math.min(time, prev.end - MIN_RANGE_DURATION)),
+            };
           }
+          return {
+            ...prev,
+            end: Math.min(duration, Math.max(time, prev.start + MIN_RANGE_DURATION)),
+          };
         });
       };
 
@@ -645,10 +658,12 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       const dist = Math.sqrt(
         Math.pow(e.clientX - dragStartX.current, 2) + Math.pow(e.clientY - dragStartY.current, 2)
       );
+      const time = getTimeFromX(e.clientX);
       if (dist > 3) {
         setHasDragged(true);
+      } else if (dragStart !== null && Math.abs(time - dragStart) >= MIN_RANGE_DURATION * 0.2) {
+        setHasDragged(true);
       }
-      const time = getTimeFromX(e.clientX);
       setDragEnd(time);
     };
 
@@ -663,7 +678,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, getTimeFromX, handleMouseUp, resizingId, resizeEdge, resizePreview]);
+  }, [isDragging, dragStart, duration, getTimeFromX, handleMouseUp, resizingId, resizeEdge, resizePreview]);
 
   // 缩放变化时将播放头滚入视野；播放过程中不自动抢滚动位置
   useEffect(() => {
@@ -808,11 +823,12 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
               const previewWidth = Math.max((previewEnd - previewStart) * safeScale, 4);
 
               const isActive = activeRangeId === range.id;
+              const isNarrowRange = previewWidth < NARROW_RANGE_DELETE_WIDTH;
 
               return (
                 <div
                   key={range.id}
-                  className={`timeline-range ${isResizing ? 'resizing' : ''}${isActive ? ' active' : ''}`}
+                  className={`timeline-range ${isResizing ? 'resizing' : ''}${isActive ? ' active' : ''}${isNarrowRange ? ' narrow' : ''}`}
                   style={{
                     left: toTimelineX(containerStart, safeScale),
                     width: containerWidth,
@@ -868,7 +884,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
               );
             })}
 
-            {selectionStart !== null && selectionEnd !== null && hasDragged && (
+            {selectionStart !== null && selectionEnd !== null && (hasDragged || Math.abs(selectionEnd - selectionStart) >= MIN_RANGE_DURATION * 0.2) && (
               <div
                 className="timeline-selection timeline-selection_added"
                 style={{
