@@ -23,4 +23,4 @@ yarn-error.log*
 build
 .temp/**
 .vite/**
-/mock/_Live_URL.ts
+# /mock/_Live_URL.ts

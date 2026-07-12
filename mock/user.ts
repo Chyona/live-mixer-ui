@@ -29,20 +29,4 @@ export default [
       };
     },
   },
-  {
-    url: `${API_PREFIX}/v1/user/auth/qrcode`,
-    method: 'get',
-    response: () => ({
-      code: 0,
-      data: { ticket: 'mock-qrcode-ticket' },
-    }),
-  },
-  {
-    url: `${API_PREFIX}/v1/user/auth/qrcode/status`,
-    method: 'get',
-    response: () => ({
-      code: 0,
-      data: { id: '222', name: 'userName', token: 'mock-token' },
-    }),
-  },
 ] as MockMethod[];

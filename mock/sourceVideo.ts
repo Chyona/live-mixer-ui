@@ -41,8 +41,6 @@ const MOCK_LIVE_TEMPLATES = [
 ];
 
 const DEMO_VIDEO_URLS = [
-  'http://vjs.zencdn.net/v/oceans.mp4',
-  'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
   ...LIVE_URL,
 ];
 

@@ -4,7 +4,7 @@ import type {
   ManualSliceDraft,
   TranscriptParagraph,
   VideoTranscript,
-} from '~/pages/ManualVideoSlice/types';
+} from '../src/pages/ManualVideoSlice/types';
 
 const SPEAKERS = [
   { id: 'host', name: '主播' },

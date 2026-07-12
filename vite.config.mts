@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
   return {
     clearScreen: false,
     server: {
+      host: true,
       port: 8008,
       open: true,
       proxy: {
