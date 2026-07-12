@@ -3,25 +3,20 @@ import { ThemeConfig } from 'antd';
 /**
  * Theme configuration for Ant Design components.
  * https://ant.design/docs/react/customize-theme
- * 这里只能配置token和components，不能配置css变量样式
- * 配置css变量样式需要在 global.css 中进行配置
- * 如：
- * .ant-tooltip {
- *   --antd-arrow-background-color:#f00;
- * }
+ * 语义色与 src/style/root.css 保持一致。
  */
 export const theme = {
   token: {
     colorPrimary: '#356bfd',
+    colorInfo: '#1677ff',
+    colorSuccess: '#52c41a',
+    colorWarning: '#faad14',
+    colorError: '#ff4d4f',
     fontSize: 14,
-    colorBorder: '#e2e8f0',
+    colorBorder: '#e0e7ff',
   },
   components: {
-    Tabs: {
-      // tabsHorizontalItemMargin: 20,
-      // horizontalItemPadding: '8px 8px',
-      // horizontalItemPaddingLG: '8px 8px',
-    },
+    Tabs: {},
     Button: {
       borderRadius: 8,
     },
@@ -42,9 +37,6 @@ export const theme = {
       labelFontSize: 12,
     },
     Table: {},
-    // Notification: {
-    // 	notificationPadding: '12px 16px'
-    // }
   },
 } as ThemeConfig;
 

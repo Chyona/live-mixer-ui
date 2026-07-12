@@ -13,7 +13,7 @@
   flex: 1;
   min-width: 0;
   font-size: 13px;
-  color: #ff4d4f;
+  color: var(--color-danger);
   line-height: 1.4;
   cursor: default;
 }

@@ -51,10 +51,48 @@
   --purple-light-rgb: 155, 89, 182;
   --purple-dark-rgb: 108, 52, 131;
 
-  /* 功能色 */
-  --success-color: #2ecc71;
-  --warning-color: #f39c12;
-  --danger-color: #e74c3c;
+  /* 功能色（与 Ant Design token 对齐） */
+  --color-info: #1677ff;
+  --color-info-dark: #2f54eb;
+  --color-info-bg: #eef3ff;
+  --color-success: #52c41a;
+  --color-success-dark: #389e0d;
+  --color-warning: #faad14;
+  --color-warning-dark: #d48806;
+  --color-danger: #ff4d4f;
+  --color-danger-dark: #cf1322;
+  --color-purple: #722ed1;
+  --color-purple-bg: #f6f0ff;
+  --color-orange: #fa8c16;
+  --color-highlight-bg: #ffe58f;
+
+  --info-color-rgb: 22, 119, 255;
+  --success-color-rgb: 82, 196, 26;
+  --warning-color-rgb: 250, 173, 20;
+  --danger-color-rgb: 255, 77, 79;
+  --purple-color-rgb: 114, 46, 209;
+
+  --color-info-bg-subtle: rgba(var(--info-color-rgb), 0.04);
+  --color-info-border-subtle: rgba(var(--info-color-rgb), 0.35);
+  --color-info-border-strong: rgba(var(--info-color-rgb), 0.45);
+  --color-info-bg-soft: rgba(var(--info-color-rgb), 0.18);
+
+  --color-primary-bg-subtle: rgba(var(--primary-color-rgb), 0.04);
+  --color-primary-bg-muted: rgba(var(--primary-color-rgb), 0.08);
+  --color-primary-bg-soft: rgba(var(--primary-color-rgb), 0.18);
+  --color-primary-border-subtle: rgba(var(--primary-color-rgb), 0.35);
+  --color-primary-border-strong: rgba(var(--primary-color-rgb), 0.45);
+
+  --color-danger-bg: rgba(var(--danger-color-rgb), 0.08);
+  --color-danger-bg-hover: rgba(var(--danger-color-rgb), 0.1);
+  --color-danger-border: rgba(var(--danger-color-rgb), 0.2);
+
+  --color-success-bg: rgba(var(--success-color-rgb), 0.08);
+
+  /* 兼容旧变量名 */
+  --success-color: var(--color-success);
+  --warning-color: var(--color-warning);
+  --danger-color: var(--color-danger);
 
   /* 中性色 */
   --light-color: #f5f6fa;
@@ -71,11 +109,11 @@
   --gradient-dark: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --gradient-danger: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%);
 
   --boxshow-warning: 0 4px 12px rgba(245, 158, 11, 0.3);
   --boxshow-success: 0 4px 12px rgba(16, 185, 129, 0.3);
-  --boxshow-danger: 0 4px 12px rgba(239, 68, 68, 0.3);
+  --boxshow-danger: 0 4px 12px rgba(var(--danger-color-rgb), 0.3);
   --boxshow-dark: 0 4px 12px rgba(59, 130, 246, 0.3);
 
   /* 淡色渐变背景 */
@@ -141,8 +179,8 @@
   /* 过渡效果 */
   --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
-  --active-bg-color: rgba(var(--primary-color), 0.1);
-  --hover-bg-color: rgba(var(--primary-color), 0.05);
+  --active-bg-color: rgba(var(--primary-color-rgb), 0.1);
+  --hover-bg-color: rgba(var(--primary-color-rgb), 0.05);
 
   --sidebar-background: #f7f8fa;
   --sidebar-border-color: #ebebeb;
@@ -150,8 +188,8 @@
   --sidebar-nav-text: #1a1a1a;
   --sidebar-nav-text-secondary: #999;
   --sidebar-nav-hover-bg: #eceef1;
-  --sidebar-nav-active-bg: #eef3ff;
-  --sidebar-nav-active-text: #356bfd;
+  --sidebar-nav-active-bg: var(--color-info-bg);
+  --sidebar-nav-active-text: var(--primary-color);
   --sidebar-nav-font-size: 14px;
   --sidebar-avatar-bg: #ebedf0;
   --sidebar-avatar-icon: #a0a7b4;

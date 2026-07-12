@@ -24,7 +24,7 @@
 }
 
 .slice-over-limit {
-  color: #cf1322;
+  color: var(--color-danger-dark);
 }
 
 .slice-selected-stats .slice-over-limit {
@@ -148,14 +148,14 @@
 .slice-editor-paragraph:hover,
 .slice-editor-paragraph.active,
 .slice-editor-paragraph.matched-current {
-  border-color: rgba(22, 119, 255, 0.35);
-  background: rgba(22, 119, 255, 0.04);
+  border-color: var(--color-primary-border-subtle);
+  background: var(--color-primary-bg-subtle);
 }
 
 .slice-editor-paragraph.matched mark {
   padding: 0 2px;
   border-radius: 3px;
-  background: #ffe58f;
+  background: var(--color-highlight-bg);
 }
 
 .slice-editor-paragraph-head {
@@ -187,7 +187,7 @@
 .slice-editor-paragraph-text .segment-active {
   padding: 0 1px;
   border-radius: 3px;
-  background: rgba(22, 119, 255, 0.18);
+  background: var(--color-primary-bg-soft);
 }
 
 .slice-editor-transcript-tip {
@@ -260,7 +260,7 @@
 }
 
 .slice-editor-copy-toolbar button.danger {
-  color: #cf1322;
+  color: var(--color-danger-dark);
 }
 
 .slice-editor-copy-toolbar button:disabled {
@@ -294,8 +294,8 @@
 }
 
 .slice-editor-copy-item.active {
-  border-color: rgba(22, 119, 255, 0.45);
-  background: rgba(22, 119, 255, 0.04);
+  border-color: var(--color-primary-border-strong);
+  background: var(--color-primary-bg-subtle);
 }
 
 .slice-editor-copy-item-head {
@@ -332,7 +332,7 @@
   padding: 8px 10px;
   border-radius: 8px;
   background: #fff;
-  border: 1px dashed rgba(22, 119, 255, 0.35);
+  border: 1px dashed var(--color-primary-border-subtle);
 }
 
 .slice-editor-copy-tip {
@@ -362,7 +362,7 @@
 }
 
 .slice-editor-copy-actions button.danger {
-  color: #cf1322;
+  color: var(--color-danger-dark);
 }
 
 .slice-editor-copy-actions-delete-group {
@@ -452,9 +452,9 @@
   width: 100%;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(255, 77, 79, 0.08);
-  border: 1px solid rgba(255, 77, 79, 0.2);
-  color: #cf1322;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger-dark);
   font-size: 13px;
   line-height: 1.6;
   text-align: center;
@@ -681,8 +681,8 @@
 }
 
 .slice-segment-tag-remove:hover {
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
+  color: var(--color-danger);
+  background: var(--color-danger-bg-hover);
 }
 
 .slice-ai-select-btn {
@@ -758,8 +758,8 @@
 }
 
 .slice-secondary-btn_danger:hover:not(:disabled) {
-  color: #ff4d4f;
-  border-color: #ff4d4f;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .slice-secondary-btn:disabled {

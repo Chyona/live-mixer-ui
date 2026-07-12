@@ -1,13 +1,7 @@
 import type { SelectedCopySegment, TranscriptParagraph, TranscriptSegment } from './types';
+import { speakerColors } from '~/style/semanticColors';
 
-export const SPEAKER_COLORS = [
-  '#1677ff',
-  '#52c41a',
-  '#fa8c16',
-  '#eb2f96',
-  '#722ed1',
-  '#13c2c2',
-];
+export const SPEAKER_COLORS = [...speakerColors];
 
 export function getSpeakerColor(speakerId: string, speakerIds: string[]) {
   const index = speakerIds.indexOf(speakerId);

@@ -22,13 +22,13 @@
 }
 
 .tasks-type-label_clip_generate {
-  background: #eef3ff;
-  color: #2f54eb;
+  background: var(--color-info-bg);
+  color: var(--color-info-dark);
 }
 
 .tasks-type-label_ai_slice_select {
-  background: #f6f0ff;
-  color: #722ed1;
+  background: var(--color-purple-bg);
+  color: var(--color-purple);
 }
 
 .tasks-status {
@@ -51,29 +51,29 @@
 .tasks-status_pending,
 .tasks-status_processing,
 .tasks-status_running {
-  color: #1677ff;
+  color: var(--color-info);
 }
 
 .tasks-status_pending .tasks-status-dot,
 .tasks-status_processing .tasks-status-dot,
 .tasks-status_running .tasks-status-dot {
-  background: #1677ff;
+  background: var(--color-info);
 }
 
 .tasks-status_success {
-  color: #389e0d;
+  color: var(--color-success-dark);
 }
 
 .tasks-status_success .tasks-status-dot {
-  background: #52c41a;
+  background: var(--color-success);
 }
 
 .tasks-status_failed {
-  color: #cf1322;
+  color: var(--color-danger-dark);
 }
 
 .tasks-status_failed .tasks-status-dot {
-  background: #ff4d4f;
+  background: var(--color-danger);
 }
 
 .tasks-actions {

@@ -503,8 +503,8 @@
   color: var(--text-gray);
 
   &:hover {
-    background: rgba(255, 77, 79, 0.1) !important;
-    color: #ff4d4f;
+    background: var(--color-danger-bg-hover) !important;
+    color: var(--color-danger);
   }
 }
 
