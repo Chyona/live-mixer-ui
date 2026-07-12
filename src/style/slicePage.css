@@ -56,7 +56,7 @@
 .slice-editor-search {
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-card);
 }
 
 .slice-editor-panel {
@@ -115,7 +115,7 @@
   padding: 2px 8px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface-card);
   color: var(--text-color);
   font-size: 12px;
   cursor: pointer;
@@ -228,7 +228,7 @@
 }
 
 .slice-editor-mode-tabs button.active {
-  background: #fff;
+  background: var(--surface-card);
   color: var(--primary-color);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
@@ -247,7 +247,7 @@
   padding: 6px 10px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-card);
   color: var(--text-color);
   font-size: 12px;
   cursor: pointer;
@@ -331,7 +331,7 @@
 .slice-editor-copy-text_active {
   padding: 8px 10px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-card);
   border: 1px dashed var(--color-primary-border-subtle);
 }
 
@@ -356,7 +356,7 @@
   padding: 4px 8px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface-card);
   font-size: 12px;
   cursor: pointer;
 }
@@ -432,6 +432,10 @@
   height: 100%;
   max-height: 100%;
   overflow: hidden;
+  padding: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
 }
 
 .slice-video-section .stream-video-player {
@@ -690,7 +694,7 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--primary-color);
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid rgba(var(--primary-color-rgb), 0.45);
   border-radius: 8px;
   cursor: pointer;
@@ -742,7 +746,7 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
-  background: #fff;
+  background: var(--surface-card);
   border: 1px solid var(--border-color, #e2e8f0);
   border-radius: 8px;
   cursor: pointer;

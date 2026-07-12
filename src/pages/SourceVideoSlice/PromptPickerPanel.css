@@ -6,7 +6,7 @@
   min-height: 0;
   border: 1px solid rgba(var(--primary-color-rgb), 0.12);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-card);
   overflow: hidden;
   padding-bottom: 8px;
 }
