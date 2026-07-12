@@ -1,29 +1,34 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, DatePicker, Input, Table } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { Button, DatePicker, Input, Space, Table } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
-import { LuPlay, LuSearch } from 'react-icons/lu';
+import { LuCirclePlay, LuSearch, LuTextSelect } from 'react-icons/lu';
 
-import { useAppSEO } from '~/hooks/useAppSEO';
+import EllipsisTooltip from '~/components/EllipsisTooltip';
 import RemarkEditor from '~/components/RemarkEditor';
+import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import {
-  fetchSliceList,
-  updateSliceName,
-  // type SliceAuditStatus,
-  type VideoSliceItem,
-} from '~/services/slice';
-import { formatToDate } from '~/utils/date';
+  fetchSliceProjectList,
+  updateSliceProjectName,
+  type SliceProject,
+} from '~/services/sliceProject';
+import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
-import { formatVideoDuration } from '../SourceVideos/utils';
+import {
+  buildManualVideoSliceLink,
+  buildSourceVideoSliceLink,
+} from '../SourceVideos/utils';
 
 import { buildDateRange } from './utils';
-import SlicePreviewModal from './SlicePreviewModal';
 import './index.css';
 
 const SlicesPage = () => {
+  const navigate = useNavigate();
+
   useAppSEO({
-    title: '切片管理',
+    title: '项目管理',
     path: '/slices',
     robots: 'noindex, nofollow',
   });
@@ -32,18 +37,17 @@ const SlicesPage = () => {
   const [keyword, setKeyword] = useState('');
   const [appliedKeyword, setAppliedKeyword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [list, setList] = useState<VideoSliceItem[]>([]);
+  const [list, setList] = useState<SliceProject[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [previewSlice, setPreviewSlice] = useState<VideoSliceItem | null>(null);
 
   const loadList = useCallback(async () => {
     setLoading(true);
 
     try {
       const { date, dateEnd } = buildDateRange(dateRange);
-      const response = await fetchSliceList({
+      const response = await fetchSliceProjectList({
         date,
         dateEnd,
         keyword: appliedKeyword || undefined,
@@ -52,7 +56,7 @@ const SlicesPage = () => {
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || '加载切片列表失败');
+        toast.notify.error(response.message || '加载剪辑项目失败');
         return;
       }
 
@@ -62,7 +66,7 @@ const SlicesPage = () => {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('加载切片列表失败');
+        toast.notify.error('加载剪辑项目失败');
       }
     } finally {
       setLoading(false);
@@ -83,103 +87,90 @@ const SlicesPage = () => {
     setPage(1);
   };
 
-  const handleNameSave = async (id: string, name: string) => {
+  const handleProjectNameSave = async (id: string, projectName: string) => {
     try {
-      const response = await updateSliceName(id, name);
+      const response = await updateSliceProjectName(id, projectName);
       if (response.code !== 0) {
-        toast.error(response.message || '切片名称保存失败');
+        toast.notify.error(response.message || '项目名称保存失败');
         return;
       }
 
       setList((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, name: response.data.name } : item))
+        prev.map((item) => (item.id === id ? { ...item, projectName: response.data.projectName } : item))
       );
-      toast.success('切片名称已保存');
+      toast.notify.success('项目名称已保存');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
       } else {
-        toast.error('切片名称保存失败');
+        toast.notify.error('项目名称保存失败');
       }
     }
   };
 
-  const columns = useMemo<ColumnsType<VideoSliceItem>>(
+  const columns = useMemo<ColumnsType<SliceProject>>(
     () => [
       {
-        title: '切片名称',
-        dataIndex: 'name',
-        key: 'name',
-        width: 220,
-        render: (name: string, record) => (
+        title: '项目名称',
+        dataIndex: 'projectName',
+        key: 'projectName',
+        render: (projectName: string, record) => (
           <RemarkEditor
-            value={name}
-            placeholder="输入切片名称"
-            onSave={(value) => handleNameSave(record.id, value)}
+            value={projectName}
+            placeholder="输入项目名称"
+            onSave={(value) => handleProjectNameSave(record.id, value)}
           />
         ),
       },
       {
-        title: '开始时间',
-        dataIndex: 'startTime',
-        key: 'startTime',
-        width: 100,
-        render: (startTime: number) => formatVideoDuration(startTime),
+        title: '源视频名称',
+        dataIndex: 'sourceVideoName',
+        key: 'sourceVideoName',
+        ellipsis: true,
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="slices-cell-ellipsis" />,
       },
       {
-        title: '结束时间',
-        dataIndex: 'endTime',
-        key: 'endTime',
-        width: 100,
-        render: (endTime: number) => formatVideoDuration(endTime),
+        title: '备注名称',
+        dataIndex: 'remarkName',
+        key: 'remarkName',
+        ellipsis: true,
+        render: (name: string) => <EllipsisTooltip text={name || '-'} className="slices-cell-ellipsis" />,
       },
       {
-        title: '时长',
-        dataIndex: 'duration',
-        key: 'duration',
-        width: 100,
-        render: (duration: number) => formatVideoDuration(duration),
-      },
-      {
-        title: '时间',
-        dataIndex: 'date',
-        key: 'date',
-        width: 120,
-        render: (date: string) => formatToDate(date),
-      },
-      // {
-      //   title: '审核',
-      //   dataIndex: 'auditStatus',
-      //   key: 'auditStatus',
-      //   width: 120,
-      //   render: (status: SliceAuditStatus) => {
-      //     const config = AUDIT_STATUS_MAP[status];
-      //     return <Tag color={config.color}>{config.text}</Tag>;
-      //   },
-      // },
-      {
-        title: '预览',
-        key: 'preview',
+        title: '片段数',
+        dataIndex: 'segmentCount',
+        key: 'segmentCount',
         width: 100,
         align: 'center',
+      },
+      {
+        title: '更新时间',
+        dataIndex: 'updatedAt',
+        key: 'updatedAt',
+        width: 160,
+        render: (value: string) => formatToDateTime(value),
+      },
+      {
+        title: '操作',
+        key: 'actions',
+        width: 120,
         fixed: 'right',
-        onHeaderCell: () => ({ className: 'slices-preview-col' }),
-        onCell: () => ({ className: 'slices-preview-col' }),
         render: (_, record) => (
-          <div className="slices-preview-cell">
-            <button
-              type="button"
-              className="slices-preview-thumb"
-              aria-label={`预览${record.name}`}
-              onClick={() => setPreviewSlice(record)}
+          <Space size={8}>
+            <Button
+              type="link"
+              size="small"
+              className="slices-action-btn"
+              icon={<LuTextSelect size={14} />}
+              onClick={() => navigate(buildManualVideoSliceLink(record.sourceVideoId))}
             >
-              <LuPlay size={16} />
-            </button>
-          </div>
+              编辑项目
+            </Button>
+          </Space>
         ),
       },
     ],
-    []
+    [navigate]
   );
 
   const handleTableChange = (pagination: TablePaginationConfig) => {
@@ -194,8 +185,10 @@ const SlicesPage = () => {
   return (
     <div className="slices-page">
       <div className="slices-header">
-        <h1 className="slices-title">切片管理</h1>
-        <p className="slices-desc">查看、编辑与管理直播切片，支持按日期与源视频标题筛选。</p>
+        <h1 className="slices-title">项目管理</h1>
+        <p className="slices-desc">
+          管理每个源视频对应的剪辑项目，单视频对应一个可二次编辑的切片项目。
+        </p>
       </div>
 
       <div className="slices-toolbar">
@@ -211,7 +204,7 @@ const SlicesPage = () => {
             className="slices-search-input"
             allowClear
             prefix={<LuSearch size={14} />}
-            placeholder="标题搜索：源视频名称 / 备注名称（支持 关键词A+关键词B）"
+            placeholder="标题搜索：项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={applySearch}
@@ -222,13 +215,13 @@ const SlicesPage = () => {
         </div>
       </div>
 
-      <Table<VideoSliceItem>
+      <Table<SliceProject>
         className="slices-table"
         rowKey="id"
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 880 }}
+        scroll={{ x: 1100 }}
         pagination={{
           current: page,
           pageSize,
@@ -237,12 +230,6 @@ const SlicesPage = () => {
           showTotal: (count) => `共 ${count} 条`,
         }}
         onChange={handleTableChange}
-      />
-
-      <SlicePreviewModal
-        slice={previewSlice}
-        open={!!previewSlice}
-        onClose={() => setPreviewSlice(null)}
       />
     </div>
   );

@@ -181,7 +181,7 @@ const AiPromptsPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 80,
+        width: 120,
         fixed: 'right',
         render: (_, record) => (
           <Popconfirm

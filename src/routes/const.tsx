@@ -76,7 +76,7 @@ export const RoutesCfg: RouteCfgType[] = [
   },
   {
     path: '/slices',
-    text: '切片管理',
+    text: '项目管理',
     icon: LuScissors,
     element: SlicesPage,
     iconProps: { strokeWidth: 1.75 },

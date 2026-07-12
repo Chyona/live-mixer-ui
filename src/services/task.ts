@@ -1,10 +1,13 @@
+import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
 import type { BaseResponse } from './types';
 import { request } from './http';
 
 export type ClipTaskItemStatus = 'pending' | 'processing' | 'running' | 'success' | 'failed';
+export type GenerationTaskType = 'clip_generate' | 'ai_slice_select';
 
 export interface ClipTaskItem {
   taskId: string;
+  taskType: GenerationTaskType;
   clipName: string;
   sourceVideoId: string;
   sourceVideoName: string;
@@ -15,6 +18,9 @@ export interface ClipTaskItem {
   draftUrls: string[];
   message: string | null;
   createdAt: string;
+  promptName?: string | null;
+  segmentCount?: number;
+  aiSegments?: SelectedCopySegment[];
 }
 
 export interface ClipTaskListResult {

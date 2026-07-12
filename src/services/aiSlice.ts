@@ -1,4 +1,3 @@
-import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
 import type { BaseResponse } from './types';
 import type { ClipRange } from './slice';
 import { request } from './http';
@@ -7,10 +6,11 @@ export interface AiSliceSelectParams {
   prompt: string;
   promptId?: string;
   clips: ClipRange[];
+  sourceVideoName?: string;
 }
 
 export interface AiSliceSelectResult {
-  segments: SelectedCopySegment[];
+  taskId: string;
 }
 
 export async function submitAiSliceSelection(

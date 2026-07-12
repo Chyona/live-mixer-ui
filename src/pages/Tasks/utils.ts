@@ -14,6 +14,16 @@ export function buildDateRange(dateRange: [Dayjs | null, Dayjs | null] | null) {
   };
 }
 
+export function getGenerationTaskTypeLabel(taskType: ClipTaskItem['taskType']): string {
+  switch (taskType) {
+    case 'ai_slice_select':
+      return 'AI 选片';
+    case 'clip_generate':
+    default:
+      return '一键成片';
+  }
+}
+
 export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
   switch (status) {
     case 'pending':

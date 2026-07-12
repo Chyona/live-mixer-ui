@@ -1,5 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
+import { createAiSliceTask } from './clipTaskStore';
+import { upsertSliceProject } from './sliceProjectStore';
 import type {
   ManualSliceDraft,
   SelectedCopySegment,
@@ -170,6 +172,12 @@ export default [
       list.unshift(draft);
       draftStore.set(query.id, list);
 
+      upsertSliceProject({
+        sourceVideoId: query.id,
+        projectName: `${name} 剪辑项目`,
+        segmentCount: draft.segments.length,
+      });
+
       return { code: 0, message: '', data: draft };
     },
   },
@@ -184,6 +192,7 @@ export default [
         prompt?: string;
         promptId?: string;
         clips?: Array<{ start: number; end: number }>;
+        sourceVideoName?: string;
       };
       query: { id: string };
     }) => {
@@ -205,10 +214,20 @@ export default [
         return { code: 400, message: '所选时间范围内未匹配到文案片段', data: null };
       }
 
+      const taskId = `ai-slice-task-${Date.now()}`;
+      createAiSliceTask({
+        taskId,
+        sourceVideoId: query.id,
+        sourceVideoName: body?.sourceVideoName?.trim() || `源视频 ${query.id}`,
+        promptName: prompt.slice(0, 24),
+        clips,
+        segments,
+      });
+
       return {
         code: 0,
         message: '',
-        data: { segments },
+        data: { taskId },
       };
     },
   },

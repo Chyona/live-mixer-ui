@@ -242,22 +242,16 @@ const SourceVideoSlicePage = () => {
         prompt: selectedPrompt.content.trim(),
         promptId: selectedPrompt.id,
         clips,
+        sourceVideoName: video.name,
       });
 
       if (response.code !== 0) {
-        toast.error(response.message || 'AI 选片失败');
+        toast.error(response.message || 'AI 选片任务提交失败');
         return;
       }
 
-      if (!response.data.segments.length) {
-        toast.warning('AI 未选出可用文案片段');
-        return;
-      }
-
-      toast.success('AI 选片完成，正在进入人工切片编辑');
-      navigate(`/source-videos/${id}/manual-slice`, {
-        state: { aiSelectedSegments: response.data.segments },
-      });
+      toast.success('AI 选片任务已提交，正在前往任务管理');
+      navigate('/tasks');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);

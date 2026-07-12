@@ -87,15 +87,10 @@ const TasksPage = () => {
         <h1 className="tasks-title">任务管理</h1>
 
         <p className="tasks-desc">
-
-          查看每次一键成片任务的执行进度、成片结果与草稿地址。
-
+          统一查看「一键成片」与「AI 选片」生成任务的执行进度、状态与操作。
           {hasActiveTasks && (
-
             <span className="tasks-polling-hint">{polling ? '进度刷新中...' : '进行中任务将每 3 秒自动刷新'}</span>
-
           )}
-
         </p>
 
       </div>
