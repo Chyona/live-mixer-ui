@@ -302,6 +302,11 @@
   background: rgba(255, 77, 79, 0.1);
 }
 
+.slice-submit-btn-wrap {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
 .slice-submit-btn {
   padding: 8px 24px;
   font-size: 13px;

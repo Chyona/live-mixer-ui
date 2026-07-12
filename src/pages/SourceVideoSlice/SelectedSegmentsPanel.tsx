@@ -1,4 +1,4 @@
-import { Switch } from 'antd';
+import { Tooltip } from 'antd';
 import { LuX } from 'react-icons/lu';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
@@ -33,6 +33,7 @@ interface SelectedSegmentsPanelProps {
   onSubmit: () => void;
   onClearAll: () => void;
   onRangeDelete: (rangeId: string) => void;
+  hasSelectedPrompt: boolean;
 }
 
 const SelectedSegmentsPanel = ({
@@ -51,8 +52,38 @@ const SelectedSegmentsPanel = ({
   onSubmit,
   onClearAll,
   onRangeDelete,
+  hasSelectedPrompt,
 }: SelectedSegmentsPanelProps) => {
   const isOverLimit = totalSelectedDuration > maxTotalDuration;
+  const canSubmit = selectedRanges.length > 0 && hasSelectedPrompt && !isOverLimit;
+
+  const submitDisabledReason = (() => {
+    if (submitting || canSubmit) return null;
+
+    const missing: string[] = [];
+    if (selectedRanges.length === 0) {
+      missing.push('请选中至少一个时间片段');
+    }
+    if (!hasSelectedPrompt) {
+      missing.push('请在上方提示词列表中选择合适的提示词');
+    }
+    if (isOverLimit) {
+      missing.push(`已选时长不超过 ${maxTotalDuration / 60} 分钟`);
+    }
+
+    return missing.length > 0 ? `${missing.join('；')}` : null;
+  })();
+
+  const submitButton = (
+    <button
+      type="button"
+      className="slice-submit-btn"
+      onClick={onSubmit}
+      disabled={submitting || !canSubmit}
+    >
+      {submitting ? '处理中...' : '一键成片'}
+    </button>
+  );
 
   return (
     <div className="slice-selected-panel">
@@ -83,14 +114,13 @@ const SelectedSegmentsPanel = ({
             <span>选中后自动播放</span>
             <Switch size="small" checked={autoPlayOnSelect} onChange={onAutoPlayChange} />
           </label> */}
-          <button
-            type="button"
-            className="slice-submit-btn"
-            onClick={onSubmit}
-            disabled={submitting || selectedRanges.length === 0 || isOverLimit}
-          >
-            {submitting ? '处理中...' : '一键成片'}
-          </button>
+          {submitDisabledReason ? (
+            <Tooltip title={submitDisabledReason}>
+              <span className="slice-submit-btn-wrap">{submitButton}</span>
+            </Tooltip>
+          ) : (
+            submitButton
+          )}
           <button
             type="button"
             className="slice-secondary-btn slice-secondary-btn_danger"

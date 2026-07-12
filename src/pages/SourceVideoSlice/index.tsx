@@ -307,6 +307,7 @@ const SourceVideoSlicePage = () => {
                 onSubmit={() => void handleSubmit()}
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
+                hasSelectedPrompt={Boolean(selectedPrompt?.content.trim())}
               />
               <VideoTimeline
                 duration={videoDuration}
