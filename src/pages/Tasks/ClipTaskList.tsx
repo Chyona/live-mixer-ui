@@ -24,7 +24,7 @@ interface ClipTaskListProps {
   tasks: ClipTaskItem[];
   total: number;
   scrollY?: number;
-  pagination: TablePaginationConfig;
+  pagination: TablePaginationConfig | false;
   onTableChange: (pagination: TablePaginationConfig) => void;
   onChanged: () => Promise<void>;
   onRefreshTask: (taskId: string) => Promise<void>;

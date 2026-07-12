@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 const MIN_SCROLL_Y = 240;
 const HEADER_RESERVE = 55;
 const PAGINATION_RESERVE = 56;
+const COMPACT_PAGINATION_WIDTH = 960;
 
 function measureTableContentHeight(el: HTMLElement) {
   const scrollBody = el.querySelector('.ant-table-body') as HTMLElement | null;
@@ -19,6 +20,7 @@ export function useListTableScrollY(deps: unknown[] = []) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scrollY, setScrollY] = useState<number>();
   const [needScroll, setNeedScroll] = useState(false);
+  const [compactPagination, setCompactPagination] = useState(false);
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -26,7 +28,10 @@ export function useListTableScrollY(deps: unknown[] = []) {
 
     const measure = () => {
       const wrapHeight = el.getBoundingClientRect().height;
+      const wrapWidth = el.getBoundingClientRect().width;
       if (wrapHeight <= 0) return;
+
+      setCompactPagination(wrapWidth > 0 && wrapWidth < COMPACT_PAGINATION_WIDTH);
 
       const tableHeader =
         el.querySelector('.ant-table-thead')?.getBoundingClientRect().height ??
@@ -77,5 +82,5 @@ export function useListTableScrollY(deps: unknown[] = []) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return { wrapRef, scrollY, needScroll };
+  return { wrapRef, scrollY, needScroll, compactPagination };
 }

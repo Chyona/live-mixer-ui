@@ -2,6 +2,7 @@ import { Table } from 'antd';
 import type { TableProps } from 'antd';
 
 import { useListTableScrollY } from '~/hooks/useListTableScrollY';
+import { buildListPagePagination } from '~/utils/table';
 
 export type ListPageTableProps<T extends object> = Omit<TableProps<T>, 'scroll'> & {
   scrollX?: number | string;
@@ -24,15 +25,20 @@ function ListPageTable<T extends object>({
         ? pagination.current ?? pagination.pageSize ?? pagination.total
         : pagination;
 
-  const { wrapRef, scrollY, needScroll } = useListTableScrollY([
+  const { wrapRef, scrollY, needScroll, compactPagination } = useListTableScrollY([
     loading,
     dataSource?.length,
     paginationKey,
   ]);
 
+  const resolvedPagination = buildListPagePagination(pagination, {
+    compact: compactPagination,
+  });
+
   const wrapClassName = [
     'list-page__table-wrap',
     needScroll ? 'list-page__table-wrap--scrollable' : '',
+    compactPagination ? 'list-page__table-wrap--compact-pagination' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -43,7 +49,7 @@ function ListPageTable<T extends object>({
         {...rest}
         loading={loading}
         dataSource={dataSource}
-        pagination={pagination}
+        pagination={resolvedPagination}
         className={['list-page__table', className].filter(Boolean).join(' ')}
         scroll={{
           ...scroll,

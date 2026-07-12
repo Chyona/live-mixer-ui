@@ -10,7 +10,7 @@ import PageLoading from '~/components/PageLoading';
 import ClipTaskList from './ClipTaskList';
 import { useClipTasks } from './useClipTasks';
 import { useListFilters } from '~/hooks/useListFilters';
-import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
+import { buildListPagePagination, handleTablePaginationChange } from '~/utils/table';
 import type { ClipTaskItemStatus } from '~/services/task';
 import { CLIP_TASK_STATUS_OPTIONS } from './utils';
 
@@ -51,7 +51,7 @@ const TasksPage = () => {
 
   const { tasks, total, loading, polling, hasActiveTasks, reload, refreshTask } = useClipTasks(filters);
 
-  const { wrapRef, scrollY, needScroll } = useListTableScrollY([
+  const { wrapRef, scrollY, needScroll, compactPagination } = useListTableScrollY([
     loading,
     tasks.length,
     page,
@@ -72,6 +72,15 @@ const TasksPage = () => {
   const applySearch = () => {
     applyKeywordSearch();
   };
+
+  const tablePagination = buildListPagePagination(
+    {
+      current: page,
+      pageSize,
+      total,
+    },
+    { compact: compactPagination }
+  );
 
   const handleTableChange = (pagination: TablePaginationConfig) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
@@ -128,6 +137,7 @@ const TasksPage = () => {
           'list-page__table-wrap',
           'list-page__panel',
           needScroll ? 'list-page__table-wrap--scrollable' : '',
+          compactPagination ? 'list-page__table-wrap--compact-pagination' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -139,12 +149,7 @@ const TasksPage = () => {
             tasks={tasks}
             total={total}
             scrollY={needScroll ? scrollY : undefined}
-            pagination={{
-              current: page,
-              pageSize,
-              total,
-              ...DEFAULT_TABLE_PAGINATION,
-            }}
+            pagination={tablePagination}
             onTableChange={handleTableChange}
             onChanged={reload}
             onRefreshTask={refreshTask}

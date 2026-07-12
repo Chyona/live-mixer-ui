@@ -35,6 +35,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   background: var(--surface-card);
   border-radius: var(--radius-lg);
@@ -49,6 +50,7 @@
   border: none;
   border-radius: 0;
   box-shadow: inset 0 -1px 0 var(--surface-divider);
+  margin-bottom: var(--list-page-card-padding);
 }
 
 .list-page__toolbar-search {
@@ -181,8 +183,9 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
-  padding: var(--list-page-card-padding, 16px) var(--list-page-card-padding, 16px) 0;
+  padding: 0 var(--list-page-card-padding, 16px) var(--list-page-card-padding, 16px);
 }
 
 .list-page__table-wrap {
@@ -190,6 +193,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   background: transparent;
   border: none;
@@ -202,6 +206,10 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .list-page__table-wrap .ant-spin-nested-loading,
@@ -210,6 +218,18 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.list-page__table-wrap .ant-spin-container > .ant-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .list-page__table {
@@ -233,18 +253,32 @@
 .list-page__table-wrap .ant-table {
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   border-radius: 0 !important;
 }
 
 .list-page__table-wrap .ant-table-container {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 0 !important;
+  overflow: hidden;
 }
 
 .list-page__table-wrap .ant-table-header,
 .list-page__table-wrap .ant-table-body {
   border-radius: 0 !important;
+}
+
+.list-page__table-wrap .ant-table-body {
+  overflow: auto !important;
+}
+
+.list-page__table-wrap--scrollable .ant-table-body {
+  scrollbar-gutter: stable;
 }
 
 .list-page__table-wrap .ant-table-thead > tr > th:first-child,
@@ -260,12 +294,45 @@
 }
 
 .list-page__table-wrap .ant-table-pagination {
-  flex-shrink: 0;
+  flex: 0 0 auto;
   margin: 0;
-  padding: 12px 0;
+  padding: 12px 0 0;
   border-top: none;
   background: var(--surface-card);
   box-shadow: inset 0 1px 0 var(--surface-divider);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+.list-page__table-wrap .ant-table-pagination .ant-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  row-gap: 8px;
+  column-gap: 8px;
+  margin: 0;
+  max-width: 100%;
+}
+
+.list-page__table-wrap--compact-pagination .ant-table-pagination .ant-pagination-options,
+.list-page__table-wrap--compact-pagination
+  .ant-table-pagination
+  .ant-pagination-options-size-changer {
+  display: none !important;
+}
+
+.list-page__table-wrap--compact-pagination .ant-table-pagination .ant-pagination {
+  justify-content: center;
+}
+
+.list-page__table-wrap--compact-pagination .ant-table-pagination .ant-pagination-total-text {
+  flex: 1 1 100%;
+  margin-inline-end: 0 !important;
+  text-align: center;
 }
 
 /* 未溢出时不启用 scroll.y，隐藏 Ant Table 预留的滚动条占位 */
@@ -367,5 +434,30 @@
   .list-page__filter-field {
     width: 100%;
     max-width: none;
+  }
+
+  .list-page__table-wrap .ant-table-pagination {
+    padding-top: 10px;
+  }
+
+  .list-page__table-wrap .ant-table-pagination .ant-pagination {
+    justify-content: center;
+    column-gap: 4px;
+  }
+
+  .list-page__table-wrap .ant-table-pagination .ant-pagination-total-text {
+    flex: 1 1 100%;
+    margin-inline-end: 0 !important;
+    text-align: center;
+  }
+
+  .list-page__table-wrap .ant-table-pagination .ant-pagination-options {
+    flex: 1 1 100%;
+    margin-inline-start: 0 !important;
+    text-align: center;
+  }
+
+  .list-page__table-wrap .ant-table-pagination .ant-pagination-options-size-changer {
+    margin-inline-start: 0 !important;
   }
 }
