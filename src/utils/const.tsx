@@ -8,6 +8,8 @@ export const isDevelopment = import.meta.env.DEV ?? process.env.NODE_ENV === 'de
 export const isMockEnabled = !!import.meta.env.VITE_MOCK;
 export const isProduction = import.meta.env.PROD ?? process.env.NODE_ENV === 'production';
 
+export const AppMinWidth = 1280;
+
 export const ScreenBreakpoint = 992;
 
 export const G_EmptyStr = '-';

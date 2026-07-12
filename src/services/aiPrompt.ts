@@ -28,6 +28,12 @@ export interface CreateAiPromptParams {
   remark?: string;
 }
 
+export interface UpdateAiPromptParams {
+  name: string;
+  content: string;
+  remark?: string;
+}
+
 export async function fetchAiPromptList(
   params: AiPromptListParams
 ): Promise<BaseResponse<AiPromptListResult>> {
@@ -42,6 +48,16 @@ export async function createAiPrompt(
 ): Promise<BaseResponse<AiPrompt>> {
   return await request('/v1/ai-prompts', {
     method: 'post',
+    data: params,
+  });
+}
+
+export async function updateAiPrompt(
+  id: string,
+  params: UpdateAiPromptParams
+): Promise<BaseResponse<AiPrompt>> {
+  return await request(`/v1/ai-prompts/${id}`, {
+    method: 'put',
     data: params,
   });
 }

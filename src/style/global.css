@@ -8,6 +8,12 @@ body {
   padding: 0;
 }
 
+html {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 body {
   font-weight: var(--bs-body-font-weight);
   color: var(--bs-body-color);
@@ -15,6 +21,8 @@ body {
   background-color: var(--bs-body-bg);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  height: 100%;
+  overflow: hidden;
 }
 
 body,
@@ -42,8 +50,22 @@ html,
 body,
 #root,
 .size-full {
-  height: 100%;
   width: 100%;
+}
+
+.size-full {
+  height: 100%;
+}
+
+html,
+body,
+#root {
+  min-width: var(--app-min-width);
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
 }
 
 .hide {

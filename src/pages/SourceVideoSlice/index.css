@@ -1,6 +1,11 @@
 .slice-page {
   padding: var(--content-padding);
-  min-height: 100%;
+  padding-bottom: 16px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .slice-page_loading {
@@ -9,21 +14,52 @@
   justify-content: center;
 }
 
-.slice-empty {
-  margin-top: 48px;
+.slice-page > .slice-page-header,
+.slice-page > .slice-timeline-section,
+.slice-page > .slice-timeline-loading {
+  flex-shrink: 0;
+}
+
+.slice-main-section {
+  display: grid;
+  grid-template-columns: minmax(0, 60%) minmax(0, 40%);
+  gap: 16px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 16px;
+}
+
+.slice-main-section > * {
+  min-height: 0;
 }
 
 .slice-video-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 0 0 20px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.slice-video-section .stream-video-player {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
 }
 
 .slice-video-error {
-  margin: 0;
-  max-width: 860px;
+  flex-shrink: 0;
+  margin: 8px 0 0;
   width: 100%;
   padding: 10px 14px;
   border-radius: 8px;
@@ -35,10 +71,13 @@
   text-align: center;
 }
 
-.slice-video {
+.slice-video-section .slice-video {
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  max-width: 860px;
-  aspect-ratio: 16 / 9;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
   border-radius: 12px;
   background: #000;
 }
@@ -50,6 +89,7 @@
   border: 1px solid rgba(var(--primary-color-rgb), 0.12);
   border-radius: 12px;
   overflow: hidden;
+  height: 260px;
   background: var(--gradient-light-1);
 }
 
@@ -355,6 +395,28 @@
 }
 
 @media (max-width: 992px) {
+  .slice-main-section {
+    grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
+  }
+
+  .slice-video-section {
+    height: auto;
+    max-height: none;
+  }
+
+  .slice-video-section .stream-video-player {
+    height: auto;
+    max-height: none;
+  }
+
+  .slice-video-section .slice-video {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: min(56vw, 280px);
+  }
+
   .slice-video-info {
     flex-direction: column;
   }

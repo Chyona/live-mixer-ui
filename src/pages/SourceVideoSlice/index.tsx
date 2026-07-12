@@ -8,12 +8,14 @@ import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
 import { submitClip } from '~/services/slice';
+import type { AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDate } from '~/utils/date';
 import { formatVideoDuration } from '../SourceVideos/utils';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
 import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
+import PromptPickerPanel from './PromptPickerPanel';
 
 import './index.css';
 
@@ -34,6 +36,7 @@ const SourceVideoSlicePage = () => {
   const [timelineZoomLevel, setTimelineZoomLevel] = useState(1);
   const [activeRangeId, setActiveRangeId] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [selectedPrompt, setSelectedPrompt] = useState<AiPrompt | null>(null);
   const playerRef = useRef<StreamVideoPlayerHandle>(null);
   const rafRef = useRef<number>(0);
 
@@ -171,6 +174,11 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
+    if (!selectedPrompt?.content.trim()) {
+      toast.warning('请先选择一个 AI 提示词');
+      return;
+    }
+
     const clips = selectedRanges.map((range) => ({
       start: Math.round(range.start),
       end: Math.round(range.end),
@@ -181,7 +189,7 @@ const SourceVideoSlicePage = () => {
       const response = await submitClip({
         m3u8_url: streamUrl,
         clips,
-        prompt: '确保生成的视频整体都是在讲同一个商品',
+        prompt: selectedPrompt.content.trim(),
         water_text: 'www',
         count: 1,
         source_video_id: video.id,
@@ -206,7 +214,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, selectedRanges, streamUrl, video]);
+  }, [navigate, selectedPrompt, selectedRanges, streamUrl, video]);
 
   if (loading) {
     return (
@@ -261,14 +269,21 @@ const SourceVideoSlicePage = () => {
         <Empty className="slice-empty" description="当前播放地址格式不受支持，请使用 m3u8、mp4 等可播放链接" />
       ) : (
         <>
-          <div className="slice-video-section">
-            <StreamVideoPlayer
-              ref={playerRef}
-              url={streamUrl}
-              className="slice-video"
-              errorClassName="slice-video-error"
-              onDurationChange={handleDurationChange}
-              onPlaybackError={handlePlaybackError}
+          <div className="slice-main-section">
+            <div className="slice-video-section">
+              <StreamVideoPlayer
+                ref={playerRef}
+                url={streamUrl}
+                className="slice-video"
+                errorClassName="slice-video-error"
+                onDurationChange={handleDurationChange}
+                onPlaybackError={handlePlaybackError}
+              />
+            </div>
+
+            <PromptPickerPanel
+              selectedId={selectedPrompt?.id ?? null}
+              onSelect={setSelectedPrompt}
             />
           </div>
 

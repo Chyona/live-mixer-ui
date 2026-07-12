@@ -159,6 +159,7 @@
   --sidebar-width: 248px;
   --sidebar-collapsed-width: 72px;
   --content-padding: 30px;
+  --app-min-width: 1280px;
 
   --bs-header-height: 54px;
 
