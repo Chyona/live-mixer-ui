@@ -189,3 +189,42 @@ export function highlightKeyword(text: string, keyword: string) {
   const regex = new RegExp(`(${escaped})`, 'gi');
   return text.replace(regex, '<mark>$1</mark>');
 }
+
+function formatSrtTimestamp(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const ms = Math.round((seconds % 1) * 1000);
+
+  return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+}
+
+export function buildTranscriptSrt(paragraphs: TranscriptParagraph[]): string {
+  const cues = paragraphs.flatMap((paragraph) =>
+    paragraph.segments.map((segment) => ({
+      start: segment.start,
+      end: segment.end,
+      text: `${paragraph.speakerName}：${segment.text}`.trim(),
+    }))
+  );
+
+  return cues
+    .map((cue, index) => {
+      return `${index + 1}\n${formatSrtTimestamp(cue.start)} --> ${formatSrtTimestamp(cue.end)}\n${cue.text}`;
+    })
+    .join('\n\n');
+}
+
+export function downloadTextFile(content: string, filename: string) {
+  const blob = new Blob([`\uFEFF${content}`], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function sanitizeDownloadFilename(name: string) {
+  return name.replace(/[\\/:*?"<>|]/g, '_').trim() || 'subtitle';
+}

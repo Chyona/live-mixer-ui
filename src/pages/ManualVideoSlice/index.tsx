@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, Empty, Spin } from 'antd';
+import { Button, Empty, Space, Spin } from 'antd';
+import { LuDownload } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -17,8 +18,11 @@ import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
 import type { ManualSliceMode, SelectedCopySegment, TranscriptParagraph } from './types';
 import {
+  buildTranscriptSrt,
+  downloadTextFile,
   findActiveSegment,
   getParagraphText,
+  sanitizeDownloadFilename,
   splitCopySegment,
 } from './utils';
 
@@ -307,6 +311,23 @@ const ManualVideoSlicePage = () => {
     setSaveModalOpen(true);
   };
 
+  const handleDownloadSubtitle = useCallback(() => {
+    if (!paragraphs.length) {
+      toast.notify.warning('暂无字幕文案');
+      return;
+    }
+
+    const srt = buildTranscriptSrt(paragraphs);
+    if (!srt.trim()) {
+      toast.notify.warning('暂无字幕文案');
+      return;
+    }
+
+    const filename = `${sanitizeDownloadFilename(video?.name ?? 'subtitle')}-字幕.srt`;
+    downloadTextFile(srt, filename);
+    toast.notify.success('字幕文件已开始下载');
+  }, [paragraphs, video?.name]);
+
   const scrollToMatch = (index: number) => {
     const paragraphId = matchParagraphIds[index];
     if (!paragraphId) return;
@@ -355,9 +376,14 @@ const ManualVideoSlicePage = () => {
         title={`${video.name} - 视频人工切片`}
         description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
-          <Link to={`/source-videos/${id}/slice`}>
-            <Button type="primary">切换到时间轴切片</Button>
-          </Link>
+          <Space size={12}>
+            <Button icon={<LuDownload size={16} />} onClick={handleDownloadSubtitle}>
+              字幕下载
+            </Button>
+            <Link to={`/source-videos/${id}/slice`}>
+              <Button type="primary">切换到时间轴切片</Button>
+            </Link>
+          </Space>
         }
       />
 
