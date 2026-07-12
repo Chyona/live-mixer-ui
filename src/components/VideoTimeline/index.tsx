@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, type FC, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, type CSSProperties, type FC, useMemo } from 'react';
 import { toast } from '~/utils/toast';
 import './index.less';
 
@@ -45,6 +45,16 @@ function formatTimeMs(seconds: number): string {
 }
 
 const MIN_TICK_SPACING_PX = 50;
+const TIMELINE_EDGE_GUTTER = 20;
+const TIMELINE_LABEL_EDGE_THRESHOLD = 40;
+
+function toTimelineX(time: number, scale: number) {
+  return TIMELINE_EDGE_GUTTER + time * scale;
+}
+
+function fromTimelineX(x: number, scale: number) {
+  return (x - TIMELINE_EDGE_GUTTER) / scale;
+}
 
 type RangeSegmentType = 'core' | 'added' | 'removed';
 
@@ -167,15 +177,16 @@ function generateVisibleTicks(
   subInterval: number,
   safeScale: number,
   scrollLeft: number,
-  wrapperWidth: number
+  wrapperWidth: number,
+  edgeGutter: number
 ): Tick[] {
   if (!Number.isFinite(duration) || duration <= 0 || tickInterval <= 0) {
     return [];
   }
 
   const buffer = 100; // 像素缓冲区
-  const startTime = Math.max(0, (scrollLeft - buffer) / safeScale);
-  const endTime = Math.min(duration, (scrollLeft + wrapperWidth + buffer) / safeScale);
+  const startTime = Math.max(0, (scrollLeft - edgeGutter - buffer) / safeScale);
+  const endTime = Math.min(duration, (scrollLeft + wrapperWidth + buffer - edgeGutter) / safeScale);
 
   const startMajor = Math.floor(startTime / tickInterval) * tickInterval;
   const ticks: Tick[] = [];
@@ -306,10 +317,12 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // baseScale = 1x 时每秒对应像素数，使时间轴刚好占满 wrapper 宽度
-  const baseScale = Number.isFinite(duration) && duration > 0 && wrapperWidth > 0
-    ? wrapperWidth / duration
-    : 50;
+  // baseScale = 1x 时每秒对应像素数，两端预留刻度文字空间
+  const trackInnerWidth = Math.max(wrapperWidth - TIMELINE_EDGE_GUTTER * 2, 0);
+  const baseScale =
+    Number.isFinite(duration) && duration > 0 && trackInnerWidth > 0
+      ? trackInnerWidth / duration
+      : 50;
   const safeScale = baseScale * zoomLevel;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -319,7 +332,9 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   const dragStartY = useRef(0);
   const scrollRafRef = useRef<number>(0);
 
-  const timelineWidth = Number.isFinite(duration) && Number.isFinite(safeScale) ? Math.max(duration * safeScale, 0) : 0;
+  const trackWidth =
+    Number.isFinite(duration) && Number.isFinite(safeScale) ? Math.max(duration * safeScale, 0) : 0;
+  const timelineWidth = trackWidth + TIMELINE_EDGE_GUTTER * 2;
 
   const { tickInterval, subInterval } = useMemo(
     () => getTickConfig(duration, safeScale, wrapperWidth),
@@ -357,7 +372,8 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       subInterval,
       safeScale,
       scrollOffset,
-      wrapperWidth
+      wrapperWidth,
+      TIMELINE_EDGE_GUTTER
     );
   }, [duration, tickInterval, subInterval, safeScale, scrollOffset]);
 
@@ -366,7 +382,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       if (!contentRef.current) return 0;
       const rect = contentRef.current.getBoundingClientRect();
       const x = clientX - rect.left;
-      let time = x / safeScale;
+      let time = fromTimelineX(x, safeScale);
       time = Math.max(0, Math.min(time, duration));
       return Math.round(time * 100) / 100;
     },
@@ -592,7 +608,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     if (!wrapperRef.current || !contentRef.current) return;
 
     const wrapper = wrapperRef.current;
-    const playheadLeft = currentTime * safeScale;
+    const playheadLeft = toTimelineX(currentTime, safeScale);
     const wrapperWidth = wrapper.clientWidth;
     const contentWidth = contentRef.current.clientWidth;
 
@@ -659,8 +675,9 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
   return (
     <div
-      className={`video-timeline${resizingId ? ' is-resizing' : ''}${isDragging ? ' is-selecting' : ''}`}
+      className={`video-timeline${zoomLevel > 1 ? ' has-zoom-scroll' : ''}${resizingId ? ' is-resizing' : ''}${isDragging ? ' is-selecting' : ''}`}
       ref={containerRef}
+      style={{ '--timeline-edge-gutter': `${TIMELINE_EDGE_GUTTER}px` } as CSSProperties}
     >
       <div className={`timeline-wrapper ${zoomLevel > 1 ? 'has-scroll' : ''}`} ref={wrapperRef}>
         <div
@@ -671,12 +688,28 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
         >
           <div className="timeline-ruler">
             {ticks.map((tick) => {
-              const tickLeft = tick.time * safeScale;
-              const isNearEnd = tickLeft + 40 > scrollOffset + wrapperWidth;
+              const tickLeft = toTimelineX(tick.time, safeScale);
+              const isStart = tick.time <= 0.01;
+              const isEnd = Math.abs(tick.time - duration) < 0.01;
+              const viewportLeft = scrollOffset;
+              const viewportRight = scrollOffset + wrapperWidth;
+              const isNearViewportStart =
+                Boolean(tick.label) && tickLeft - viewportLeft < TIMELINE_LABEL_EDGE_THRESHOLD;
+              const isNearViewportEnd =
+                Boolean(tick.label) && viewportRight - tickLeft < TIMELINE_LABEL_EDGE_THRESHOLD;
+
               return (
                 <div
                   key={tick.time}
-                  className={`timeline-tick ${tick.isMajor ? 'major' : ''} ${tick.isSub ? 'sub' : ''} ${isNearEnd ? 'align-left' : ''}`}
+                  className={[
+                    'timeline-tick',
+                    tick.isMajor ? 'major' : '',
+                    tick.isSub ? 'sub' : '',
+                    isStart || isNearViewportStart ? 'align-start' : '',
+                    isEnd || isNearViewportEnd ? 'align-end' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   style={{ left: tickLeft }}
                 >
                   {!tick.isSub && <span className="timeline-tick-label">{tick.label}</span>}
@@ -705,7 +738,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
                   key={range.id}
                   className={`timeline-range ${isResizing ? 'resizing' : ''}${isActive ? ' active' : ''}`}
                   style={{
-                    left: containerStart * safeScale,
+                    left: toTimelineX(containerStart, safeScale),
                     width: containerWidth,
                   }}
                   title={`片段${rangeIndexMap.get(range.id) ?? ''} · ${formatTime(previewStart)} - ${formatTime(previewEnd)} · 点击从该区域开始播放`}
@@ -763,14 +796,14 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
               <div
                 className="timeline-selection timeline-selection_added"
                 style={{
-                  left: selectionStart * safeScale,
+                  left: toTimelineX(selectionStart, safeScale),
                   width: Math.max((selectionEnd - selectionStart) * safeScale, 4),
                 }}
               />
             )}
           </div>
 
-          <div className="timeline-playhead" style={{ left: currentTime * safeScale }}>
+          <div className="timeline-playhead" style={{ left: toTimelineX(currentTime, safeScale) }}>
             <div className="timeline-playhead-triangle" />
             <div className="timeline-playhead-line" />
             <div className="timeline-playhead-time">{formatTimeMs(currentTime)}</div>

@@ -308,7 +308,7 @@ const SourceVideoSlicePage = () => {
             <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
             {entryFrom !== 'slices' ? (
               <Link to={`/source-videos/${id}/manual-slice`}>
-                <Button type="primary">切换到人工切片</Button>
+                <Button>切换到人工切片</Button>
               </Link>
             ) : null}
           </>
@@ -324,7 +324,7 @@ const SourceVideoSlicePage = () => {
       ) : !canPreview ? (
         <Empty description="当前播放地址格式不受支持，请使用 m3u8、mp4 等可播放链接" />
       ) : (
-        <>
+        <div className="slice-workspace-card">
           <div className="slice-main-section">
             <div className="slice-video-section">
               <StreamVideoPlayer
@@ -383,7 +383,7 @@ const SourceVideoSlicePage = () => {
               />
             </div>
           )}
-        </>
+        </div>
       )}
 
       <Modal

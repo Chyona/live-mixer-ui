@@ -489,7 +489,7 @@ const ManualVideoSlicePage = () => {
             </Button>
             {entryFrom !== 'slices' ? (
               <Link to={`/source-videos/${id}/slice`}>
-                <Button type="primary">切换到时间轴切片</Button>
+                <Button>切换到时间轴切片</Button>
               </Link>
             ) : null}
           </Space>

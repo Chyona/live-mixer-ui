@@ -4,9 +4,10 @@
   min-width: 0;
   height: 100%;
   min-height: 0;
-  border: 1px solid rgba(var(--primary-color-rgb), 0.12);
-  border-radius: 12px;
-  background: var(--surface-card);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
   padding-bottom: 8px;
 }
@@ -16,8 +17,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.08);
+  padding: 12px;
+  box-shadow: inset 0 -1px 0 var(--surface-divider);
 }
 
 .slice-prompt-panel__header-main {
@@ -85,9 +86,10 @@
   align-items: flex-start;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid rgba(var(--primary-color-rgb), 0.12);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: rgba(var(--primary-color-rgb), 0.03);
+  background: #fafbfd;
+  box-shadow: none;
   cursor: pointer;
   transition:
     border-color 0.2s ease,
@@ -96,14 +98,13 @@
 }
 
 .slice-prompt-panel__item:hover {
-  border-color: rgba(var(--primary-color-rgb), 0.28);
-  background: rgba(var(--primary-color-rgb), 0.06);
+  border-color: var(--color-primary-border-subtle);
+  background: var(--color-primary-bg-subtle);
 }
 
 .slice-prompt-panel__item.active {
   border-color: var(--primary-color);
-  background: rgba(var(--primary-color-rgb), 0.08);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  background: rgba(var(--primary-color-rgb), 0.06);
 }
 
 .slice-prompt-panel__radio {
@@ -183,6 +184,7 @@
 @media (max-width: 992px) {
   .slice-prompt-panel {
     height: clamp(220px, 32vh, 280px);
+    box-shadow: none;
   }
 
   .slice-prompt-panel__header {

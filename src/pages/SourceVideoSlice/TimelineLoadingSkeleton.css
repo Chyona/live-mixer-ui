@@ -1,11 +1,14 @@
 .slice-timeline-loading {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 8px;
-  border: 1px solid rgba(var(--primary-color-rgb), 0.12);
-  border-radius: 12px;
+  gap: 0;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
-  background: var(--gradient-light-1);
+  background: transparent;
+  box-shadow: none;
   position: relative;
 }
 
@@ -27,7 +30,7 @@
   position: relative;
   z-index: 1;
   padding: 16px 20px 14px;
-  border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.12);
+  box-shadow: inset 0 -1px 0 var(--surface-divider);
 }
 
 .slice-timeline-loading__header {
@@ -134,7 +137,9 @@
 .slice-timeline-loading__timeline {
   position: relative;
   z-index: 1;
-  padding: 18px 20px 16px;
+  padding: 10px 12px 14px;
+  background: var(--surface-card-muted);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .slice-timeline-loading__ruler {
@@ -163,12 +168,10 @@
 .slice-timeline-loading__track {
   position: relative;
   height: 56px;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.42)),
-    rgba(var(--primary-color-rgb), 0.06);
-  border: 1px solid rgba(var(--primary-color-rgb), 0.12);
+  background: rgba(var(--primary-color-rgb), 0.05);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .slice-timeline-loading__track-shimmer {

@@ -122,7 +122,7 @@ const SelectedSegmentsPanel = ({
               {selectedRanges.length > 0 && (
                 <>
                   {' '}
-                  · 已选时长 {formatVideoDuration(Math.round(totalSelectedDuration))}
+                  · 已选时长 {formatVideoDuration(totalSelectedDuration)}
                   {isOverLimit && (
                     <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
                   )}
