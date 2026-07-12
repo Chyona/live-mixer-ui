@@ -3,69 +3,75 @@ import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 
 type MockSourceVideo = {
-  id: string;
+  id: number;
   name: string;
-  liveUrl: string;
-  remarkName: string;
+  live_url: string;
+  remark: string;
   duration: number;
-  date: string;
-  segmentCount: number;
-  clipCount: number;
-  sourceType: 'live' | 'import';
+  ext: string;
+  live_asr: string;
+  asr_status: 'pending' | 'processing' | 'success' | 'failed';
+  asr_progress: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
   ownerId: string;
-  asrStatus: 'pending' | 'processing' | 'success' | 'failed';
-  asrProgress: number;
-  asrMessage?: string;
 };
 
 const CURRENT_USER_ID = '222';
 
 const MOCK_LIVE_TEMPLATES = [
-  { name: '周末游戏直播回放', remarkName: '游戏专场素材' },
-  { name: '新品发布会直播', remarkName: '发布会实录' },
-  { name: '户外探店直播', remarkName: '探店精选' },
-  { name: '美食烹饪教学', remarkName: '厨房直播' },
-  { name: '数码产品测评', remarkName: '测评专场' },
-  { name: '音乐演唱会直播', remarkName: '演唱会素材' },
-  { name: '健身跟练直播', remarkName: '运动健身' },
-  { name: '旅游风景直播', remarkName: '风景记录' },
-  { name: '电商带货专场', remarkName: '带货素材' },
-  { name: '访谈节目直播', remarkName: '访谈备用' },
-  { name: '校园活动直播', remarkName: '校园活动' },
-  { name: '科技峰会直播', remarkName: '峰会实录' },
-  { name: '宠物日常直播', remarkName: '萌宠日常' },
-  { name: '手工制作教学', remarkName: '手工教学' },
-  { name: '读书分享会', remarkName: '读书分享' },
-  { name: '汽车试驾直播', remarkName: '试驾记录' },
-  { name: '时装秀场直播', remarkName: '秀场素材' },
-  { name: '电竞赛事直播', remarkName: '赛事回放' },
-  { name: '农业科普直播', remarkName: '科普专场' },
-  { name: '城市夜景直播', remarkName: '夜景素材' },
+  { name: '周末游戏直播回放', remark: '游戏专场素材' },
+  { name: '新品发布会直播', remark: '发布会实录' },
+  { name: '户外探店直播', remark: '探店精选' },
+  { name: '美食烹饪教学', remark: '厨房直播' },
+  { name: '数码产品测评', remark: '测评专场' },
+  { name: '音乐演唱会直播', remark: '演唱会素材' },
+  { name: '健身跟练直播', remark: '运动健身' },
+  { name: '旅游风景直播', remark: '风景记录' },
+  { name: '电商带货专场', remark: '带货素材' },
+  { name: '访谈节目直播', remark: '访谈备用' },
+  { name: '校园活动直播', remark: '校园活动' },
+  { name: '科技峰会直播', remark: '峰会实录' },
+  { name: '宠物日常直播', remark: '萌宠日常' },
+  { name: '手工制作教学', remark: '手工教学' },
+  { name: '读书分享会', remark: '读书分享' },
+  { name: '汽车试驾直播', remark: '试驾记录' },
+  { name: '时装秀场直播', remark: '秀场素材' },
+  { name: '电竞赛事直播', remark: '赛事回放' },
+  { name: '农业科普直播', remark: '科普专场' },
+  { name: '城市夜景直播', remark: '夜景素材' },
 ];
 
-const DEMO_VIDEO_URLS = [
-  ...LIVE_URL,
-];
+const DEMO_VIDEO_URLS = [...LIVE_URL];
+
+function isoAt(day: string, hour = 10) {
+  return `2026-06-${day}T${String(hour).padStart(2, '0')}:00:00.000Z`;
+}
 
 function buildMockSourceVideos(): MockSourceVideo[] {
   return MOCK_LIVE_TEMPLATES.map((item, index) => {
-    const id = String(index + 1).padStart(3, '0');
+    const id = index + 1;
     const day = String((index % 28) + 1).padStart(2, '0');
+    const created_at = isoAt(day);
+    const failed = index % 4 === 0;
 
     return {
-      id: `sv-${id}`,
+      id,
       name: item.name,
-      liveUrl: DEMO_VIDEO_URLS[index % DEMO_VIDEO_URLS.length],
-      remarkName: item.remarkName,
-      duration: 3600 + index * 317,
-      date: `2026-06-${day}`,
-      segmentCount: 3 + (index % 12),
-      clipCount: 8 + (index % 20),
-      sourceType: 'live',
+      live_url: DEMO_VIDEO_URLS[index % DEMO_VIDEO_URLS.length],
+      remark: item.remark,
+      duration: failed ? 0 : 3600 + index * 317,
+      ext: '',
+      live_asr: failed
+        ? JSON.stringify({ message: '转写服务超时，请稍后重试' })
+        : '{}',
+      asr_status: failed ? 'failed' : 'success',
+      asr_progress: failed ? 36 : 100,
+      created_at,
+      updated_at: created_at,
+      created_by: 1,
       ownerId: CURRENT_USER_ID,
-      asrStatus: index % 4 === 0 ? 'failed' : 'success',
-      asrProgress: index % 4 === 0 ? 36 : 100,
-      asrMessage: index % 4 === 0 ? '转写服务超时，请稍后重试' : undefined,
     };
   });
 }
@@ -73,18 +79,19 @@ function buildMockSourceVideos(): MockSourceVideo[] {
 const sourceVideos: MockSourceVideo[] = [
   ...buildMockSourceVideos(),
   {
-    id: 'sv-999',
+    id: 999,
     name: '其他用户直播素材',
-    liveUrl: 'rtmp://live.example.com/stream/other',
-    remarkName: '不应展示',
+    live_url: 'rtmp://live.example.com/stream/other',
+    remark: '不应展示',
     duration: 1200,
-    date: '2026-07-05',
-    segmentCount: 2,
-    clipCount: 4,
-    sourceType: 'live',
+    ext: '',
+    live_asr: '{}',
+    asr_status: 'success',
+    asr_progress: 100,
+    created_at: isoAt('05', 12),
+    updated_at: isoAt('05', 12),
+    created_by: 2,
     ownerId: 'other-user',
-    asrStatus: 'success',
-    asrProgress: 100,
   },
 ];
 
@@ -108,26 +115,26 @@ function toPublicItem(item: MockSourceVideo) {
 }
 
 function advanceAsrProgress(item: MockSourceVideo) {
-  if (item.asrStatus === 'success' || item.asrStatus === 'failed') return;
+  if (item.asr_status === 'success' || item.asr_status === 'failed') return;
 
-  if (item.asrStatus === 'pending') {
-    item.asrStatus = 'processing';
-    item.asrProgress = 8;
+  if (item.asr_status === 'pending') {
+    item.asr_status = 'processing';
+    item.asr_progress = 8;
     return;
   }
 
-  item.asrProgress = Math.min(100, item.asrProgress + 10 + Math.floor(Math.random() * 10));
+  item.asr_progress = Math.min(100, item.asr_progress + 10 + Math.floor(Math.random() * 10));
 
-  if (item.asrProgress >= 100) {
-    item.asrProgress = 100;
-    item.asrStatus = 'success';
-    if (item.segmentCount === 0) {
-      item.segmentCount = 8 + Math.floor(Math.random() * 12);
-    }
+  if (item.asr_progress >= 100) {
+    item.asr_progress = 100;
+    item.asr_status = 'success';
+    item.live_asr = '{}';
     if (item.duration === 0) {
       item.duration = 1800 + Math.floor(Math.random() * 3600);
     }
   }
+
+  item.updated_at = new Date().toISOString();
 }
 
 function tickAllAsrJobs() {
@@ -148,13 +155,14 @@ function filterList(query: Record<string, string | string[] | undefined>) {
   return sourceVideos.filter((item) => {
     if (item.ownerId !== CURRENT_USER_ID) return false;
 
-    if (date && item.date < date) return false;
-    if (dateEnd && item.date > dateEnd) return false;
+    const createdDate = item.created_at.slice(0, 10);
+    if (date && createdDate < date) return false;
+    if (dateEnd && createdDate > dateEnd) return false;
 
-    const titleText = `${item.name} ${item.remarkName}`;
+    const titleText = `${item.name} ${item.remark}`;
     if (!matchKeywords(titleText, titleKeywords)) return false;
 
-    const globalText = `${item.name} ${item.remarkName} ${item.liveUrl} ${item.date} ${item.sourceType}`;
+    const globalText = `${item.name} ${item.remark} ${item.live_url} ${createdDate}`;
     if (!matchKeywords(globalText, globalKeywords)) return false;
 
     return true;
@@ -163,7 +171,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
 
 export default [
   {
-    url: `${API_PREFIX}/v1/source-videos`,
+    url: `${API_PREFIX}/v1/live-materials`,
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
       tickAllAsrJobs();
@@ -183,42 +191,39 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/source-videos`,
+    url: `${API_PREFIX}/v1/live-materials`,
     method: 'post',
     response: ({
       body,
     }: {
       body: {
         name?: string;
-        liveUrl?: string;
-        remarkName?: string;
-        date?: string;
-        sourceType?: 'live' | 'import';
-        duration?: number;
+        live_url?: string;
+        remark?: string;
       };
     }) => {
       const name = body?.name?.trim();
-      const liveUrl = body?.liveUrl?.trim();
-      const date = body?.date?.trim();
-      const sourceType = body?.sourceType === 'import' ? 'import' : 'live';
+      const live_url = body?.live_url?.trim();
 
-      if (!name || !liveUrl || !date) {
+      if (!name || !live_url) {
         return { code: 400, message: '请填写完整信息', data: null };
       }
 
+      const now = new Date().toISOString();
       const item: MockSourceVideo = {
-        id: `sv-${Date.now()}`,
+        id: Date.now(),
         name,
-        liveUrl,
-        remarkName: body.remarkName?.trim() || '',
-        duration: body.duration || 0,
-        date,
-        segmentCount: 0,
-        clipCount: 0,
-        sourceType,
+        live_url,
+        remark: body.remark?.trim() || '',
+        duration: 0,
+        ext: '',
+        live_asr: '{}',
+        asr_status: 'pending',
+        asr_progress: 0,
+        created_at: now,
+        updated_at: now,
+        created_by: 1,
         ownerId: CURRENT_USER_ID,
-        asrStatus: 'pending',
-        asrProgress: 0,
       };
 
       sourceVideos.unshift(item);
@@ -227,12 +232,12 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/source-videos/:id`,
+    url: `${API_PREFIX}/v1/live-materials/:id`,
     method: 'get',
     response: ({ query }: { query: { id: string } }) => {
       tickAllAsrJobs();
       const item = sourceVideos.find(
-        (video) => video.id === query.id && video.ownerId === CURRENT_USER_ID
+        (video) => String(video.id) === query.id && video.ownerId === CURRENT_USER_ID
       );
       if (!item) {
         return { code: 404, message: '源视频不存在', data: null };
@@ -241,23 +246,26 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/source-videos/:id/remark`,
+    url: `${API_PREFIX}/v1/live-materials/:id/remark`,
     method: 'put',
-    response: ({ body, query }: { body: { remarkName?: string }; query: { id: string } }) => {
-      const item = sourceVideos.find((video) => video.id === query.id && video.ownerId === CURRENT_USER_ID);
+    response: ({ body, query }: { body: { remark?: string }; query: { id: string } }) => {
+      const item = sourceVideos.find(
+        (video) => String(video.id) === query.id && video.ownerId === CURRENT_USER_ID
+      );
       if (!item) {
         return { code: 404, message: '源视频不存在', data: null };
       }
-      item.remarkName = body?.remarkName?.trim() || '';
+      item.remark = body?.remark?.trim() || '';
+      item.updated_at = new Date().toISOString();
       return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
   {
-    url: `${API_PREFIX}/v1/source-videos/:id`,
+    url: `${API_PREFIX}/v1/live-materials/:id`,
     method: 'delete',
     response: ({ query }: { query: { id: string } }) => {
       const index = sourceVideos.findIndex(
-        (video) => video.id === query.id && video.ownerId === CURRENT_USER_ID
+        (video) => String(video.id) === query.id && video.ownerId === CURRENT_USER_ID
       );
       if (index < 0) {
         return { code: 404, message: '源视频不存在', data: null };
@@ -267,22 +275,23 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/source-videos/:id/asr/retry`,
+    url: `${API_PREFIX}/v1/live-materials/:id/asr/retry`,
     method: 'post',
     response: ({ query }: { query: { id: string } }) => {
       const item = sourceVideos.find(
-        (video) => video.id === query.id && video.ownerId === CURRENT_USER_ID
+        (video) => String(video.id) === query.id && video.ownerId === CURRENT_USER_ID
       );
       if (!item) {
         return { code: 404, message: '源视频不存在', data: null };
       }
-      if (item.asrStatus !== 'failed') {
+      if (item.asr_status !== 'failed') {
         return { code: 400, message: '当前 ASR 状态不可重新解析', data: null };
       }
 
-      item.asrStatus = 'pending';
-      item.asrProgress = 0;
-      delete item.asrMessage;
+      item.asr_status = 'pending';
+      item.asr_progress = 0;
+      item.live_asr = '{}';
+      item.updated_at = new Date().toISOString();
 
       return { code: 0, message: '', data: toPublicItem(item) };
     },

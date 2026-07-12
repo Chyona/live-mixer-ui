@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
@@ -32,6 +32,8 @@ const AiPromptsPage = () => {
 
   const { keyword, setKeyword, appliedKeyword, applySearch: applyKeywordSearch } = useListFilters();
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [list, setList] = useState<AiPrompt[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -39,8 +41,15 @@ const AiPromptsPage = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const loadList = useCallback(async () => {
-    setLoading(true);
+  const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
+    const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
+    const refresh = options?.refresh ?? false;
+
+    if (refresh) {
+      setRefreshing(true);
+    } else if (!silent) {
+      setLoading(true);
+    }
 
     try {
       const response = await fetchAiPromptList({
@@ -50,20 +59,29 @@ const AiPromptsPage = () => {
       });
 
       if (response.code !== 0) {
-        toast.notify.error(response.message || '加载提示词列表失败');
+        if (!silent && !refresh) {
+          toast.notify.error(response.message || '加载提示词列表失败');
+        }
         return;
       }
 
       setList(response.data.list);
       setTotal(response.data.total);
+      hasLoadedRef.current = true;
     } catch (error) {
-      if (error instanceof AppError) {
-        showAppError(error);
-      } else {
-        toast.notify.error('加载提示词列表失败');
+      if (!silent && !refresh) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('加载提示词列表失败');
+        }
       }
     } finally {
-      setLoading(false);
+      if (refresh) {
+        setRefreshing(false);
+      } else if (!silent) {
+        setLoading(false);
+      }
     }
   }, [appliedKeyword, page, pageSize]);
 
@@ -222,6 +240,8 @@ const AiPromptsPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索名称 / 提示词 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onRefresh={() => void loadList({ refresh: true })}
+          refreshing={refreshing}
           extra={
             <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
               添加提示词
@@ -232,7 +252,7 @@ const AiPromptsPage = () => {
     >
       <ListPageTable<AiPrompt>
         rowKey="id"
-        loading={loading}
+        loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
         scrollX={1200}

@@ -1,23 +1,21 @@
 import type { BaseResponse } from './types';
 import { request } from './http';
 
-export type SourceVideoType = 'live' | 'import';
-
 export type AsrStatus = 'pending' | 'processing' | 'success' | 'failed';
 
 export interface SourceVideo {
-  id: string;
+  id: number;
   name: string;
-  liveUrl: string;
-  remarkName: string;
+  live_url: string;
+  remark: string;
   duration: number;
-  date: string;
-  segmentCount: number;
-  clipCount: number;
-  sourceType: SourceVideoType;
-  asrStatus: AsrStatus;
-  asrProgress: number;
-  asrMessage?: string;
+  ext: string;
+  live_asr: string;
+  asr_status: AsrStatus;
+  asr_progress: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
 }
 
 export interface SourceVideoListParams {
@@ -36,39 +34,41 @@ export interface SourceVideoListResult {
 
 export interface CreateSourceVideoParams {
   name: string;
-  liveUrl: string;
-  remarkName?: string;
-  date: string;
-  duration?: number;
+  live_url: string;
+  remark?: string;
 }
+
+export type SourceVideoId = number | string;
 
 export async function fetchSourceVideoList(
   params: SourceVideoListParams
 ): Promise<BaseResponse<SourceVideoListResult>> {
-  return await request('/v1/source-videos', {
+  return await request('/v1/live-materials', {
     method: 'get',
     params,
   });
 }
 
-export async function fetchSourceVideoDetail(id: string): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/source-videos/${id}`, {
+export async function fetchSourceVideoDetail(
+  id: SourceVideoId
+): Promise<BaseResponse<SourceVideo>> {
+  return await request(`/v1/live-materials/${id}`, {
     method: 'get',
   });
 }
 
 export async function updateSourceVideoRemark(
-  id: string,
-  remarkName: string
+  id: SourceVideoId,
+  remark: string
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/source-videos/${id}/remark`, {
+  return await request(`/v1/live-materials/${id}/remark`, {
     method: 'put',
-    data: { remarkName },
+    data: { remark },
   });
 }
 
-export async function deleteSourceVideo(id: string): Promise<BaseResponse<null>> {
-  return await request(`/v1/source-videos/${id}`, {
+export async function deleteSourceVideo(id: SourceVideoId): Promise<BaseResponse<null>> {
+  return await request(`/v1/live-materials/${id}`, {
     method: 'delete',
   });
 }
@@ -76,14 +76,14 @@ export async function deleteSourceVideo(id: string): Promise<BaseResponse<null>>
 export async function createSourceVideo(
   params: CreateSourceVideoParams
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request('/v1/source-videos', {
+  return await request('/v1/live-materials', {
     method: 'post',
-    data: { ...params, sourceType: 'live' },
+    data: params,
   });
 }
 
-export async function retrySourceVideoAsr(id: string): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/source-videos/${id}/asr/retry`, {
+export async function retrySourceVideoAsr(id: SourceVideoId): Promise<BaseResponse<SourceVideo>> {
+  return await request(`/v1/live-materials/${id}/asr/retry`, {
     method: 'post',
   });
 }

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuCirclePlay, LuPlus, LuTextSelect, LuTrash2 } from 'react-icons/lu';
@@ -28,7 +28,7 @@ import { showAppError, toast } from '~/utils/toast';
 
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
-import { getAsrActionDisabledReason } from './asrUtils';
+import { getAsrActionDisabledReason, parseLiveAsrMessage } from './asrUtils';
 import './index.css';
 
 function renderSliceAction(options: {
@@ -75,16 +75,23 @@ const SourceVideosPage = () => {
   const [globalKeyword, setGlobalKeyword] = useState('');
   const [appliedGlobalKeyword, setAppliedGlobalKeyword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [list, setList] = useState<SourceVideo[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [retryingAsrId, setRetryingAsrId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [retryingAsrId, setRetryingAsrId] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const loadList = useCallback(async (options?: { silent?: boolean }) => {
-    if (!options?.silent) {
+  const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
+    const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
+    const refresh = options?.refresh ?? false;
+
+    if (refresh) {
+      setRefreshing(true);
+    } else if (!silent) {
       setLoading(true);
     }
 
@@ -99,7 +106,7 @@ const SourceVideosPage = () => {
       });
 
       if (response.code !== 0) {
-        if (!options?.silent) {
+        if (!silent && !refresh) {
           toast.notify.error(response.message || '加载源视频列表失败');
         }
         return;
@@ -107,8 +114,9 @@ const SourceVideosPage = () => {
 
       setList(response.data.list);
       setTotal(response.data.total);
+      hasLoadedRef.current = true;
     } catch (error) {
-      if (!options?.silent) {
+      if (!silent && !refresh) {
         if (error instanceof AppError) {
           showAppError(error);
         } else {
@@ -116,7 +124,9 @@ const SourceVideosPage = () => {
         }
       }
     } finally {
-      if (!options?.silent) {
+      if (refresh) {
+        setRefreshing(false);
+      } else if (!silent) {
         setLoading(false);
       }
     }
@@ -127,7 +137,7 @@ const SourceVideosPage = () => {
   }, [loadList]);
 
   const hasProcessingAsr = useMemo(
-    () => list.some((item) => item.asrStatus === 'pending' || item.asrStatus === 'processing'),
+    () => list.some((item) => item.asr_status === 'pending' || item.asr_status === 'processing'),
     [list]
   );
 
@@ -152,16 +162,16 @@ const SourceVideosPage = () => {
     setPage(1);
   };
 
-  const handleRemarkSave = async (id: string, remarkName: string) => {
+  const handleRemarkSave = async (id: number, remark: string) => {
     try {
-      const response = await updateSourceVideoRemark(id, remarkName);
+      const response = await updateSourceVideoRemark(id, remark);
       if (response.code !== 0) {
         toast.notify.error(response.message || '备注保存失败');
         return;
       }
 
       setList((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, remarkName: response.data.remarkName } : item))
+        prev.map((item) => (item.id === id ? { ...item, remark: response.data.remark } : item))
       );
       toast.notify.success('备注已保存');
     } catch (error) {
@@ -173,7 +183,7 @@ const SourceVideosPage = () => {
     }
   };
 
-  const handleRetryAsr = async (id: string) => {
+  const handleRetryAsr = async (id: number) => {
     setRetryingAsrId(id);
     try {
       const response = await retrySourceVideoAsr(id);
@@ -195,7 +205,7 @@ const SourceVideosPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     setDeletingId(id);
     try {
       const response = await deleteSourceVideo(id);
@@ -252,10 +262,10 @@ const SourceVideosPage = () => {
       // },
       {
         title: '备注名称',
-        dataIndex: 'remarkName',
-        key: 'remarkName',
-        render: (remarkName: string, record) => (
-          <RemarkEditor value={remarkName} onSave={(value) => handleRemarkSave(record.id, value)} />
+        dataIndex: 'remark',
+        key: 'remark',
+        render: (remark: string, record) => (
+          <RemarkEditor value={remark} onSave={(value) => handleRemarkSave(record.id, value)} />
         ),
       },
       {
@@ -267,39 +277,27 @@ const SourceVideosPage = () => {
       },
       {
         title: '时间',
-        dataIndex: 'date',
-        key: 'date',
+        dataIndex: 'created_at',
+        key: 'created_at',
         width: 160,
-        render: (date: string) => formatToDate(date),
+        render: (created_at: string) => formatToDate(created_at),
       },
       {
         title: 'ASR解析进度',
-        key: 'asrProgress',
+        key: 'asr_progress',
         width: 180,
         render: (_, record) => (
           <AsrProgressCell
-            status={record.asrStatus}
-            progress={record.asrProgress}
-            message={record.asrMessage}
+            status={record.asr_status}
+            progress={record.asr_progress}
+            message={parseLiveAsrMessage(record.live_asr)}
             retrying={retryingAsrId === record.id}
             onRetry={
-              record.asrStatus === 'failed'
+              record.asr_status === 'failed'
                 ? () => void handleRetryAsr(record.id)
                 : undefined
             }
           />
-        ),
-      },
-      {
-        title: '切片数量',
-        dataIndex: 'clipCount',
-        key: 'clipCount',
-        width: 100,
-        align: 'center',
-        render: (count: number, record) => (
-          <Link className="source-videos-count-link" to={buildSourceVideoSliceLink(record.id)}>
-            {count}
-          </Link>
         ),
       },
       {
@@ -308,19 +306,19 @@ const SourceVideosPage = () => {
         width: 280,
         fixed: 'right',
         render: (_, record) => {
-          const asrDisabledReason = getAsrActionDisabledReason(record.asrStatus, record.asrMessage);
+          const asrDisabledReason = getAsrActionDisabledReason(record.asr_status, record.live_asr);
 
           return (
             <Space size={8}>
               {renderSliceAction({
-                to: buildSourceVideoSliceLink(record.id),
+                to: buildSourceVideoSliceLink(String(record.id)),
                 icon: <LuCirclePlay size={14} />,
                 label: '进入选片',
                 disabledReason: asrDisabledReason,
                 onNavigate: navigate,
               })}
               {renderSliceAction({
-                to: buildManualVideoSliceLink(record.id),
+                to: buildManualVideoSliceLink(String(record.id)),
                 icon: <LuTextSelect size={14} />,
                 label: '人工切片',
                 disabledReason: asrDisabledReason,
@@ -369,6 +367,8 @@ const SourceVideosPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索源视频名称 / 备注名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onRefresh={() => void loadList({ refresh: true })}
+          refreshing={refreshing}
           hasActiveAdvancedFilters={hasActiveAdvancedFilters}
           extra={
             <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
@@ -403,10 +403,10 @@ const SourceVideosPage = () => {
     >
       <ListPageTable<SourceVideo>
         rowKey="id"
-        loading={loading}
+        loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
-        scrollX={1320}
+        scrollX={1200}
         pagination={{
           current: page,
           pageSize,

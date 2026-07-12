@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -41,13 +41,22 @@ const SlicesPage = () => {
     dateFilters,
   } = useListFilters();
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedRef = useRef(false);
   const [list, setList] = useState<SliceProject[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const loadList = useCallback(async () => {
-    setLoading(true);
+  const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
+    const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
+    const refresh = options?.refresh ?? false;
+
+    if (refresh) {
+      setRefreshing(true);
+    } else if (!silent) {
+      setLoading(true);
+    }
 
     try {
       const response = await fetchSliceProjectList({
@@ -59,20 +68,29 @@ const SlicesPage = () => {
       });
 
       if (response.code !== 0) {
-        toast.notify.error(response.message || '加载剪辑项目失败');
+        if (!silent && !refresh) {
+          toast.notify.error(response.message || '加载剪辑项目失败');
+        }
         return;
       }
 
       setList(response.data.list);
       setTotal(response.data.total);
+      hasLoadedRef.current = true;
     } catch (error) {
-      if (error instanceof AppError) {
-        showAppError(error);
-      } else {
-        toast.notify.error('加载剪辑项目失败');
+      if (!silent && !refresh) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('加载剪辑项目失败');
+        }
       }
     } finally {
-      setLoading(false);
+      if (refresh) {
+        setRefreshing(false);
+      } else if (!silent) {
+        setLoading(false);
+      }
     }
   }, [appliedKeyword, dateFilters, page, pageSize]);
 
@@ -191,6 +209,8 @@ const SlicesPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onRefresh={() => void loadList({ refresh: true })}
+          refreshing={refreshing}
           hasActiveAdvancedFilters={Boolean(dateRange?.[0])}
           advanced={
             <div className="list-page__filter-field">
@@ -208,7 +228,7 @@ const SlicesPage = () => {
     >
       <ListPageTable<SliceProject>
         rowKey="id"
-        loading={loading}
+        loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
         scrollX={1100}

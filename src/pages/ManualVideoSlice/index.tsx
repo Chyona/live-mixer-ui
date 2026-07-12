@@ -70,7 +70,7 @@ const ManualVideoSlicePage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const streamUrl = video?.liveUrl?.trim() ?? '';
+  const streamUrl = video?.live_url?.trim() ?? '';
   const canPreview = Boolean(streamUrl) && isPlayableVideoUrl(streamUrl);
 
   const speakerIds = useMemo(
@@ -286,7 +286,7 @@ const ManualVideoSlicePage = () => {
       const response = await saveSliceProject(id, {
         projectName: projectName?.trim() || draftName || `${video.name} 剪辑项目`,
         sourceVideoName: video.name,
-        remarkName: video.remarkName,
+        remarkName: video.remark,
         projectSource: 'manual',
         segments: selectedSegments,
       });
@@ -350,7 +350,7 @@ const ManualVideoSlicePage = () => {
         const response = await saveSliceProject(id, {
           projectName: name,
           sourceVideoName: video.name,
-          remarkName: video.remarkName,
+          remarkName: video.remark,
           projectSource: 'manual',
           segments: selectedSegments,
         });
@@ -388,7 +388,7 @@ const ManualVideoSlicePage = () => {
         prompt: '根据人工选择的文案片段生成成片',
         water_text: 'www',
         count: 1,
-        source_video_id: video.id,
+        source_video_id: String(video.id),
         source_video_name: video.name,
       });
 

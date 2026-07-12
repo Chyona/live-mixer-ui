@@ -1,6 +1,5 @@
-import { Form, Input, Modal, DatePicker } from 'antd';
-import dayjs, { type Dayjs } from 'dayjs';
-import { useEffect, useState } from 'react';
+import { Form, Input, Modal } from 'antd';
+import { useState } from 'react';
 
 import { AppError } from '~/services/http';
 import { createSourceVideo } from '~/services/sourceVideo';
@@ -9,8 +8,7 @@ import { showAppError, toast } from '~/utils/toast';
 type FormValues = {
   name: string;
   liveUrl: string;
-  remarkName?: string;
-  date: Dayjs;
+  remark?: string;
 };
 
 interface AddSourceVideoModalProps {
@@ -23,11 +21,6 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
   const [form] = Form.useForm<FormValues>();
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    form.setFieldsValue({ date: dayjs() });
-  }, [form, open]);
-
   const handleClose = () => {
     form.resetFields();
     onClose();
@@ -39,9 +32,8 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
     try {
       const response = await createSourceVideo({
         name: values.name.trim(),
-        liveUrl: values.liveUrl.trim(),
-        remarkName: values.remarkName?.trim(),
-        date: values.date.format('YYYY-MM-DD'),
+        live_url: values.liveUrl.trim(),
+        remark: values.remark?.trim(),
       });
 
       if (response.code !== 0) {
@@ -74,7 +66,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
       onCancel={handleClose}
       onOk={() => form.submit()}
     >
-      <Form form={form} layout="vertical" initialValues={{ date: dayjs() }} onFinish={handleSubmit}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
           name="name"
           label="直播名称"
@@ -103,12 +95,8 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
           <Input placeholder="请输入直播流地址，如 rtmp:// 或 https://" maxLength={512} allowClear />
         </Form.Item>
 
-        <Form.Item name="remarkName" label="备注名称">
+        <Form.Item name="remark" label="备注名称">
           <Input placeholder="选填，便于后续搜索识别" maxLength={64} allowClear />
-        </Form.Item>
-
-        <Form.Item name="date" label="时间" rules={[{ required: true, message: '请选择日期' }]}>
-          <DatePicker className="source-videos-form-date" placeholder="选择日期" />
         </Form.Item>
       </Form>
     </Modal>

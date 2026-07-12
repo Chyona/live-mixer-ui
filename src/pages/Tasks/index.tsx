@@ -49,7 +49,8 @@ const TasksPage = () => {
     [appliedKeyword, dateFilters, page, pageSize, status]
   );
 
-  const { tasks, total, loading, polling, hasActiveTasks, reload, refreshTask } = useClipTasks(filters);
+  const { tasks, total, loading, refreshing, polling, hasActiveTasks, reload, refreshTask } =
+    useClipTasks(filters);
 
   const { wrapRef, scrollY, needScroll, compactPagination } = useListTableScrollY([
     loading,
@@ -104,6 +105,8 @@ const TasksPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="任务名称 / 源视频名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onRefresh={() => void reload()}
+          refreshing={refreshing}
           hasActiveAdvancedFilters={Boolean(dateRange?.[0] || status)}
           advanced={
             <>
@@ -142,7 +145,7 @@ const TasksPage = () => {
           .filter(Boolean)
           .join(' ')}
       >
-        {loading ? (
+        {loading && tasks.length === 0 ? (
           <PageLoading />
         ) : (
           <ClipTaskList

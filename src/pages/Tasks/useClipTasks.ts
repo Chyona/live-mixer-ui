@@ -15,6 +15,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   const [tasks, setTasks] = useState<ClipTaskItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [polling, setPolling] = useState(false);
   const pollingRef = useRef(false);
   const tasksRef = useRef<ClipTaskItem[]>([]);
@@ -77,13 +78,15 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   }, []);
 
   const refreshTasks = useCallback(
-    async (options?: { withPoll?: boolean; showLoading?: boolean }) => {
+    async (options?: { withPoll?: boolean; showLoading?: boolean; refresh?: boolean }) => {
       if (pollingRef.current) return;
 
-      const { withPoll = true, showLoading = false } = options ?? {};
+      const { withPoll = true, showLoading = false, refresh = false } = options ?? {};
       pollingRef.current = true;
 
-      if (showLoading) {
+      if (refresh) {
+        setRefreshing(true);
+      } else if (showLoading) {
         setLoading(true);
       }
 
@@ -107,7 +110,9 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
         applyTaskList(nextTasks, nextTotal);
       } finally {
         pollingRef.current = false;
-        if (showLoading) {
+        if (refresh) {
+          setRefreshing(false);
+        } else if (showLoading) {
           setLoading(false);
         }
       }
@@ -116,7 +121,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   );
 
   const reload = useCallback(async () => {
-    await refreshTasks({ withPoll: true, showLoading: true });
+    await refreshTasks({ withPoll: true, refresh: true });
   }, [refreshTasks]);
 
   const refreshTask = useCallback(
@@ -155,7 +160,10 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   );
 
   useEffect(() => {
-    void refreshTasks({ withPoll: true, showLoading: true });
+    void refreshTasks({
+      withPoll: true,
+      showLoading: tasksRef.current.length === 0,
+    });
   }, [
     filters.date,
     filters.dateEnd,
@@ -182,6 +190,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
     tasks,
     total,
     loading,
+    refreshing,
     polling,
     hasActiveTasks,
     reload,

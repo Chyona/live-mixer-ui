@@ -1,12 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { Button, Input } from 'antd';
-import { LuChevronDown, LuSearch, LuSlidersHorizontal } from 'react-icons/lu';
+import { LuChevronDown, LuRefreshCw, LuSearch, LuSlidersHorizontal } from 'react-icons/lu';
 
 export interface ListSearchToolbarProps {
   keyword: string;
   onKeywordChange: (value: string) => void;
   keywordPlaceholder?: string;
   onSearch: () => void;
+  /** 刷新当前列表 */
+  onRefresh?: () => void;
+  refreshing?: boolean;
   /** 高级筛选面板；传入时显示「高级筛选」切换按钮 */
   advanced?: ReactNode;
   /** 是否存在已生效的高级筛选项 */
@@ -23,6 +26,8 @@ const ListSearchToolbar = ({
   onKeywordChange,
   keywordPlaceholder = '搜索',
   onSearch,
+  onRefresh,
+  refreshing = false,
   advanced,
   hasActiveAdvancedFilters = false,
   defaultAdvancedOpen = false,
@@ -66,7 +71,24 @@ const ListSearchToolbar = ({
           </Button>
         ) : null}
 
-        {extra ? <div className="list-page__toolbar-extra">{extra}</div> : null}
+        {extra || onRefresh ? (
+          <div className="list-page__toolbar-actions">
+            {onRefresh ? (
+              <Button
+                type="text"
+                className="list-page__refresh-btn"
+                icon={<LuRefreshCw size={14} />}
+                loading={refreshing}
+                aria-label="刷新列表"
+                title="刷新"
+                onClick={onRefresh}
+              >
+                刷新
+              </Button>
+            ) : null}
+            {extra ? <div className="list-page__toolbar-extra">{extra}</div> : null}
+          </div>
+        ) : null}
       </div>
 
       {advanced && advancedOpen ? (

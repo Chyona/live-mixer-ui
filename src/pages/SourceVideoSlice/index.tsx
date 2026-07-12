@@ -50,7 +50,7 @@ const SourceVideoSlicePage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const streamUrl = video?.liveUrl?.trim() ?? '';
+  const streamUrl = video?.live_url?.trim() ?? '';
   const hasVideoUrl = Boolean(streamUrl);
   const canPreview = hasVideoUrl && isPlayableVideoUrl(streamUrl);
   const videoFormatLabel = useMemo(() => getVideoFormatLabel(streamUrl), [streamUrl]);
@@ -196,7 +196,7 @@ const SourceVideoSlicePage = () => {
         prompt: selectedPrompt.content.trim(),
         water_text: 'www',
         count: 1,
-        source_video_id: video.id,
+        source_video_id: String(video.id),
         source_video_name: video.name,
       });
 
@@ -240,7 +240,7 @@ const SourceVideoSlicePage = () => {
 
     setAiSelecting(true);
     try {
-      const response = await submitAiSliceSelection(video.id, {
+      const response = await submitAiSliceSelection(String(video.id), {
         prompt: selectedPrompt.content.trim(),
         promptId: selectedPrompt.id,
         clips,
@@ -400,19 +400,19 @@ const SourceVideoSlicePage = () => {
           <h3 className="slice-source-modal-title">播放源信息</h3>
           <Descriptions column={1} size="small" className="slice-source-descriptions">
             <Descriptions.Item label="源视频名称">{video.name}</Descriptions.Item>
-            <Descriptions.Item label="备注名称">{video.remarkName || '-'}</Descriptions.Item>
+            <Descriptions.Item label="备注名称">{video.remark || '-'}</Descriptions.Item>
             <Descriptions.Item label="直播地址">
               <Typography.Paragraph
                 className="slice-source-url"
-                copyable={{ text: video.liveUrl }}
+                copyable={{ text: video.live_url }}
               >
-                {video.liveUrl}
+                {video.live_url}
               </Typography.Paragraph>
             </Descriptions.Item>
             <Descriptions.Item label="时长">
               {video.duration > 0 ? formatVideoDuration(video.duration) : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="日期">{formatToDate(video.date)}</Descriptions.Item>
+            <Descriptions.Item label="日期">{formatToDate(video.created_at)}</Descriptions.Item>
             <Descriptions.Item label="预览状态">
               {canPreview ? `支持浏览器预览（${videoFormatLabel}）` : hasVideoUrl ? '格式不受支持' : '暂无播放地址'}
             </Descriptions.Item>
