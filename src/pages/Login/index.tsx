@@ -35,41 +35,13 @@ const LoginPage = () => {
 
   return (
     <div className="login-page">
-      <div className="login-page-bg" aria-hidden="true">
+      <div className="login-page-bg" aria-hidden>
+        <div className="login-page-bg__base" />
         <div className="login-page-bg__mesh" />
-        <div className="login-page-bg__grid" />
-        <div className="login-page-bg__scanline" />
-
-        <div className="login-page-bg__frames">
-          <span className="login-frame login-frame--1" />
-          <span className="login-frame login-frame--2" />
-          <span className="login-frame login-frame--3" />
-        </div>
-
-        <div className="login-page-bg__waveform">
-          {Array.from({ length: 28 }, (_, i) => (
-            <span key={i} className="login-waveform-bar" style={{ '--i': i } as React.CSSProperties} />
-          ))}
-        </div>
-
-        <div className="login-page-bg__timeline">
-          <div className="login-timeline-ruler">
-            {Array.from({ length: 12 }, (_, i) => (
-              <span key={i} className="login-timeline-tick" />
-            ))}
-          </div>
-          <div className="login-timeline-track">
-            <span className="login-clip login-clip--1" />
-            <span className="login-clip login-clip--2" />
-            <span className="login-clip login-clip--3" />
-            <span className="login-playhead" />
-          </div>
-        </div>
-
-        <div className="login-page-bg__live">
-          <span className="login-live-dot" />
-          LIVE
-        </div>
+        <div className="login-page-bg__blob login-page-bg__blob_purple" />
+        <div className="login-page-bg__blob login-page-bg__blob_lavender" />
+        <div className="login-page-bg__blob login-page-bg__blob_pink" />
+        <div className="login-page-bg__blob login-page-bg__blob_blue" />
       </div>
 
       <div className="login-page-content">

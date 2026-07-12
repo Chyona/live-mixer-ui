@@ -1,480 +1,97 @@
 .login-page {
-  --login-bg: #060b18;
-  --login-bg-mid: #0c1530;
-  --login-accent: var(--primary-color, #356bfd);
-  --login-accent-light: var(--primary-light, #5c89ff);
-  --login-accent-dark: var(--primary-dark, #1a50d9);
-
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, var(--login-bg) 0%, var(--login-bg-mid) 45%, #0a1024 100%);
+  background: rgba(var(--primary-light-rgb), 0.06);
 }
 
 .login-page-bg {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  overflow: hidden;
 }
 
-.login-page-bg__mesh {
-  position: absolute;
-  inset: -20%;
-  background:
-    radial-gradient(
-      circle at 15% 20%,
-      rgba(var(--primary-color-rgb, 53, 107, 253), 0.28) 0%,
-      transparent 42%
-    ),
-    radial-gradient(
-      circle at 85% 15%,
-      rgba(var(--primary-light-rgb, 92, 137, 255), 0.2) 0%,
-      transparent 38%
-    ),
-    radial-gradient(
-      circle at 70% 80%,
-      rgba(var(--primary-dark-rgb, 26, 80, 217), 0.22) 0%,
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 25% 75%,
-      rgba(var(--primary-color-rgb, 53, 107, 253), 0.12) 0%,
-      transparent 35%
-    );
-  animation: login-mesh-drift 18s ease-in-out infinite alternate;
-}
-
-.login-page-bg__grid {
+.login-page-bg__base {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(var(--primary-light-rgb, 92, 137, 255), 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(var(--primary-light-rgb, 92, 137, 255), 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 20%, transparent 75%);
-  animation: login-grid-pulse 8s ease-in-out infinite;
+  --un-gradient-stops:
+    rgba(var(--primary-light-rgb), 0.1), rgba(var(--primary-color-rgb), 0.04),
+    rgba(var(--primary-light-rgb), 0.07);
+  --un-gradient-shape: to bottom right in oklch;
+  --un-gradient: var(--un-gradient-shape), var(--un-gradient-stops);
+  background-image: linear-gradient(var(--un-gradient));
 }
 
-.login-page-bg__scanline {
+.login-page-bg__blob {
   position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.015) 2px,
-    rgba(255, 255, 255, 0.015) 4px
-  );
-  opacity: 0.35;
-}
-
-.login-page-bg__scanline::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 120px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(var(--primary-color-rgb, 53, 107, 253), 0.06),
-    rgba(var(--primary-light-rgb, 92, 137, 255), 0.1),
-    transparent
-  );
-  animation: login-scan-sweep 6s linear infinite;
-}
-
-/* 漂浮的视频切片帧 */
-.login-page-bg__frames {
-  position: absolute;
-  inset: 0;
-}
-
-.login-frame {
-  position: absolute;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(var(--primary-color-rgb, 53, 107, 253), 0.2);
-  backdrop-filter: blur(4px);
-}
-
-.login-frame::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--login-accent-dark),
-    var(--login-accent),
-    var(--login-accent-light)
-  );
-  opacity: 0.7;
-}
-
-.login-frame--1 {
-  width: 140px;
-  height: 88px;
-  top: 12%;
-  left: 8%;
-  animation: login-frame-float-1 12s ease-in-out infinite;
-}
-
-.login-frame--2 {
-  width: 110px;
-  height: 70px;
-  top: 22%;
-  right: 10%;
-  animation: login-frame-float-2 14s ease-in-out infinite;
-}
-
-.login-frame--3 {
-  width: 96px;
-  height: 60px;
-  bottom: 28%;
-  left: 14%;
-  animation: login-frame-float-3 16s ease-in-out infinite;
-}
-
-/* 音频波形 — 直播感 */
-.login-page-bg__waveform {
-  position: absolute;
-  bottom: 22%;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 48px;
-  opacity: 0.35;
-  mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
-}
-
-.login-waveform-bar {
-  width: 3px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--login-accent-light), var(--login-accent));
-  animation: login-waveform 1.2s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 0.08s);
-}
-
-/* 时间轴 — 视频切片核心意象 */
-.login-page-bg__timeline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 0 24px 28px;
-}
-
-.login-timeline-ruler {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 0 4px;
-  opacity: 0.25;
-}
-
-.login-timeline-tick {
-  width: 1px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.login-timeline-track {
-  position: relative;
-  height: 52px;
-  border-radius: 8px;
-  background: rgba(var(--primary-color-rgb, 53, 107, 253), 0.06);
-  border: 1px solid rgba(var(--primary-light-rgb, 92, 137, 255), 0.15);
-  overflow: hidden;
-}
-
-.login-clip {
-  position: absolute;
-  top: 8px;
-  height: 36px;
-  border-radius: 6px;
-  border: 1px solid rgba(var(--primary-light-rgb, 92, 137, 255), 0.25);
-  background: linear-gradient(
-    180deg,
-    rgba(var(--primary-color-rgb, 53, 107, 253), 0.55),
-    rgba(var(--primary-color-rgb, 53, 107, 253), 0.25)
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.login-clip::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 6px,
-    rgba(255, 255, 255, 0.06) 6px,
-    rgba(255, 255, 255, 0.06) 7px
-  );
-  border-radius: inherit;
-}
-
-.login-clip--1 {
-  left: 5%;
-  width: 22%;
-  animation: login-clip-shift-1 14s ease-in-out infinite;
-}
-
-.login-clip--2 {
-  left: 32%;
-  width: 18%;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--primary-light-rgb, 92, 137, 255), 0.5),
-    rgba(var(--primary-light-rgb, 92, 137, 255), 0.22)
-  );
-  animation: login-clip-shift-2 18s ease-in-out infinite;
-}
-
-.login-clip--3 {
-  left: 58%;
-  width: 26%;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--primary-dark-rgb, 26, 80, 217), 0.55),
-    rgba(var(--primary-dark-rgb, 26, 80, 217), 0.28)
-  );
-  animation: login-clip-shift-3 16s ease-in-out infinite;
-}
-
-.login-playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--login-accent-light);
-  box-shadow:
-    0 0 12px var(--login-accent-light),
-    0 0 24px rgba(var(--primary-color-rgb, 53, 107, 253), 0.5);
-  animation: login-playhead-move 8s linear infinite;
-}
-
-.login-playhead::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid var(--login-accent-light);
-}
-
-/* LIVE 标识 */
-.login-page-bg__live {
-  position: absolute;
-  top: 28px;
-  right: 32px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(var(--primary-color-rgb, 53, 107, 253), 0.15);
-  border: 1px solid rgba(var(--primary-light-rgb, 92, 137, 255), 0.4);
-  backdrop-filter: blur(8px);
-}
-
-.login-live-dot {
-  width: 8px;
-  height: 8px;
   border-radius: 50%;
-  background: var(--login-accent-light);
-  box-shadow:
-    0 0 8px var(--login-accent),
-    0 0 16px rgba(var(--primary-color-rgb, 53, 107, 253), 0.6);
-  animation: login-live-pulse 1.5s ease-in-out infinite;
+  filter: blur(110px);
+}
+
+.login-page-bg__blob_purple {
+  top: 40%;
+  left: 30%;
+  width: 300px;
+  height: 300px;
+  background: rgba(var(--primary-color-rgb), 0.24);
+  transform: translate(-50%, -50%);
+}
+
+.login-page-bg__blob_lavender {
+  bottom: -6%;
+  left: -4%;
+  width: 280px;
+  height: 280px;
+  background: rgba(200, 190, 255, 0.58);
+}
+
+.login-page-bg__blob_pink {
+  bottom: 20%;
+  right: -4%;
+  width: 340px;
+  height: 340px;
+  background: rgba(255, 188, 210, 0.38);
+}
+
+.login-page-bg__blob_blue {
+  top: -4%;
+  right: 8%;
+  width: 360px;
+  height: 360px;
+  background: rgba(var(--primary-light-rgb), 0.28);
 }
 
 .login-page-content {
   position: relative;
   z-index: 1;
-}
-
-/* 动画关键帧 */
-@keyframes login-mesh-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  100% {
-    transform: translate(2%, -2%) scale(1.05);
-  }
-}
-
-@keyframes login-grid-pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes login-scan-sweep {
-  0% {
-    top: -120px;
-  }
-
-  100% {
-    top: 100%;
-  }
-}
-
-@keyframes login-frame-float-1 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(-2deg);
-  }
-
-  50% {
-    transform: translate(12px, -16px) rotate(1deg);
-  }
-}
-
-@keyframes login-frame-float-2 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(3deg);
-  }
-
-  50% {
-    transform: translate(-14px, 10px) rotate(-1deg);
-  }
-}
-
-@keyframes login-frame-float-3 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(-1deg);
-  }
-
-  50% {
-    transform: translate(10px, 12px) rotate(2deg);
-  }
-}
-
-@keyframes login-waveform {
-  0%,
-  100% {
-    height: 8px;
-  }
-
-  50% {
-    height: calc(12px + (var(--i) % 5) * 6px);
-  }
-}
-
-@keyframes login-playhead-move {
-  0% {
-    left: 0;
-  }
-
-  100% {
-    left: 100%;
-  }
-}
-
-@keyframes login-clip-shift-1 {
-  0%,
-  100% {
-    transform: translateX(0);
-    opacity: 0.85;
-  }
-
-  50% {
-    transform: translateX(8px);
-    opacity: 1;
-  }
-}
-
-@keyframes login-clip-shift-2 {
-  0%,
-  100% {
-    transform: translateX(0) scaleX(1);
-  }
-
-  50% {
-    transform: translateX(-6px) scaleX(1.05);
-  }
-}
-
-@keyframes login-clip-shift-3 {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(10px);
-  }
-}
-
-@keyframes login-live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.6;
-    transform: scale(0.85);
-  }
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
 }
 
 @media (max-width: 768px) {
-  .login-frame--1,
-  .login-frame--2,
-  .login-frame--3 {
-    opacity: 0.5;
-    transform: scale(0.8);
+  .login-page-bg__blob_purple {
+    width: 220px;
+    height: 220px;
+    left: 30%;
   }
 
-  .login-page-bg__waveform {
-    opacity: 0.2;
+  .login-page-bg__blob_lavender {
+    width: 200px;
+    height: 200px;
   }
 
-  .login-page-bg__live {
-    top: 16px;
-    right: 16px;
+  .login-page-bg__blob_pink {
+    width: 240px;
+    height: 240px;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .login-page-bg__mesh,
-  .login-page-bg__grid,
-  .login-page-bg__scanline::after,
-  .login-frame,
-  .login-waveform-bar,
-  .login-playhead,
-  .login-clip,
-  .login-live-dot {
-    animation: none !important;
+  .login-page-bg__blob_blue {
+    width: 240px;
+    height: 240px;
   }
 }
