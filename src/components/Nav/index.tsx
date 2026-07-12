@@ -7,6 +7,7 @@ import { useResponsive } from '~/hooks/useResponsive';
 import NavMenuItems from './NavMenuItems';
 import UserActions from './UserActions';
 import { getNavActive, useNavItems } from './useNavItems';
+import type { ManualSliceEntryFrom } from '~/pages/SourceVideos/utils';
 
 import './index.css';
 
@@ -14,6 +15,7 @@ const mobileNavPaths = ['/source-videos', '/slices', '/tasks'];
 
 export const MobileBottomNav = () => {
   const location = useLocation();
+  const entryFrom = (location.state as { from?: ManualSliceEntryFrom } | null)?.from;
 
   const navItems = useMemo(() => {
     return RoutesCfg.filter((item) => mobileNavPaths.includes(item.path));
@@ -22,7 +24,7 @@ export const MobileBottomNav = () => {
   return (
     <div className="mobile-bottom-nav">
       {navItems.map((item) => {
-        const isActive = getNavActive(item.path, location.pathname);
+        const isActive = getNavActive(item.path, location.pathname, entryFrom);
 
         if (item.links) {
           return (

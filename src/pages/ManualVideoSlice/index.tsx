@@ -12,6 +12,7 @@ import { fetchVideoTranscript } from '~/services/transcript';
 import { submitClip } from '~/services/slice';
 import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
+import type { ManualSliceEntryFrom } from '../SourceVideos/utils';
 import KeywordSearchBar from './components/KeywordSearchBar';
 import TranscriptPanel from './components/TranscriptPanel';
 import SelectedCopyPanel from './components/SelectedCopyPanel';
@@ -29,6 +30,11 @@ import {
 } from './utils';
 
 import './index.css';
+
+interface ManualSliceLocationState {
+  from?: ManualSliceEntryFrom;
+  aiSelectedSegments?: SelectedCopySegment[];
+}
 
 const MAX_TOTAL_DURATION = 30 * 60;
 const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
@@ -87,7 +93,7 @@ const ManualVideoSlicePage = () => {
   const loadPageData = useCallback(async () => {
     if (!id) return;
 
-    const locationState = location.state as { aiSelectedSegments?: SelectedCopySegment[] } | null;
+    const locationState = location.state as ManualSliceLocationState | null;
     const hasAiSegments = Boolean(locationState?.aiSelectedSegments?.length);
 
     setLoading(true);
@@ -137,7 +143,7 @@ const ManualVideoSlicePage = () => {
   }, [loadPageData]);
 
   useEffect(() => {
-    const state = location.state as { aiSelectedSegments?: SelectedCopySegment[] } | null;
+    const state = location.state as ManualSliceLocationState | null;
     const aiSelectedSegments = state?.aiSelectedSegments;
 
     if (!aiSelectedSegments?.length) return;
@@ -280,6 +286,7 @@ const ManualVideoSlicePage = () => {
         projectName: projectName?.trim() || draftName || `${video.name} 剪辑项目`,
         sourceVideoName: video.name,
         remarkName: video.remarkName,
+        projectSource: 'manual',
         segments: selectedSegments,
       });
 
@@ -343,6 +350,7 @@ const ManualVideoSlicePage = () => {
           projectName: name,
           sourceVideoName: video.name,
           remarkName: video.remarkName,
+          projectSource: 'manual',
           segments: selectedSegments,
         });
 
@@ -433,6 +441,35 @@ const ManualVideoSlicePage = () => {
     }
   };
 
+  const entryFrom = useMemo(() => {
+    const state = location.state as ManualSliceLocationState | null;
+    return state?.from ?? 'source-videos';
+  }, [location.state]);
+
+  const breadcrumbItems = useMemo(() => {
+    const currentTitle = video ? `${video.name} - 人工切片` : '人工切片';
+
+    if (entryFrom === 'slices') {
+      return [
+        { title: <Link to="/slices">项目管理</Link> },
+        { title: currentTitle },
+      ];
+    }
+
+    if (entryFrom === 'tasks') {
+      return [
+        { title: <Link to="/tasks">任务管理</Link> },
+        { title: currentTitle },
+      ];
+    }
+
+    return [
+      { title: <Link to="/source-videos">源视频管理</Link> },
+      { title: <Link to={`/source-videos/${id}/slice`}>时间轴切片</Link> },
+      { title: currentTitle },
+    ];
+  }, [entryFrom, id, video]);
+
   if (loading) {
     return (
       <div className="manual-slice-page manual-slice-page_loading">
@@ -445,10 +482,7 @@ const ManualVideoSlicePage = () => {
     return (
       <div className="manual-slice-page">
         <SlicePageHeader
-          breadcrumbItems={[
-            { title: <Link to="/source-videos">源视频管理</Link> },
-            { title: '人工切片' },
-          ]}
+          breadcrumbItems={breadcrumbItems}
           title="视频人工切片"
           description="源视频不存在或无权访问。"
         />
@@ -460,11 +494,7 @@ const ManualVideoSlicePage = () => {
   return (
     <div className="manual-slice-page">
       <SlicePageHeader
-        breadcrumbItems={[
-          { title: <Link to="/source-videos">源视频管理</Link> },
-          { title: <Link to={`/source-videos/${id}/slice`}>时间轴切片</Link> },
-          { title: `${video.name} - 人工切片` },
-        ]}
+        breadcrumbItems={breadcrumbItems}
         title={`${video.name} - 视频人工切片`}
         description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
@@ -472,9 +502,11 @@ const ManualVideoSlicePage = () => {
             <Button icon={<LuDownload size={16} />} onClick={handleDownloadSubtitle}>
               字幕下载
             </Button>
-            <Link to={`/source-videos/${id}/slice`}>
-              <Button type="primary">切换到时间轴切片</Button>
-            </Link>
+            {entryFrom !== 'slices' ? (
+              <Link to={`/source-videos/${id}/slice`}>
+                <Button type="primary">切换到时间轴切片</Button>
+              </Link>
+            ) : null}
           </Space>
         }
       />

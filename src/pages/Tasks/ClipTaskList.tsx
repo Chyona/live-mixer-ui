@@ -111,7 +111,7 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
       }
 
       navigate(buildManualVideoSliceLink(record.sourceVideoId), {
-        state: { aiSelectedSegments: record.aiSegments },
+        state: { from: 'tasks', aiSelectedSegments: record.aiSegments },
       });
     },
     [navigate]
@@ -169,7 +169,7 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
         title: '操作',
         key: 'actions',
         fixed: 'right',
-        width: 320,
+        width: 280,
         render: (_, record) => {
           const isAiTask = record.taskType === 'ai_slice_select';
           const videoUrl = record.videoUrls[0];
@@ -209,49 +209,15 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
                 </Popconfirm>
               </Space>
               <Space size={4} className="tasks-actions-row">
-                {isAiTask ? (
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<LuTextSelect size={14} />}
-                    disabled={!canViewAiResult}
-                    onClick={() => handleViewAiResult(record)}
-                  >
-                    查看选片
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<LuEye size={14} />}
-                      disabled={!videoUrl}
-                      onClick={() => setPreviewUrl(videoUrl ?? null)}
-                    >
-                      成片预览
-                    </Button>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<LuDownload size={14} />}
-                      disabled={!videoUrl}
-                      href={videoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      下载成片
-                    </Button>
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<LuCopy size={14} />}
-                      disabled={!draftUrl}
-                      onClick={() => draftUrl && void handleCopyDraft(draftUrl)}
-                    >
-                      复制草稿地址
-                    </Button>
-                  </>
-                )}
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuCopy size={14} />}
+                  disabled={!draftUrl}
+                  onClick={() => draftUrl && void handleCopyDraft(draftUrl)}
+                >
+                  复制草稿地址
+                </Button>
               </Space>
             </div>
           );

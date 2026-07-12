@@ -2,12 +2,15 @@ import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
 import type { BaseResponse } from './types';
 import { request } from './http';
 
+export type SliceProjectSource = 'timeline' | 'manual';
+
 export interface SliceProject {
   id: string;
   sourceVideoId: string;
   sourceVideoName: string;
   remarkName: string;
   projectName: string;
+  projectSource: SliceProjectSource;
   segmentCount: number;
   updatedAt: string;
   segments?: SelectedCopySegment[];
@@ -21,6 +24,7 @@ export interface SaveSliceProjectParams {
   projectName?: string;
   sourceVideoName?: string;
   remarkName?: string;
+  projectSource?: SliceProjectSource;
   segments: SelectedCopySegment[];
 }
 

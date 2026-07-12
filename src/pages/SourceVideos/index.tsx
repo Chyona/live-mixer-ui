@@ -274,7 +274,7 @@ const SourceVideosPage = () => {
       {
         title: 'ASR解析进度',
         key: 'asrProgress',
-        width: 160,
+        width: 180,
         render: (_, record) => (
           <AsrProgressCell
             status={record.asrStatus}
@@ -304,7 +304,7 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 240,
+        width: 280,
         fixed: 'right',
         render: (_, record) => {
           const asrDisabledReason = getAsrActionDisabledReason(record.asrStatus, record.asrMessage);
@@ -314,7 +314,7 @@ const SourceVideosPage = () => {
               {renderSliceAction({
                 to: buildSourceVideoSliceLink(record.id),
                 icon: <LuCirclePlay size={14} />,
-                label: '进入',
+                label: '进入选片',
                 disabledReason: asrDisabledReason,
                 onNavigate: navigate,
               })}

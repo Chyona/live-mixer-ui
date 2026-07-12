@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Descriptions, Empty, Modal, Spin, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -12,7 +12,7 @@ import { submitAiSliceSelection } from '~/services/aiSlice';
 import type { AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDate } from '~/utils/date';
-import { formatVideoDuration } from '../SourceVideos/utils';
+import { formatVideoDuration, type ManualSliceEntryFrom } from '../SourceVideos/utils';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
 import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
@@ -25,6 +25,10 @@ const MAX_TOTAL_DURATION = 30 * 60;
 const SourceVideoSlicePage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const entryFrom = useMemo(() => {
+    return (location.state as { from?: ManualSliceEntryFrom } | null)?.from ?? 'source-videos';
+  }, [location.state]);
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<SourceVideo | null>(null);
   const [tipVisible, setTipVisible] = useState(false);
@@ -263,6 +267,29 @@ const SourceVideoSlicePage = () => {
     }
   }, [id, navigate, selectedPrompt, selectedRanges, video]);
 
+  const breadcrumbItems = useMemo(() => {
+    const currentTitle = video ? `${video.name} - 切片` : '视频切片';
+
+    if (entryFrom === 'slices') {
+      return [
+        { title: <Link to="/slices">项目管理</Link> },
+        { title: currentTitle },
+      ];
+    }
+
+    if (entryFrom === 'tasks') {
+      return [
+        { title: <Link to="/tasks">任务管理</Link> },
+        { title: currentTitle },
+      ];
+    }
+
+    return [
+      { title: <Link to="/source-videos">源视频管理</Link> },
+      { title: currentTitle },
+    ];
+  }, [entryFrom, video]);
+
   if (loading) {
     return (
       <div className="slice-page slice-page_loading">
@@ -275,10 +302,7 @@ const SourceVideoSlicePage = () => {
     return (
       <div className="slice-page">
         <SlicePageHeader
-          breadcrumbItems={[
-            { title: <Link to="/source-videos">源视频管理</Link> },
-            { title: '视频切片' },
-          ]}
+          breadcrumbItems={breadcrumbItems}
           title="视频切片"
           description="源视频不存在或无权访问。"
         />
@@ -290,18 +314,17 @@ const SourceVideoSlicePage = () => {
   return (
     <div className="slice-page">
       <SlicePageHeader
-        breadcrumbItems={[
-          { title: <Link to="/source-videos">源视频管理</Link> },
-          { title: `${video.name} - 切片` },
-        ]}
+        breadcrumbItems={breadcrumbItems}
         title={`${video.name} - 视频切片`}
         description="在时间轴上拖拽标记片段，支持缩放预览、片段管理与一键成片。"
         actions={
           <>
             <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-            <Link to={`/source-videos/${id}/manual-slice`}>
-              <Button type="primary">切换到人工切片</Button>
-            </Link>
+            {entryFrom !== 'slices' ? (
+              <Link to={`/source-videos/${id}/manual-slice`}>
+                <Button type="primary">切换到人工切片</Button>
+              </Link>
+            ) : null}
           </>
         }
         tip={{

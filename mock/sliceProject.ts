@@ -85,6 +85,7 @@ export default [
         projectName?: string;
         sourceVideoName?: string;
         remarkName?: string;
+        projectSource?: 'timeline' | 'manual';
         segments?: SelectedCopySegment[];
       };
       query: { id: string };
@@ -99,6 +100,7 @@ export default [
         sourceVideoName: body?.sourceVideoName,
         remarkName: body?.remarkName,
         projectName: body?.projectName,
+        projectSource: body?.projectSource,
         segments,
       });
 

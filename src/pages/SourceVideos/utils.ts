@@ -23,12 +23,25 @@ export function buildDateRange(dateRange: [Dayjs | null, Dayjs | null] | null) {
   };
 }
 
+export type ManualSliceEntryFrom = 'source-videos' | 'slices' | 'tasks';
+
+export type SliceProjectSource = 'timeline' | 'manual';
+
 export function buildSourceVideoSliceLink(sourceVideoId: string) {
   return `/source-videos/${sourceVideoId}/slice`;
 }
 
 export function buildManualVideoSliceLink(sourceVideoId: string) {
   return `/source-videos/${sourceVideoId}/manual-slice`;
+}
+
+export function buildSliceProjectEditLink(
+  sourceVideoId: string,
+  projectSource: SliceProjectSource = 'manual'
+) {
+  return projectSource === 'timeline'
+    ? buildSourceVideoSliceLink(sourceVideoId)
+    : buildManualVideoSliceLink(sourceVideoId);
 }
 
 export function isPlayableStreamUrl(url: string) {

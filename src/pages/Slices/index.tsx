@@ -16,10 +16,7 @@ import {
 } from '~/services/sliceProject';
 import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
-import {
-  buildManualVideoSliceLink,
-  buildSourceVideoSliceLink,
-} from '../SourceVideos/utils';
+import { buildSliceProjectEditLink } from '../SourceVideos/utils';
 
 import { buildDateRange } from './utils';
 import './index.css';
@@ -162,7 +159,11 @@ const SlicesPage = () => {
               size="small"
               className="slices-action-btn"
               icon={<LuTextSelect size={14} />}
-              onClick={() => navigate(buildManualVideoSliceLink(record.sourceVideoId))}
+              onClick={() =>
+                navigate(buildSliceProjectEditLink(record.sourceVideoId, record.projectSource), {
+                  state: { from: 'slices' },
+                })
+              }
             >
               编辑项目
             </Button>
