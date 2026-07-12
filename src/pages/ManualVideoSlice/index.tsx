@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, Empty, Space, Spin } from 'antd';
+import { Button, Empty, Space } from 'antd';
 import { LuDownload } from 'react-icons/lu';
+import PageLoading from '~/components/PageLoading';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -456,8 +457,8 @@ const ManualVideoSlicePage = () => {
 
   if (loading) {
     return (
-      <div className="slice-page slice-page_loading">
-        <Spin size="large" />
+      <div className="slice-page">
+        <PageLoading />
       </div>
     );
   }

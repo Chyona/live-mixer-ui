@@ -21,7 +21,6 @@ import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/t
 import { showAppError, toast } from '~/utils/toast';
 
 import AddAiPromptModal from './AddAiPromptModal';
-import './index.css';
 
 const AiPromptsPage = () => {
   useAppSEO({

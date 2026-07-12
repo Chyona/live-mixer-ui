@@ -21,8 +21,6 @@ import { formatToDateTime } from '~/utils/date';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, toast } from '~/utils/toast';
 
-import './index.css';
-
 const SlicesPage = () => {
   const navigate = useNavigate();
 

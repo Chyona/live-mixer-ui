@@ -1,22 +1,9 @@
-import { Tooltip } from 'antd';
-import type { ReactNode } from 'react';
 import { LuX } from 'react-icons/lu';
+import DisabledActionWrap from '~/components/DisabledActionWrap';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
 import { formatVideoDuration } from '~/utils/duration';
 import '~/components/VideoTimeline/index.less';
-
-function formatClipTime(seconds: number): string {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-
-  if (hrs > 0) {
-    return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
-
-  return `${mins}:${String(secs).padStart(2, '0')}`;
-}
 
 function buildActionDisabledReason(options: {
   actionLoading: boolean;
@@ -43,16 +30,6 @@ function buildActionDisabledReason(options: {
   }
 
   return missing.length > 0 ? missing.join('；') : null;
-}
-
-function wrapDisabledButton(button: ReactNode, disabledReason: string | null) {
-  if (!disabledReason) return button;
-
-  return (
-    <Tooltip title={disabledReason}>
-      <span className="slice-action-btn-wrap">{button}</span>
-    </Tooltip>
-  );
 }
 
 interface SelectedSegmentsPanelProps {
@@ -141,13 +118,13 @@ const SelectedSegmentsPanel = ({
               <span className="slice-selected-subtitle">（左键拖拽可继续新增片段）</span>
             </h3>
             <p className="slice-selected-stats">
-              总时长约 {formatClipTime(videoDuration)} · 播放位置 {formatClipTime(currentTime)}
+              总时长约 {formatVideoDuration(videoDuration)} · 播放位置 {formatVideoDuration(currentTime)}
               {selectedRanges.length > 0 && (
                 <>
                   {' '}
                   · 已选时长 {formatVideoDuration(Math.round(totalSelectedDuration))}
                   {isOverLimit && (
-                    <span className="slice-selected-over">（超出 {maxTotalDuration / 60} 分钟限制）</span>
+                    <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
                   )}
                 </>
               )}
@@ -156,8 +133,8 @@ const SelectedSegmentsPanel = ({
         </div>
 
         <div className="slice-selected-header-right">
-          {wrapDisabledButton(submitButton, disabledReason)}
-          {wrapDisabledButton(aiSelectButton, disabledReason)}
+          <DisabledActionWrap disabledReason={disabledReason}>{submitButton}</DisabledActionWrap>
+          <DisabledActionWrap disabledReason={disabledReason}>{aiSelectButton}</DisabledActionWrap>
           <button
             type="button"
             className="slice-secondary-btn slice-secondary-btn_danger"
@@ -182,7 +159,7 @@ const SelectedSegmentsPanel = ({
                 onClick={() => onActiveRangeSelect(range.id, range.start)}
               >
                 <span>
-                  片段 {index + 1}: {formatClipTime(range.start)} - {formatClipTime(range.end)}
+                  片段 {index + 1}: {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
                 </span>
                 <span
                   className="slice-segment-tag-remove"
