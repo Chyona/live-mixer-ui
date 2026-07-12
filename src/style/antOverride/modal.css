@@ -22,6 +22,12 @@
   background: var(--surface-card);
 }
 
+/* footer 默认 margin-top 会在 body 与 footer 之间露出 content 渐变底色 */
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-body + .ant-modal-footer {
+  margin-top: 0;
+  border-top: 1px solid var(--border-color);
+}
+
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm)
   .ant-modal-content
   > .ant-modal-body:last-child {
@@ -49,6 +55,12 @@
   padding: 16px 24px;
 }
 
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm)
+  .ant-modal-content
+  .ant-modal-body:has(+ .ant-modal-footer) {
+  padding-bottom: 8px;
+}
+
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-footer {
-  padding: 0 24px 20px;
+  padding: 12px 24px 20px;
 }
