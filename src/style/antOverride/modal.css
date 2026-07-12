@@ -1,3 +1,37 @@
+.ant-modal .ant-modal-header {
+  margin-bottom: 0;
+}
+
+.ant-modal .ant-modal-content {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* 渐变 header 弹窗：content 用 header 底色，避免圆角处露出白边 */
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content {
+  padding: 0;
+  background: var(--gradient-card-header);
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-body,
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-footer {
+  background: var(--surface-card);
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm)
+  .ant-modal-content
+  > .ant-modal-body:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-footer {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
 .ant-modal .ant-modal-content .ant-modal-close {
   border-radius: 50%;
   transition: all 0.3s ease;
@@ -5,10 +39,6 @@
 
 .ant-modal .ant-modal-content .ant-modal-close:hover {
   transform: rotate(90deg);
-}
-
-.ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content {
-  padding: 0;
 }
 
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content .ant-modal-header {

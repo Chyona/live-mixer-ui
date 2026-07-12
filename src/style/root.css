@@ -175,9 +175,12 @@
   --scrollbar-width: 12px;
   --scrollbar-border-radius: 6px;
 
-  /* 边框 */
+  /* 边框与圆角 */
   --border-color: #e0e7ff;
   --border-radius: 16px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
   /* 过渡效果 */
   --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);

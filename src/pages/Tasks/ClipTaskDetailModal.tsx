@@ -50,18 +50,7 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
         <Descriptions.Item label="进度">{task.progress}%</Descriptions.Item>
         <Descriptions.Item label="创建时间">{formatToDateTime(task.createdAt)}</Descriptions.Item>
         {task.message && <Descriptions.Item label="错误信息">{task.message}</Descriptions.Item>}
-        {!isAiTask && task.videoUrls.length > 0 && (
-          <Descriptions.Item label="成片地址">
-            {task.videoUrls.map((url) => (
-              <div key={url}>
-                <a href={url} target="_blank" rel="noreferrer" className="tasks-detail-link">
-                  {url}
-                </a>
-              </div>
-            ))}
-          </Descriptions.Item>
-        )}
-        {!isAiTask && task.draftUrls.length > 0 && (
+        {task.draftUrls.length > 0 && (
           <Descriptions.Item label="草稿地址">
             {task.draftUrls.map((url) => (
               <div key={url}>

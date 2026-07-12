@@ -4,6 +4,7 @@ import { ThemeConfig } from 'antd';
  * Theme configuration for Ant Design components.
  * https://ant.design/docs/react/customize-theme
  * 语义色与 src/style/root.css 保持一致。
+ * 圆角：按钮/输入 8px（radius-md），卡片/弹窗 12px（radius-lg）。
  */
 export const theme = {
   token: {
@@ -14,6 +15,8 @@ export const theme = {
     colorError: '#ff4d4f',
     fontSize: 14,
     colorBorder: '#e0e7ff',
+    borderRadius: 8,
+    borderRadiusLG: 12,
   },
   components: {
     Tabs: {},
@@ -22,13 +25,14 @@ export const theme = {
     },
     Drawer: {
       fontSizeLG: 16,
+      borderRadiusLG: 12,
     },
     Tooltip: {
       colorBgSpotlight: '#fff',
       colorTextLightSolid: 'rgba(0, 0, 0, 0.85)',
     },
     Modal: {
-      borderRadius: 2,
+      borderRadiusLG: 12,
       titleFontSize: 16,
       titleLineHeight: 1.5,
     },
