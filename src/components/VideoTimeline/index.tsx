@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, type CSSProperties, type FC, useMemo } from 'react';
 import { toast } from '~/utils/toast';
-import './index.less';
+import './index.css';
 
 export interface TimeRange {
   id: string;
@@ -330,7 +330,49 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
+  const prevActiveRangeIdRef = useRef<string | null>(null);
   const scrollRafRef = useRef<number>(0);
+  const programmaticScrollRef = useRef(false);
+  const userScrollLockedRef = useRef(false);
+  const userScrollUnlockTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const markManualScroll = useCallback(() => {
+    userScrollLockedRef.current = true;
+    if (userScrollUnlockTimerRef.current) {
+      clearTimeout(userScrollUnlockTimerRef.current);
+    }
+    userScrollUnlockTimerRef.current = setTimeout(() => {
+      userScrollLockedRef.current = false;
+    }, 3000);
+  }, []);
+
+  const applyScrollLeft = useCallback((wrapper: HTMLDivElement, targetScroll: number) => {
+    programmaticScrollRef.current = true;
+    wrapper.scrollLeft = targetScroll;
+  }, []);
+
+  const scrollTimeToCenter = useCallback(
+    (time: number) => {
+      const wrapper = wrapperRef.current;
+      const content = contentRef.current;
+      if (!wrapper || !content) return;
+      if (wrapper.scrollWidth <= wrapper.clientWidth) return;
+
+      userScrollLockedRef.current = false;
+      if (userScrollUnlockTimerRef.current) {
+        clearTimeout(userScrollUnlockTimerRef.current);
+        userScrollUnlockTimerRef.current = undefined;
+      }
+
+      const viewportWidth = wrapper.clientWidth;
+      const contentWidth = content.clientWidth;
+      const maxScroll = Math.max(0, contentWidth - viewportWidth);
+      const centerX = toTimelineX(time, safeScale);
+      const targetScroll = Math.max(0, Math.min(maxScroll, centerX - viewportWidth / 2));
+      applyScrollLeft(wrapper, targetScroll);
+    },
+    [safeScale, applyScrollLeft]
+  );
 
   const trackWidth =
     Number.isFinite(duration) && Number.isFinite(safeScale) ? Math.max(duration * safeScale, 0) : 0;
@@ -341,12 +383,17 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     [duration, safeScale, wrapperWidth]
   );
 
-  // 监听滚动，只渲染视野内刻度
+  // 监听滚动，只渲染视野内刻度；用户手动滚动时锁定，避免被播放/缩放抢滚动位置
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
     const handleScroll = () => {
+      if (!programmaticScrollRef.current) {
+        markManualScroll();
+      }
+      programmaticScrollRef.current = false;
+
       if (scrollRafRef.current) return;
       scrollRafRef.current = requestAnimationFrame(() => {
         setScrollOffset(wrapper.scrollLeft);
@@ -354,14 +401,29 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       });
     };
 
+    const handlePointerDown = (event: PointerEvent) => {
+      if (wrapper.scrollWidth <= wrapper.clientWidth) return;
+
+      const rect = wrapper.getBoundingClientRect();
+      const scrollbarZone = 16;
+      if (event.clientY >= rect.bottom - scrollbarZone) {
+        markManualScroll();
+      }
+    };
+
     wrapper.addEventListener('scroll', handleScroll);
+    wrapper.addEventListener('pointerdown', handlePointerDown);
     return () => {
       wrapper.removeEventListener('scroll', handleScroll);
+      wrapper.removeEventListener('pointerdown', handlePointerDown);
       if (scrollRafRef.current) {
         cancelAnimationFrame(scrollRafRef.current);
       }
+      if (userScrollUnlockTimerRef.current) {
+        clearTimeout(userScrollUnlockTimerRef.current);
+      }
     };
-  }, []);
+  }, [markManualScroll]);
 
   const ticks: Tick[] = useMemo(() => {
     const wrapper = wrapperRef.current;
@@ -603,31 +665,45 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     };
   }, [isDragging, getTimeFromX, handleMouseUp, resizingId, resizeEdge, resizePreview]);
 
-  // 缩放时自动将标尺保持在视野中央
+  // 缩放变化时将播放头滚入视野；播放过程中不自动抢滚动位置
   useEffect(() => {
     if (!wrapperRef.current || !contentRef.current) return;
+    if (userScrollLockedRef.current) return;
 
     const wrapper = wrapperRef.current;
     const playheadLeft = toTimelineX(currentTime, safeScale);
-    const wrapperWidth = wrapper.clientWidth;
+    const viewportWidth = wrapper.clientWidth;
     const contentWidth = contentRef.current.clientWidth;
 
-    // 确保 scrollLeft 不超出内容范围
-    const maxScroll = Math.max(0, contentWidth - wrapperWidth);
+    const maxScroll = Math.max(0, contentWidth - viewportWidth);
     let targetScroll = wrapper.scrollLeft;
 
-    // 如果标尺在视野外，将其滚动到中央
-    if (playheadLeft < targetScroll || playheadLeft > targetScroll + wrapperWidth) {
-      targetScroll = Math.max(0, Math.min(maxScroll, playheadLeft - wrapperWidth / 2));
+    if (playheadLeft < targetScroll || playheadLeft > targetScroll + viewportWidth) {
+      targetScroll = Math.max(0, Math.min(maxScroll, playheadLeft - viewportWidth / 2));
     }
 
-    // 如果内容比容器窄，滚动到开头
-    if (contentWidth <= wrapperWidth) {
+    if (contentWidth <= viewportWidth) {
       targetScroll = 0;
     }
 
-    wrapper.scrollLeft = targetScroll;
-  }, [safeScale, currentTime]);
+    applyScrollLeft(wrapper, targetScroll);
+  }, [safeScale, applyScrollLeft, duration]);
+
+  // 切换选中片段时，将片段滚到时间轴中央（如点击上方 tab）
+  useEffect(() => {
+    if (!activeRangeId) {
+      prevActiveRangeIdRef.current = null;
+      return;
+    }
+    if (activeRangeId === prevActiveRangeIdRef.current) return;
+    if (isDragging || resizingId) return;
+
+    const range = selectedRanges.find((item) => item.id === activeRangeId);
+    if (!range) return;
+
+    prevActiveRangeIdRef.current = activeRangeId;
+    scrollTimeToCenter((range.start + range.end) / 2);
+  }, [activeRangeId, isDragging, resizingId, scrollTimeToCenter, selectedRanges]);
 
   // Ctrl+滚轮切换 zoomLevel（1x~6x）
   useEffect(() => {

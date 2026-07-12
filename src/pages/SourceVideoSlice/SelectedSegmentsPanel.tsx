@@ -3,7 +3,7 @@ import DisabledActionWrap from '~/components/DisabledActionWrap';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
 import { formatVideoDuration } from '~/utils/duration';
-import '~/components/VideoTimeline/index.less';
+import '~/components/VideoTimeline/index.css';
 
 function buildActionDisabledReason(options: {
   actionLoading: boolean;

@@ -1,4 +1,8 @@
 .slice-page-breadcrumb {
+  margin-bottom: 0;
+}
+
+.slice-page-header .slice-page-breadcrumb {
   margin-bottom: 12px;
 }
 
