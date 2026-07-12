@@ -45,11 +45,11 @@ const SaveDraftModal = ({
         key={`${open}-${defaultName}`}
       >
         <Form.Item
-          label="草稿名称"
+          label="项目名称"
           name="name"
-          rules={[{ required: true, message: '请输入草稿名称' }]}
+          rules={[{ required: true, message: '请输入项目名称' }]}
         >
-          <Input placeholder="请输入草稿名称" maxLength={50} />
+          <Input placeholder="请输入项目名称" maxLength={50} />
         </Form.Item>
       </Form>
     </Modal>

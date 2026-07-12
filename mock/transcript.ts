@@ -157,7 +157,7 @@ export default [
     }) => {
       const name = body?.name?.trim();
       if (!name) {
-        return { code: 400, message: '请输入草稿名称', data: null };
+        return { code: 400, message: '请输入项目名称', data: null };
       }
 
       const draft: ManualSliceDraft = {

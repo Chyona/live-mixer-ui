@@ -1,3 +1,5 @@
+import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
+
 export type SliceProjectRecord = {
   id: string;
   sourceVideoId: string;
@@ -6,6 +8,7 @@ export type SliceProjectRecord = {
   projectName: string;
   segmentCount: number;
   updatedAt: string;
+  segments: SelectedCopySegment[];
 };
 
 const sliceProjectMap = new Map<string, SliceProjectRecord>();
@@ -13,7 +16,7 @@ const sliceProjectMap = new Map<string, SliceProjectRecord>();
 function seedSliceProjects() {
   if (sliceProjectMap.size > 0) return;
 
-  const seeds: Omit<SliceProjectRecord, 'id'>[] = [
+  const seeds: Omit<SliceProjectRecord, 'id' | 'segments'>[] = [
     {
       sourceVideoId: 'sv-001',
       sourceVideoName: '周末游戏直播回放',
@@ -43,6 +46,7 @@ function seedSliceProjects() {
   for (const item of seeds) {
     sliceProjectMap.set(item.sourceVideoId, {
       id: item.sourceVideoId,
+      segments: [],
       ...item,
     });
   }
@@ -56,6 +60,7 @@ export function upsertSliceProject(input: {
   remarkName?: string;
   projectName: string;
   segmentCount: number;
+  segments?: SelectedCopySegment[];
 }) {
   const existing = sliceProjectMap.get(input.sourceVideoId);
   const next: SliceProjectRecord = {
@@ -66,10 +71,38 @@ export function upsertSliceProject(input: {
     projectName: input.projectName,
     segmentCount: input.segmentCount,
     updatedAt: new Date().toISOString(),
+    segments: input.segments ?? existing?.segments ?? [],
   };
 
   sliceProjectMap.set(input.sourceVideoId, next);
   return next;
+}
+
+export function saveSliceProjectRecord(input: {
+  sourceVideoId: string;
+  sourceVideoName?: string;
+  remarkName?: string;
+  projectName?: string;
+  segments: SelectedCopySegment[];
+}) {
+  const existing = sliceProjectMap.get(input.sourceVideoId);
+  const projectName =
+    input.projectName?.trim() ||
+    existing?.projectName ||
+    `${input.sourceVideoName ?? existing?.sourceVideoName ?? '未命名源视频'} 剪辑项目`;
+
+  return upsertSliceProject({
+    sourceVideoId: input.sourceVideoId,
+    sourceVideoName: input.sourceVideoName ?? existing?.sourceVideoName,
+    remarkName: input.remarkName ?? existing?.remarkName,
+    projectName,
+    segmentCount: input.segments.length,
+    segments: input.segments,
+  });
+}
+
+export function getSliceProject(sourceVideoId: string) {
+  return sliceProjectMap.get(sourceVideoId) ?? null;
 }
 
 export function listSliceProjects() {
@@ -85,4 +118,12 @@ export function updateSliceProjectName(sourceVideoId: string, projectName: strin
   project.projectName = projectName;
   project.updatedAt = new Date().toISOString();
   return project;
+}
+
+export function toPublicSliceProject(project: SliceProjectRecord, options?: { withSegments?: boolean }) {
+  const { segments, ...rest } = project;
+  return {
+    ...rest,
+    ...(options?.withSegments ? { segments } : {}),
+  };
 }

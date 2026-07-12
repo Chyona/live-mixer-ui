@@ -1,6 +1,13 @@
 import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
-import { listSliceProjects, updateSliceProjectName } from './sliceProjectStore';
+import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
+import {
+  getSliceProject,
+  listSliceProjects,
+  saveSliceProjectRecord,
+  toPublicSliceProject,
+  updateSliceProjectName,
+} from './sliceProjectStore';
 
 function parseKeywords(input?: string) {
   if (!input?.trim()) return [];
@@ -28,7 +35,9 @@ export default [
       const pageSize = Number(query.pageSize || 10);
       const titleKeywords = parseKeywords(keyword);
 
-      const filtered = listSliceProjects().filter((item) => {
+      const filtered = listSliceProjects()
+        .filter((item) => item.segments.length > 0)
+        .filter((item) => {
         const updatedDate = item.updatedAt.slice(0, 10);
         if (date && updatedDate < date) return false;
         if (dateEnd && updatedDate > dateEnd) return false;
@@ -43,9 +52,60 @@ export default [
         code: 0,
         message: '',
         data: {
-          list: filtered.slice(start, start + pageSize),
+          list: filtered.slice(start, start + pageSize).map((item) => toPublicSliceProject(item)),
           total: filtered.length,
         },
+      };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/slice-projects/:id`,
+    method: 'get',
+    response: ({ query }: { query: { id: string } }) => {
+      const project = getSliceProject(query.id);
+      if (!project) {
+        return { code: 404, message: '剪辑项目不存在', data: null };
+      }
+
+      return {
+        code: 0,
+        message: '',
+        data: toPublicSliceProject(project, { withSegments: true }),
+      };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/slice-projects/:id/save`,
+    method: 'post',
+    response: ({
+      body,
+      query,
+    }: {
+      body: {
+        projectName?: string;
+        sourceVideoName?: string;
+        remarkName?: string;
+        segments?: SelectedCopySegment[];
+      };
+      query: { id: string };
+    }) => {
+      const segments = body?.segments ?? [];
+      if (!segments.length) {
+        return { code: 400, message: '请先选择至少一个片段', data: null };
+      }
+
+      const project = saveSliceProjectRecord({
+        sourceVideoId: query.id,
+        sourceVideoName: body?.sourceVideoName,
+        remarkName: body?.remarkName,
+        projectName: body?.projectName,
+        segments,
+      });
+
+      return {
+        code: 0,
+        message: '',
+        data: toPublicSliceProject(project, { withSegments: true }),
       };
     },
   },
@@ -63,7 +123,7 @@ export default [
         return { code: 404, message: '剪辑项目不存在', data: null };
       }
 
-      return { code: 0, message: '', data: project };
+      return { code: 0, message: '', data: toPublicSliceProject(project) };
     },
   },
 ] as MockMethod[];

@@ -1,3 +1,4 @@
+import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
 import type { BaseResponse } from './types';
 import { request } from './http';
 
@@ -9,6 +10,18 @@ export interface SliceProject {
   projectName: string;
   segmentCount: number;
   updatedAt: string;
+  segments?: SelectedCopySegment[];
+}
+
+export interface SliceProjectDetail extends SliceProject {
+  segments: SelectedCopySegment[];
+}
+
+export interface SaveSliceProjectParams {
+  projectName?: string;
+  sourceVideoName?: string;
+  remarkName?: string;
+  segments: SelectedCopySegment[];
 }
 
 export interface SliceProjectListParams {
@@ -30,6 +43,24 @@ export async function fetchSliceProjectList(
   return await request('/v1/slice-projects', {
     method: 'get',
     params,
+  });
+}
+
+export async function fetchSliceProjectDetail(
+  sourceVideoId: string
+): Promise<BaseResponse<SliceProjectDetail>> {
+  return await request(`/v1/slice-projects/${sourceVideoId}`, {
+    method: 'get',
+  });
+}
+
+export async function saveSliceProject(
+  sourceVideoId: string,
+  params: SaveSliceProjectParams
+): Promise<BaseResponse<SliceProjectDetail>> {
+  return await request(`/v1/slice-projects/${sourceVideoId}/save`, {
+    method: 'post',
+    data: params,
   });
 }
 

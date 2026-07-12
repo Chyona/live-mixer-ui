@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   LuCopy,
   LuGripVertical,
@@ -12,6 +12,7 @@ import type { ManualSliceMode, SelectedCopySegment } from '../types';
 import {
   formatSliceTime,
   getSpeakerColor,
+  getTextSelectionOffsets,
   getTotalSelectedDuration,
   reorderSegments,
 } from '../utils';
@@ -31,11 +32,16 @@ interface SelectedCopyPanelProps {
   onReorder: (segments: SelectedCopySegment[]) => void;
   onUpdateSegment: (segment: SelectedCopySegment) => void;
   onDeleteSegment: (segmentId: string) => void;
-  onSplitSegment: (segmentId: string) => void;
+  onDeleteSelectedRange: (
+    segmentId: string,
+    textElement: HTMLElement | null,
+    savedSelection?: { start: number; end: number } | null
+  ) => void;
   onCopySegment: (segmentId: string) => void;
   onClearAll: () => void;
   onPreview: () => void;
   onSave: () => void;
+  savingProject?: boolean;
   onSaveAs: () => void;
   onExportDraft: () => void;
   onSubmit: () => void;
@@ -55,16 +61,18 @@ const SelectedCopyPanel = ({
   onReorder,
   onUpdateSegment,
   onDeleteSegment,
-  onSplitSegment,
+  onDeleteSelectedRange,
   onCopySegment,
   onClearAll,
   onPreview,
   onSave,
+  savingProject = false,
   onSaveAs,
   onExportDraft,
   onSubmit,
 }: SelectedCopyPanelProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const textSelectionRef = useRef<{ segmentId: string; start: number; end: number } | null>(null);
   const totalDuration = getTotalSelectedDuration(segments);
   const isOverLimit = totalDuration > maxTotalDuration;
 
@@ -111,8 +119,8 @@ const SelectedCopyPanel = ({
           <LuPlay size={14} />
           连续预览
         </button>
-        <button type="button" onClick={onSave} disabled={segments.length === 0}>
-          保存
+        <button type="button" onClick={onSave} disabled={segments.length === 0 || savingProject}>
+          {savingProject ? '保存中...' : '保存'}
         </button>
         <button type="button" onClick={onSaveAs} disabled={segments.length === 0}>
           另存为
@@ -147,18 +155,29 @@ const SelectedCopyPanel = ({
               <div
                 key={segment.id}
                 className={`manual-slice-copy-item${isActive ? ' active' : ''}`}
-                draggable={mode === 'edit'}
-                onDragStart={() => setDragIndex(index)}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={() => handleDrop(index)}
                 onClick={() => {
+                  const selection = window.getSelection();
+                  if (selection && !selection.isCollapsed) return;
+
                   onActiveSegmentChange(segment.id);
                   onSeek(segment.start);
                 }}
               >
                 <div className="manual-slice-copy-item-head">
                   {mode === 'edit' && (
-                    <span className="manual-slice-copy-drag">
+                    <span
+                      className="manual-slice-copy-drag"
+                      draggable
+                      onDragStart={(event) => {
+                        setDragIndex(index);
+                        event.stopPropagation();
+                      }}
+                      onDragEnd={() => setDragIndex(null)}
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
                       <LuGripVertical size={14} />
                     </span>
                   )}
@@ -171,7 +190,21 @@ const SelectedCopyPanel = ({
                   </span>
                 </div>
 
-                <p className="manual-slice-copy-text">{segment.text}</p>
+                <p
+                  className={`manual-slice-copy-text${isActive ? ' manual-slice-copy-text_active' : ''}`}
+                  data-copy-text-id={segment.id}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onMouseUp={(event) => {
+                    event.stopPropagation();
+                    const offsets = getTextSelectionOffsets(event.currentTarget);
+                    textSelectionRef.current = offsets
+                      ? { segmentId: segment.id, ...offsets }
+                      : null;
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {segment.text}
+                </p>
 
                 {mode === 'edit' && isActive && (
                   <div className="manual-slice-copy-actions">
@@ -231,33 +264,44 @@ const SelectedCopyPanel = ({
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        onSplitSegment(segment.id);
-                      }}
-                    >
-                      <LuScissors size={14} />
-                      拆分
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
                         onCopySegment(segment.id);
                       }}
                     >
                       <LuCopy size={14} />
                       复制
                     </button>
-                    <button
-                      type="button"
-                      className="danger"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDeleteSegment(segment.id);
-                      }}
-                    >
-                      <LuTrash2 size={14} />
-                      删除
-                    </button>
+                    <div className="manual-slice-copy-actions-delete-group">
+                      <button
+                        type="button"
+                        className="danger"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const textElement = event.currentTarget
+                            .closest('.manual-slice-copy-item')
+                            ?.querySelector<HTMLElement>(`[data-copy-text-id="${segment.id}"]`) ?? null;
+                          const savedSelection =
+                            textSelectionRef.current?.segmentId === segment.id
+                              ? textSelectionRef.current
+                              : null;
+                          onDeleteSelectedRange(segment.id, textElement, savedSelection);
+                        }}
+                      >
+                        <LuScissors size={14} />
+                        部分删除
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDeleteSegment(segment.id);
+                        }}
+                      >
+                        <LuTrash2 size={14} />
+                        删除
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -265,6 +309,9 @@ const SelectedCopyPanel = ({
           })
         )}
       </div>
+      {segments.length > 0 && mode === 'edit' ? (
+        <p className="manual-slice-copy-tip">在片段文案中拖选文字后，点击「删除选中区」可移除选中内容及其对应时长。</p>
+      ) : null}
     </div>
   );
 };

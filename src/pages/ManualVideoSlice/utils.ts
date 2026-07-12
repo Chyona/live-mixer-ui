@@ -121,28 +121,85 @@ export function paragraphToCopySegment(paragraph: TranscriptParagraph): Selected
   return segmentsToCopySegment(paragraph.segments, paragraph.speakerId, paragraph.speakerName);
 }
 
-export function splitCopySegment(segment: SelectedCopySegment): [SelectedCopySegment, SelectedCopySegment] | null {
+export function deleteSelectedRangeFromSegment(
+  segment: SelectedCopySegment,
+  selectionStart: number,
+  selectionEnd: number
+): SelectedCopySegment[] | 'delete-all' | null {
+  const text = segment.text;
+
+  if (selectionStart < 0 || selectionEnd > text.length || selectionStart >= selectionEnd) {
+    return null;
+  }
+
+  if (selectionStart === 0 && selectionEnd === text.length) {
+    return 'delete-all';
+  }
+
   const duration = segment.end - segment.start;
-  if (duration <= 1) return null;
+  if (duration <= 0.5) return null;
 
-  const midTime = segment.start + duration / 2;
-  const midpoint = Math.ceil(segment.text.length / 2);
+  const timeAt = (offset: number) => segment.start + (duration * offset) / text.length;
+  const deleteStartTime = timeAt(selectionStart);
+  const deleteEndTime = timeAt(selectionEnd);
 
-  const first: SelectedCopySegment = {
-    ...segment,
-    id: `${segment.id}-a`,
-    text: segment.text.slice(0, midpoint),
-    end: midTime,
-  };
+  const beforeText = text.slice(0, selectionStart);
+  const afterText = text.slice(selectionEnd);
 
-  const second: SelectedCopySegment = {
-    ...segment,
-    id: `${segment.id}-b`,
-    text: segment.text.slice(midpoint),
-    start: midTime,
-  };
+  if (beforeText && afterText) {
+    if (deleteStartTime - segment.start < 0.5 || segment.end - deleteEndTime < 0.5) {
+      return null;
+    }
 
-  return [first, second];
+    return [
+      {
+        ...segment,
+        id: `${segment.id}-a-${Date.now()}`,
+        text: beforeText,
+        end: deleteStartTime,
+      },
+      {
+        ...segment,
+        id: `${segment.id}-b-${Date.now()}`,
+        text: afterText,
+        start: deleteEndTime,
+      },
+    ];
+  }
+
+  if (beforeText) {
+    if (deleteStartTime - segment.start < 0.5) return null;
+    return [{ ...segment, text: beforeText, end: deleteStartTime }];
+  }
+
+  if (afterText) {
+    if (segment.end - deleteEndTime < 0.5) return null;
+    return [{ ...segment, text: afterText, start: deleteEndTime }];
+  }
+
+  return null;
+}
+
+export function getTextSelectionOffsets(container: HTMLElement): { start: number; end: number } | null {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!container.contains(range.commonAncestorContainer)) return null;
+
+  const selectedText = range.toString();
+  if (!selectedText) return null;
+
+  const preRange = range.cloneRange();
+  preRange.selectNodeContents(container);
+  preRange.setEnd(range.startContainer, range.startOffset);
+
+  const start = preRange.toString().length;
+  const end = start + selectedText.length;
+
+  if (start >= end) return null;
+
+  return { start, end };
 }
 
 export function adjustSegmentTime(

@@ -44,7 +44,7 @@
 
 .manual-slice-video {
   width: 100%;
-  max-height: 420px;
+  max-height: 380px;
   border-radius: 8px;
   background: #000;
 }
@@ -293,6 +293,11 @@
 
 .manual-slice-copy-drag {
   color: var(--text-gray);
+  cursor: grab;
+}
+
+.manual-slice-copy-drag:active {
+  cursor: grabbing;
 }
 
 .manual-slice-copy-index {
@@ -304,6 +309,22 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.7;
+  user-select: text;
+  cursor: text;
+}
+
+.manual-slice-copy-text_active {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed rgba(22, 119, 255, 0.35);
+}
+
+.manual-slice-copy-tip {
+  margin: 10px 0 0;
+  color: var(--text-gray);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .manual-slice-copy-actions {
@@ -327,6 +348,15 @@
 
 .manual-slice-copy-actions button.danger {
   color: #cf1322;
+}
+
+.manual-slice-copy-actions-delete-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 6px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border-color, #eef0f4);
 }
 
 .manual-slice-preview-modal {
