@@ -302,6 +302,38 @@
   background: rgba(255, 77, 79, 0.1);
 }
 
+.slice-action-btn-wrap {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
+.slice-ai-select-btn {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-color);
+  background: #fff;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.45);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.slice-ai-select-btn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.slice-ai-select-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .slice-submit-btn-wrap {
   display: inline-flex;
   cursor: not-allowed;

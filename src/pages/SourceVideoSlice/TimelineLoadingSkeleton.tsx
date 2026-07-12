@@ -12,6 +12,7 @@ const TimelineLoadingSkeleton = () => {
           <div className="slice-timeline-loading__actions">
             <div className="slice-timeline-loading__pill slice-timeline-loading__pill_primary" />
             <div className="slice-timeline-loading__pill" />
+            <div className="slice-timeline-loading__pill" />
           </div>
         </div>
 

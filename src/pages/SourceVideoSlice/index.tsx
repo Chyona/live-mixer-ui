@@ -8,6 +8,7 @@ import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
 import { submitClip } from '~/services/slice';
+import { submitAiSliceSelection } from '~/services/aiSlice';
 import type { AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDate } from '~/utils/date';
@@ -32,6 +33,7 @@ const SourceVideoSlicePage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedRanges, setSelectedRanges] = useState<TimeRange[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [aiSelecting, setAiSelecting] = useState(false);
   const [autoPlayOnSelect, setAutoPlayOnSelect] = useState(true);
   const [timelineZoomLevel, setTimelineZoomLevel] = useState(1);
   const [activeRangeId, setActiveRangeId] = useState<string | null>(null);
@@ -216,6 +218,57 @@ const SourceVideoSlicePage = () => {
     }
   }, [navigate, selectedPrompt, selectedRanges, streamUrl, video]);
 
+  const handleAiSelect = useCallback(async () => {
+    if (!video || !id) return;
+
+    if (selectedRanges.length === 0) {
+      toast.warning('请先选择至少一个时间段');
+      return;
+    }
+
+    if (!selectedPrompt?.content.trim()) {
+      toast.warning('请先选择一个 AI 提示词');
+      return;
+    }
+
+    const clips = selectedRanges.map((range) => ({
+      start: Math.round(range.start),
+      end: Math.round(range.end),
+    }));
+
+    setAiSelecting(true);
+    try {
+      const response = await submitAiSliceSelection(video.id, {
+        prompt: selectedPrompt.content.trim(),
+        promptId: selectedPrompt.id,
+        clips,
+      });
+
+      if (response.code !== 0) {
+        toast.error(response.message || 'AI 选片失败');
+        return;
+      }
+
+      if (!response.data.segments.length) {
+        toast.warning('AI 未选出可用文案片段');
+        return;
+      }
+
+      toast.success('AI 选片完成，正在进入人工切片编辑');
+      navigate(`/source-videos/${id}/manual-slice`, {
+        state: { aiSelectedSegments: response.data.segments },
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.error('AI 选片失败');
+      }
+    } finally {
+      setAiSelecting(false);
+    }
+  }, [id, navigate, selectedPrompt, selectedRanges, video]);
+
   if (loading) {
     return (
       <div className="slice-page slice-page_loading">
@@ -298,6 +351,7 @@ const SourceVideoSlicePage = () => {
                 totalSelectedDuration={totalSelectedDuration}
                 maxTotalDuration={MAX_TOTAL_DURATION}
                 submitting={submitting}
+                aiSelecting={aiSelecting}
                 autoPlayOnSelect={autoPlayOnSelect}
                 onAutoPlayChange={setAutoPlayOnSelect}
                 zoomLevel={timelineZoomLevel}
@@ -305,6 +359,7 @@ const SourceVideoSlicePage = () => {
                 activeRangeId={activeRangeId}
                 onActiveRangeSelect={handleActiveRangeSelect}
                 onSubmit={() => void handleSubmit()}
+                onAiSelect={() => void handleAiSelect()}
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
                 hasSelectedPrompt={Boolean(selectedPrompt?.content.trim())}

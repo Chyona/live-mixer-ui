@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Empty, Spin } from 'antd';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -30,6 +30,7 @@ const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
 const ManualVideoSlicePage = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const playerRef = useRef<StreamVideoPlayerHandle>(null);
   const rafRef = useRef<number>(0);
 
@@ -117,6 +118,18 @@ const ManualVideoSlicePage = () => {
   useEffect(() => {
     void loadPageData();
   }, [loadPageData]);
+
+  useEffect(() => {
+    const state = location.state as { aiSelectedSegments?: SelectedCopySegment[] } | null;
+    const aiSelectedSegments = state?.aiSelectedSegments;
+
+    if (!aiSelectedSegments?.length) return;
+
+    setSelectedSegments(aiSelectedSegments);
+    setMode('edit');
+    toast.notify.success('AI 选片结果已载入，可继续编辑文案片段');
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
     setVideoDuration(0);

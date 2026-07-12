@@ -2,6 +2,7 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
 import type {
   ManualSliceDraft,
+  SelectedCopySegment,
   TranscriptParagraph,
   VideoTranscript,
 } from '../src/pages/ManualVideoSlice/types';
@@ -89,6 +90,39 @@ function getTranscript(sourceVideoId: string) {
   return transcriptCache.get(sourceVideoId)!;
 }
 
+function overlapsRange(start: number, end: number, clipStart: number, clipEnd: number) {
+  return end > clipStart && start < clipEnd;
+}
+
+function buildAiSelectedSegments(
+  transcript: VideoTranscript,
+  clips: Array<{ start: number; end: number }>
+): SelectedCopySegment[] {
+  const selected: SelectedCopySegment[] = [];
+  const seen = new Set<string>();
+
+  for (const clip of clips) {
+    for (const paragraph of transcript.paragraphs) {
+      for (const segment of paragraph.segments) {
+        if (!overlapsRange(segment.start, segment.end, clip.start, clip.end)) continue;
+        if (seen.has(segment.id)) continue;
+
+        seen.add(segment.id);
+        selected.push({
+          id: segment.id,
+          speakerId: paragraph.speakerId,
+          speakerName: paragraph.speakerName,
+          text: segment.text,
+          start: segment.start,
+          end: segment.end,
+        });
+      }
+    }
+  }
+
+  return selected.sort((a, b) => a.start - b.start);
+}
+
 export default [
   {
     url: `${API_PREFIX}/v1/source-videos/:id/transcript`,
@@ -137,6 +171,45 @@ export default [
       draftStore.set(query.id, list);
 
       return { code: 0, message: '', data: draft };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/source-videos/:id/ai-slice-select`,
+    method: 'post',
+    response: ({
+      body,
+      query,
+    }: {
+      body: {
+        prompt?: string;
+        promptId?: string;
+        clips?: Array<{ start: number; end: number }>;
+      };
+      query: { id: string };
+    }) => {
+      const prompt = body?.prompt?.trim();
+      const clips = body?.clips ?? [];
+
+      if (!prompt) {
+        return { code: 400, message: '请选择 AI 提示词', data: null };
+      }
+
+      if (!clips.length) {
+        return { code: 400, message: '请选择至少一个时间片段', data: null };
+      }
+
+      const transcript = getTranscript(query.id);
+      const segments = buildAiSelectedSegments(transcript, clips);
+
+      if (!segments.length) {
+        return { code: 400, message: '所选时间范围内未匹配到文案片段', data: null };
+      }
+
+      return {
+        code: 0,
+        message: '',
+        data: { segments },
+      };
     },
   },
 ] as MockMethod[];

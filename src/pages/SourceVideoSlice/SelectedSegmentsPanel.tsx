@@ -1,4 +1,5 @@
 import { Tooltip } from 'antd';
+import type { ReactNode } from 'react';
 import { LuX } from 'react-icons/lu';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
@@ -17,6 +18,43 @@ function formatClipTime(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
+function buildActionDisabledReason(options: {
+  actionLoading: boolean;
+  canAction: boolean;
+  selectedRangesCount: number;
+  hasSelectedPrompt: boolean;
+  isOverLimit: boolean;
+  maxTotalDuration: number;
+}) {
+  const { actionLoading, canAction, selectedRangesCount, hasSelectedPrompt, isOverLimit, maxTotalDuration } =
+    options;
+
+  if (actionLoading || canAction) return null;
+
+  const missing: string[] = [];
+  if (selectedRangesCount === 0) {
+    missing.push('请选中至少一个时间片段');
+  }
+  if (!hasSelectedPrompt) {
+    missing.push('请在上方提示词列表中选择合适的提示词');
+  }
+  if (isOverLimit) {
+    missing.push(`已选时长不超过 ${maxTotalDuration / 60} 分钟`);
+  }
+
+  return missing.length > 0 ? missing.join('；') : null;
+}
+
+function wrapDisabledButton(button: ReactNode, disabledReason: string | null) {
+  if (!disabledReason) return button;
+
+  return (
+    <Tooltip title={disabledReason}>
+      <span className="slice-action-btn-wrap">{button}</span>
+    </Tooltip>
+  );
+}
+
 interface SelectedSegmentsPanelProps {
   videoDuration: number;
   currentTime: number;
@@ -24,6 +62,7 @@ interface SelectedSegmentsPanelProps {
   totalSelectedDuration: number;
   maxTotalDuration: number;
   submitting: boolean;
+  aiSelecting: boolean;
   autoPlayOnSelect: boolean;
   onAutoPlayChange: (value: boolean) => void;
   zoomLevel: number;
@@ -31,6 +70,7 @@ interface SelectedSegmentsPanelProps {
   activeRangeId: string | null;
   onActiveRangeSelect: (rangeId: string, start: number) => void;
   onSubmit: () => void;
+  onAiSelect: () => void;
   onClearAll: () => void;
   onRangeDelete: (rangeId: string) => void;
   hasSelectedPrompt: boolean;
@@ -43,6 +83,7 @@ const SelectedSegmentsPanel = ({
   totalSelectedDuration,
   maxTotalDuration,
   submitting,
+  aiSelecting,
   autoPlayOnSelect,
   onAutoPlayChange,
   zoomLevel,
@@ -50,36 +91,41 @@ const SelectedSegmentsPanel = ({
   activeRangeId,
   onActiveRangeSelect,
   onSubmit,
+  onAiSelect,
   onClearAll,
   onRangeDelete,
   hasSelectedPrompt,
 }: SelectedSegmentsPanelProps) => {
   const isOverLimit = totalSelectedDuration > maxTotalDuration;
-  const canSubmit = selectedRanges.length > 0 && hasSelectedPrompt && !isOverLimit;
+  const canAction = selectedRanges.length > 0 && hasSelectedPrompt && !isOverLimit;
+  const actionLoading = submitting || aiSelecting;
 
-  const submitDisabledReason = (() => {
-    if (submitting || canSubmit) return null;
+  const disabledReason = buildActionDisabledReason({
+    actionLoading,
+    canAction,
+    selectedRangesCount: selectedRanges.length,
+    hasSelectedPrompt,
+    isOverLimit,
+    maxTotalDuration,
+  });
 
-    const missing: string[] = [];
-    if (selectedRanges.length === 0) {
-      missing.push('请选中至少一个时间片段');
-    }
-    if (!hasSelectedPrompt) {
-      missing.push('请在上方提示词列表中选择合适的提示词');
-    }
-    if (isOverLimit) {
-      missing.push(`已选时长不超过 ${maxTotalDuration / 60} 分钟`);
-    }
-
-    return missing.length > 0 ? `${missing.join('；')}` : null;
-  })();
+  const aiSelectButton = (
+    <button
+      type="button"
+      className="slice-ai-select-btn"
+      onClick={onAiSelect}
+      disabled={actionLoading || !canAction}
+    >
+      {aiSelecting ? '选片中...' : 'AI 选片'}
+    </button>
+  );
 
   const submitButton = (
     <button
       type="button"
       className="slice-submit-btn"
       onClick={onSubmit}
-      disabled={submitting || !canSubmit}
+      disabled={actionLoading || !canAction}
     >
       {submitting ? '处理中...' : '一键成片'}
     </button>
@@ -110,22 +156,13 @@ const SelectedSegmentsPanel = ({
         </div>
 
         <div className="slice-selected-header-right">
-          {/* <label className="slice-selected-autoplay">
-            <span>选中后自动播放</span>
-            <Switch size="small" checked={autoPlayOnSelect} onChange={onAutoPlayChange} />
-          </label> */}
-          {submitDisabledReason ? (
-            <Tooltip title={submitDisabledReason}>
-              <span className="slice-submit-btn-wrap">{submitButton}</span>
-            </Tooltip>
-          ) : (
-            submitButton
-          )}
+          {wrapDisabledButton(submitButton, disabledReason)}
+          {wrapDisabledButton(aiSelectButton, disabledReason)}
           <button
             type="button"
             className="slice-secondary-btn slice-secondary-btn_danger"
             onClick={onClearAll}
-            disabled={selectedRanges.length === 0}
+            disabled={selectedRanges.length === 0 || actionLoading}
           >
             清空全部
           </button>
