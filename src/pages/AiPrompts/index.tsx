@@ -216,17 +216,17 @@ const AiPromptsPage = () => {
       className="ai-prompts-page"
       title="提示词管理"
       description="管理 AI 切片使用的提示词，支持添加、搜索、备注与删除。"
-      action={
-        <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
-          添加提示词
-        </Button>
-      }
       toolbar={
         <ListSearchToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索名称 / 提示词 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          extra={
+            <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
+              添加提示词
+            </Button>
+          }
         />
       }
     >

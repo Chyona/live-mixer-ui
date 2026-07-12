@@ -363,11 +363,6 @@ const SourceVideosPage = () => {
       className="source-videos-page"
       title="源视频管理"
       description="管理直播源视频，支持添加、筛选、备注与删除。"
-      action={
-        <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
-          添加源视频
-        </Button>
-      }
       toolbar={
         <ListSearchToolbar
           keyword={keyword}
@@ -375,6 +370,11 @@ const SourceVideosPage = () => {
           keywordPlaceholder="搜索源视频名称 / 备注名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
           hasActiveAdvancedFilters={hasActiveAdvancedFilters}
+          extra={
+            <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
+              添加源视频
+            </Button>
+          }
           advanced={
             <>
               <div className="list-page__filter-field">

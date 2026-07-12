@@ -167,6 +167,8 @@
   --shadow-sm: 0 2px 8px rgba(var(--primary-color-rgb), 0.15);
   --shadow-md: 0 4px 12px rgba(var(--primary-color-rgb), 0.2);
   --shadow-lg: 0 8px 24px rgba(var(--primary-color-rgb), 0.25);
+  --surface-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --surface-divider: rgba(0, 0, 0, 0.04);
 
   /* 定义滚动条颜色变量 */
   --scrollbar-track: #f1f1f1;
@@ -188,18 +190,18 @@
   --active-bg-color: rgba(var(--primary-color-rgb), 0.1);
   --hover-bg-color: rgba(var(--primary-color-rgb), 0.05);
 
-  --sidebar-background: #f7f8fa;
-  --sidebar-border-color: #ebebeb;
-  --sidebar-shadow: none;
-  --sidebar-nav-text: #1a1a1a;
-  --sidebar-nav-text-secondary: #999;
-  --sidebar-nav-hover-bg: #eceef1;
-  --sidebar-nav-active-bg: var(--color-info-bg);
+  --sidebar-background: var(--surface-card);
+  --sidebar-border-color: var(--border-color);
+  --sidebar-shadow: 4px 0 16px -4px rgba(0, 0, 0, 0.02);
+  --sidebar-nav-text: var(--text-primary);
+  --sidebar-nav-text-secondary: var(--text-gray);
+  --sidebar-nav-hover-bg: var(--hover-bg-color);
+  --sidebar-nav-active-bg: var(--primary-color-bg);
   --sidebar-nav-active-text: var(--primary-color);
   --sidebar-nav-font-size: 14px;
-  --sidebar-avatar-bg: #ebedf0;
-  --sidebar-avatar-icon: #a0a7b4;
-  --sidebar-user-card-bg: #f0f2f5;
+  --sidebar-avatar-bg: var(--primary-color-bg);
+  --sidebar-avatar-icon: var(--primary-color);
+  --sidebar-user-card-bg: var(--surface-card-muted);
   --sidebar-width: 248px;
   --sidebar-collapsed-width: 72px;
   --content-padding: 16px;

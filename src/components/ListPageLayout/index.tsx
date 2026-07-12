@@ -27,9 +27,10 @@ const ListPageLayout = ({
         {action ? <div className="list-page__action">{action}</div> : null}
       </div>
 
-      {toolbar ? <div className="list-page__toolbar">{toolbar}</div> : null}
-
-      <div className="list-page__body">{children}</div>
+      <div className="list-page__content-card">
+        {toolbar ? <div className="list-page__toolbar">{toolbar}</div> : null}
+        <div className="list-page__body">{children}</div>
+      </div>
     </div>
   );
 };

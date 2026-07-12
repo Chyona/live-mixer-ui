@@ -4,10 +4,21 @@ const MIN_SCROLL_Y = 240;
 const HEADER_RESERVE = 55;
 const PAGINATION_RESERVE = 56;
 
-/** 根据表格容器高度计算 Ant Table `scroll.y`，使表头与分页固定、tbody 纵向滚动 */
+function measureTableContentHeight(el: HTMLElement) {
+  const scrollBody = el.querySelector('.ant-table-body') as HTMLElement | null;
+  if (scrollBody) {
+    return scrollBody.scrollHeight;
+  }
+
+  const tbody = el.querySelector('.ant-table-tbody') as HTMLElement | null;
+  return tbody?.getBoundingClientRect().height ?? 0;
+}
+
+/** 根据表格容器高度计算 Ant Table `scroll.y`；仅内容溢出时启用纵向滚动 */
 export function useListTableScrollY(deps: unknown[] = []) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scrollY, setScrollY] = useState<number>();
+  const [needScroll, setNeedScroll] = useState(false);
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -29,26 +40,42 @@ export function useListTableScrollY(deps: unknown[] = []) {
           ? 0
           : PAGINATION_RESERVE;
 
-      const bodyScrollHeight = wrapHeight - tableHeader - pagination - 2;
-      setScrollY(Math.max(MIN_SCROLL_Y, Math.floor(bodyScrollHeight)));
+      const maxBodyHeight = wrapHeight - tableHeader - pagination - 2;
+      const maxScrollY = Math.max(MIN_SCROLL_Y, Math.floor(maxBodyHeight));
+      const contentHeight = measureTableContentHeight(el);
+
+      if (contentHeight > maxScrollY) {
+        setNeedScroll(true);
+        setScrollY(maxScrollY);
+      } else {
+        setNeedScroll(false);
+        setScrollY(undefined);
+      }
     };
 
     measure();
+    const rafId = requestAnimationFrame(measure);
 
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure);
+    });
     ro.observe(el);
 
     const toolbar = el.closest('.list-page')?.querySelector('.list-page__toolbar');
     if (toolbar) ro.observe(toolbar);
 
+    const tbody = el.querySelector('.ant-table-tbody');
+    if (tbody) ro.observe(tbody);
+
     window.addEventListener('resize', measure);
 
     return () => {
+      cancelAnimationFrame(rafId);
       ro.disconnect();
       window.removeEventListener('resize', measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return { wrapRef, scrollY };
+  return { wrapRef, scrollY, needScroll };
 }

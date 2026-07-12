@@ -25,12 +25,14 @@ function filterClipTasks(query: Record<string, string | string[] | undefined>) {
   const date = typeof query.date === 'string' ? query.date : undefined;
   const dateEnd = typeof query.dateEnd === 'string' ? query.dateEnd : undefined;
   const keyword = typeof query.keyword === 'string' ? query.keyword : undefined;
+  const status = typeof query.status === 'string' ? query.status : undefined;
   const titleKeywords = parseKeywords(keyword);
 
   return clipTaskStore.filter((task) => {
     const createdDate = task.createdAt.slice(0, 10);
     if (date && createdDate < date) return false;
     if (dateEnd && createdDate > dateEnd) return false;
+    if (status && task.status !== status) return false;
 
     const titleText = `${task.sourceVideoName} ${task.clipName}`;
     if (!matchKeywords(titleText, titleKeywords)) return false;
@@ -45,12 +47,15 @@ export default [
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
       const filtered = filterClipTasks(query);
+      const page = Number(query.page || 1);
+      const pageSize = Number(query.pageSize || 10);
+      const start = (page - 1) * pageSize;
 
       return {
         code: 0,
         message: '',
         data: {
-          list: filtered.map(toPublicClipTask),
+          list: filtered.slice(start, start + pageSize).map(toPublicClipTask),
           total: filtered.length,
         },
       };

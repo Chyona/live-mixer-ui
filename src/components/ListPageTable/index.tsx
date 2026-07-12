@@ -24,14 +24,21 @@ function ListPageTable<T extends object>({
         ? pagination.current ?? pagination.pageSize ?? pagination.total
         : pagination;
 
-  const { wrapRef, scrollY } = useListTableScrollY([
+  const { wrapRef, scrollY, needScroll } = useListTableScrollY([
     loading,
     dataSource?.length,
     paginationKey,
   ]);
 
+  const wrapClassName = [
+    'list-page__table-wrap',
+    needScroll ? 'list-page__table-wrap--scrollable' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div ref={wrapRef} className="list-page__table-wrap">
+    <div ref={wrapRef} className={wrapClassName}>
       <Table<T>
         {...rest}
         loading={loading}
@@ -41,7 +48,7 @@ function ListPageTable<T extends object>({
         scroll={{
           ...scroll,
           x: scrollX ?? scroll?.x,
-          y: scrollY ?? scroll?.y,
+          ...(needScroll && scrollY !== undefined ? { y: scrollY } : {}),
         }}
       />
     </div>

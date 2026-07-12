@@ -32,6 +32,9 @@ export interface ClipTaskListParams {
   date?: string;
   dateEnd?: string;
   keyword?: string;
+  status?: ClipTaskItemStatus;
+  page?: number;
+  pageSize?: number;
 }
 
 export async function fetchClipTaskList(

@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Button, DatePicker } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { DatePicker, Select } from 'antd';
+import type { TablePaginationConfig } from 'antd/es/table';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListTableScrollY } from '~/hooks/useListTableScrollY';
@@ -9,6 +10,9 @@ import PageLoading from '~/components/PageLoading';
 import ClipTaskList from './ClipTaskList';
 import { useClipTasks } from './useClipTasks';
 import { useListFilters } from '~/hooks/useListFilters';
+import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
+import type { ClipTaskItemStatus } from '~/services/task';
+import { CLIP_TASK_STATUS_OPTIONS } from './utils';
 
 import './index.css';
 
@@ -29,21 +33,48 @@ const TasksPage = () => {
     dateFilters,
   } = useListFilters();
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [status, setStatus] = useState<ClipTaskItemStatus | undefined>();
+
   const filters = useMemo(
     () => ({
       date: dateFilters.date,
       dateEnd: dateFilters.dateEnd,
       keyword: appliedKeyword || undefined,
+      status,
+      page,
+      pageSize,
     }),
-    [appliedKeyword, dateFilters]
+    [appliedKeyword, dateFilters, page, pageSize, status]
   );
 
-  const { tasks, loading, polling, hasActiveTasks, reload, refreshTask } = useClipTasks(filters);
+  const { tasks, total, loading, polling, hasActiveTasks, reload, refreshTask } = useClipTasks(filters);
 
-  const { wrapRef, scrollY } = useListTableScrollY([loading, tasks.length]);
+  const { wrapRef, scrollY, needScroll } = useListTableScrollY([
+    loading,
+    tasks.length,
+    page,
+    pageSize,
+    total,
+  ]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedKeyword, dateFilters.date, dateFilters.dateEnd, status]);
+
+  useEffect(() => {
+    if (!loading && total > 0 && tasks.length === 0 && page > 1) {
+      setPage(page - 1);
+    }
+  }, [loading, page, tasks.length, total]);
 
   const applySearch = () => {
     applyKeywordSearch();
+  };
+
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
 
   return (
@@ -64,28 +95,57 @@ const TasksPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="任务名称 / 源视频名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
-          hasActiveAdvancedFilters={Boolean(dateRange?.[0])}
+          hasActiveAdvancedFilters={Boolean(dateRange?.[0] || status)}
           advanced={
-            <div className="list-page__filter-field">
-              <span className="list-page__filter-label">日期范围</span>
-              <DatePicker.RangePicker
-                value={dateRange}
-                allowClear
-                placeholder={['开始日期', '结束日期']}
-                onChange={handleDateChange}
-              />
-            </div>
+            <>
+              <div className="list-page__filter-field">
+                <span className="list-page__filter-label">状态</span>
+                <Select
+                  allowClear
+                  placeholder="全部状态"
+                  value={status}
+                  options={CLIP_TASK_STATUS_OPTIONS}
+                  onChange={(value) => setStatus(value)}
+                />
+              </div>
+              <div className="list-page__filter-field">
+                <span className="list-page__filter-label">日期范围</span>
+                <DatePicker.RangePicker
+                  value={dateRange}
+                  allowClear
+                  placeholder={['开始日期', '结束日期']}
+                  onChange={handleDateChange}
+                />
+              </div>
+            </>
           }
         />
       }
     >
-      <div ref={wrapRef} className="list-page__table-wrap list-page__panel">
+      <div
+        ref={wrapRef}
+        className={[
+          'list-page__table-wrap',
+          'list-page__panel',
+          needScroll ? 'list-page__table-wrap--scrollable' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {loading ? (
           <PageLoading />
         ) : (
           <ClipTaskList
             tasks={tasks}
-            scrollY={scrollY}
+            total={total}
+            scrollY={needScroll ? scrollY : undefined}
+            pagination={{
+              current: page,
+              pageSize,
+              total,
+              ...DEFAULT_TABLE_PAGINATION,
+            }}
+            onTableChange={handleTableChange}
             onChanged={reload}
             onRefreshTask={refreshTask}
           />

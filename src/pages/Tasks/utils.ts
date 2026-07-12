@@ -28,6 +28,14 @@ export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
   }
 }
 
+export const CLIP_TASK_STATUS_OPTIONS: { label: string; value: ClipTaskItemStatus }[] = [
+  { label: '等待中', value: 'pending' },
+  { label: '处理中', value: 'processing' },
+  { label: '生成中', value: 'running' },
+  { label: '已完成', value: 'success' },
+  { label: '失败', value: 'failed' },
+];
+
 export function isClipTaskActive(status: ClipTaskItemStatus): boolean {
   return status === 'pending' || status === 'processing' || status === 'running';
 }

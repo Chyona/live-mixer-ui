@@ -18,9 +18,7 @@ const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void
         <>
           <div className="user-dropdown-info">
             <div className="user-dropdown-avatar">
-              <Avatar size={48}>
-                <FaUser size={24} />
-              </Avatar>
+              <Avatar size={48} className="user-dropdown-avatar-icon" icon={<FaUser size={22} />} />
             </div>
             <div className="user-dropdown-details">
               <div className="user-dropdown-name">{userInfo.username || '未登录'}</div>
@@ -33,14 +31,10 @@ const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void
               </div>
             </div>
           </div>
-          <Divider className="my-3" />
-          <Flex className="user-dropdown-logout px-[12px] pt-1 pb-2">
-            <Button
-              color="default"
-              variant="filled"
-              className="user-dropdown-logout-btn flex-1"
-              onClick={() => logout()}
-            >
+          <Divider className="user-dropdown-divider" />
+          <Flex className="user-dropdown-logout">
+            <Button color="default"
+              variant="filled" className="user-dropdown-logout-btn" block onClick={() => logout()}>
               <FaSignOutAlt size={18} />
               <span>退出登录</span>
             </Button>

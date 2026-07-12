@@ -12,6 +12,10 @@ export interface ListSearchToolbarProps {
   /** 是否存在已生效的高级筛选项 */
   hasActiveAdvancedFilters?: boolean;
   defaultAdvancedOpen?: boolean;
+  /** 工具栏内联筛选项（如状态选择） */
+  inlineFilters?: ReactNode;
+  /** 工具栏右侧操作区（如「添加」按钮） */
+  extra?: ReactNode;
 }
 
 const ListSearchToolbar = ({
@@ -22,6 +26,8 @@ const ListSearchToolbar = ({
   advanced,
   hasActiveAdvancedFilters = false,
   defaultAdvancedOpen = false,
+  inlineFilters,
+  extra,
 }: ListSearchToolbarProps) => {
   const [advancedOpen, setAdvancedOpen] = useState(defaultAdvancedOpen);
 
@@ -38,15 +44,17 @@ const ListSearchToolbar = ({
           onPressEnter={onSearch}
         />
 
-        <Button type="primary" icon={<LuSearch size={14} />} onClick={onSearch}>
-          搜索
-        </Button>
+        {inlineFilters}
 
         {advanced ? (
           <Button
-            type={hasActiveAdvancedFilters ? 'primary' : 'default'}
-            ghost={hasActiveAdvancedFilters}
-            className="list-page__advanced-toggle"
+            type="text"
+            className={[
+              'list-page__advanced-toggle',
+              hasActiveAdvancedFilters ? 'list-page__advanced-toggle_active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             icon={<LuSlidersHorizontal size={14} />}
             onClick={() => setAdvancedOpen((open) => !open)}
           >
@@ -57,6 +65,8 @@ const ListSearchToolbar = ({
             />
           </Button>
         ) : null}
+
+        {extra ? <div className="list-page__toolbar-extra">{extra}</div> : null}
       </div>
 
       {advanced && advancedOpen ? (

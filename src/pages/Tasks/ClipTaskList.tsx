@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Popconfirm, Progress, Space, Table, Tooltip } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { LuCopy, LuDownload, LuEye, LuInfo, LuRefreshCw, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
@@ -22,7 +22,10 @@ import { copyTextToClipboard, getClipTaskStatusLabel, getGenerationTaskTypeLabel
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
+  total: number;
   scrollY?: number;
+  pagination: TablePaginationConfig;
+  onTableChange: (pagination: TablePaginationConfig) => void;
   onChanged: () => Promise<void>;
   onRefreshTask: (taskId: string) => Promise<void>;
 }
@@ -52,7 +55,15 @@ function renderStatusLabel(status: ClipTaskItemStatus, message?: string | null) 
   return label;
 }
 
-function ClipTaskList({ tasks, scrollY, onChanged, onRefreshTask }: ClipTaskListProps) {
+function ClipTaskList({
+  tasks,
+  total,
+  scrollY,
+  pagination,
+  onTableChange,
+  onChanged,
+  onRefreshTask,
+}: ClipTaskListProps) {
   const navigate = useNavigate();
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -228,7 +239,7 @@ function ClipTaskList({ tasks, scrollY, onChanged, onRefreshTask }: ClipTaskList
     [deletingId, handleCopyDraft, handleDelete, handleRefresh, handleViewAiResult, refreshingId]
   );
 
-  if (!tasks.length) {
+  if (total === 0) {
     return (
       <div className="tasks-empty">
         暂无生成任务，请从源视频切片页提交「一键成片」或「AI 选片」任务。
@@ -243,8 +254,9 @@ function ClipTaskList({ tasks, scrollY, onChanged, onRefreshTask }: ClipTaskList
         rowKey="taskId"
         columns={columns}
         dataSource={tasks}
-        pagination={false}
-        scroll={{ x: 1200, y: scrollY }}
+        pagination={pagination}
+        onChange={(nextPagination) => onTableChange(nextPagination)}
+        scroll={{ x: 1200, ...(scrollY !== undefined ? { y: scrollY } : {}) }}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />
