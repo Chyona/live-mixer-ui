@@ -14,14 +14,9 @@ export enum UserRole {
 
 export interface UserLoginResult {
   id: string;
-  name: string;
+  username: string;
   role?: UserRole;
   token?: string;
-  user_type?: number;
-  points?: number;
-  apiKey?: string;
-  vipLevel?: number;
-  vipExpireAt?: number;
 }
 
 export interface QRcodeResult {
@@ -40,28 +35,28 @@ export async function checkUserName(phone: string): Promise<BaseResponse<UserChe
 }
 
 export async function pwdlogin(params: UserLoginParams): Promise<BaseResponse<UserLoginResult>> {
-  return await request('/v1/user/auth/login', {
+  return await request('/v1/auth/login', {
     method: 'post',
     data: params,
   });
 }
 
 export async function getPhoneCode(phone: string) {
-  return await request('/v1/user/auth/sms', {
+  return await request('/v1/auth/sms', {
     method: 'post',
     data: { phone },
   });
 }
 
 export async function fetchQRCode(): Promise<BaseResponse<QRcodeResult>> {
-  return await request('/v1/user/auth/qrcode', {
+  return await request('/v1/auth/qrcode', {
     method: 'get',
     params: { sceneID: appConfig.authSceneId },
   });
 }
 
 export async function fetchQRCodeLogin(ticket: string): Promise<BaseResponse<UserLoginResult>> {
-  return await request('/v1/user/auth/qrcode/status', {
+  return await request('/v1/auth/qrcode/status', {
     method: 'get',
     params: { ticket, sceneID: appConfig.authSceneId },
   });

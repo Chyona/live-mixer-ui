@@ -23,7 +23,7 @@ const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void
               </Avatar>
             </div>
             <div className="user-dropdown-details">
-              <div className="user-dropdown-name">{userInfo.name || '未登录'}</div>
+              <div className="user-dropdown-name">{userInfo.username || '未登录'}</div>
               <div className="user-dropdown-id">
                 ID: {userInfo.id || '-'}
                 <Typography.Text
@@ -64,7 +64,7 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
           <Avatar size={40} className="zt-sider-user-avatar" icon={<FaUser size={18} />} />
           {!collapsed && (
             <Flex vertical align="flex-start" className="zt-sider-user-meta">
-              <span className="zt-sider-user-name">{userInfo.name || '未登录'}</span>
+              <span className="zt-sider-user-name">{userInfo.username || '未登录'}</span>
               <span className="zt-sider-user-id">
                 ID: {userInfo.id || '-'}
                 <Typography.Text
@@ -81,7 +81,7 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
       return (
         <Dropdown menu={userDropdownMenu(userInfo, logout)} trigger={['click']}>
           {collapsed ? (
-            <Tooltip title={userInfo.name || '用户'} placement="right">
+            <Tooltip title={userInfo.username || '用户'} placement="right">
               {userPanel}
             </Tooltip>
           ) : (
@@ -94,7 +94,7 @@ const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
     return (
       <Dropdown menu={userDropdownMenu(userInfo, logout)}>
         <Flex className="nav-user-avatar" align="center">
-          {userInfo.name?.slice(0, 1)}
+          {userInfo.username?.slice(0, 1)}
         </Flex>
       </Dropdown>
     );
