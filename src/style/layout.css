@@ -32,6 +32,15 @@
   background-color: var(--content-bg);
 }
 
+.zt-app-main:has(.list-page) {
+  overflow: hidden;
+}
+
+.zt-app--top-nav .zt-app-main:has(.list-page):not(.zt-app-main_full):not(.zt-app-main_with-sider) {
+  height: calc(100vh - var(--bs-header-height));
+  max-height: calc(100vh - var(--bs-header-height));
+}
+
 .zt-app-main_full {
   height: 100vh;
   max-height: 100vh;

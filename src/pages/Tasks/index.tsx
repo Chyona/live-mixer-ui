@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Button, DatePicker } from 'antd';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useListTableScrollY } from '~/hooks/useListTableScrollY';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
 import PageLoading from '~/components/PageLoading';
@@ -38,6 +39,8 @@ const TasksPage = () => {
   );
 
   const { tasks, loading, polling, hasActiveTasks, reload, refreshTask } = useClipTasks(filters);
+
+  const { wrapRef, scrollY } = useListTableScrollY([loading, tasks.length]);
 
   const applySearch = () => {
     applyKeywordSearch();
@@ -76,11 +79,16 @@ const TasksPage = () => {
         />
       }
     >
-      <div className="list-page__panel">
+      <div ref={wrapRef} className="list-page__table-wrap list-page__panel">
         {loading ? (
           <PageLoading />
         ) : (
-          <ClipTaskList tasks={tasks} onChanged={reload} onRefreshTask={refreshTask} />
+          <ClipTaskList
+            tasks={tasks}
+            scrollY={scrollY}
+            onChanged={reload}
+            onRefreshTask={refreshTask}
+          />
         )}
       </div>
     </ListPageLayout>

@@ -22,6 +22,7 @@ import { copyTextToClipboard, getClipTaskStatusLabel, getGenerationTaskTypeLabel
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
+  scrollY?: number;
   onChanged: () => Promise<void>;
   onRefreshTask: (taskId: string) => Promise<void>;
 }
@@ -51,7 +52,7 @@ function renderStatusLabel(status: ClipTaskItemStatus, message?: string | null) 
   return label;
 }
 
-function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
+function ClipTaskList({ tasks, scrollY, onChanged, onRefreshTask }: ClipTaskListProps) {
   const navigate = useNavigate();
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -238,12 +239,12 @@ function ClipTaskList({ tasks, onChanged, onRefreshTask }: ClipTaskListProps) {
   return (
     <>
       <Table
-        className="tasks-table"
+        className="list-page__table tasks-table"
         rowKey="taskId"
         columns={columns}
         dataSource={tasks}
         pagination={false}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1200, y: scrollY }}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />

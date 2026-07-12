@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Popconfirm, Table } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
+import ListPageTable from '~/components/ListPageTable';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -229,13 +230,12 @@ const AiPromptsPage = () => {
         />
       }
     >
-      <Table<AiPrompt>
-        className="list-page__table"
+      <ListPageTable<AiPrompt>
         rowKey="id"
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 1200 }}
+        scrollX={1200}
         pagination={{
           current: page,
           pageSize,

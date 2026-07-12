@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, DatePicker, Input, Popconfirm, Space, Table } from 'antd';
+import { Button, DatePicker, Input, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuCirclePlay, LuPlus, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
+import ListPageTable from '~/components/ListPageTable';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -400,13 +401,12 @@ const SourceVideosPage = () => {
         />
       }
     >
-      <Table<SourceVideo>
-        className="list-page__table"
+      <ListPageTable<SourceVideo>
         rowKey="id"
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 1320 }}
+        scrollX={1320}
         pagination={{
           current: page,
           pageSize,

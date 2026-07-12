@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, DatePicker, Space, Table } from 'antd';
+import { Button, DatePicker, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuSearch, LuTextSelect } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
+import ListPageTable from '~/components/ListPageTable';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
@@ -205,13 +206,12 @@ const SlicesPage = () => {
         />
       }
     >
-      <Table<SliceProject>
-        className="list-page__table"
+      <ListPageTable<SliceProject>
         rowKey="id"
         loading={loading}
         columns={columns}
         dataSource={list}
-        scroll={{ x: 1100 }}
+        scrollX={1100}
         pagination={{
           current: page,
           pageSize,
