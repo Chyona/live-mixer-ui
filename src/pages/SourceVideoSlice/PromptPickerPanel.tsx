@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { LuPencil, LuPlus, LuSearch } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
+import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { AppError } from '~/services/http';
 import { fetchAiPromptList, type AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
@@ -195,7 +196,10 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
                       <LuPencil size={13} />
                     </button>
                   </div>
-                  <p className="slice-prompt-panel__item-content">{item.content}</p>
+                  <EllipsisTooltip
+                    text={item.content}
+                    className="slice-prompt-panel__item-content"
+                  />
                 </div>
               </label>
             ))}

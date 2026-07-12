@@ -153,10 +153,9 @@
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slice-prompt-panel__loading {

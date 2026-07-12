@@ -79,6 +79,7 @@ const AiPromptFormModal = ({ open, prompt, onClose, onSuccess }: AiPromptFormMod
   return (
     <Modal
       title={isEdit ? '编辑提示词' : '添加提示词'}
+      width={720}
       open={open}
       okText={isEdit ? '保存' : '添加'}
       cancelText="取消"

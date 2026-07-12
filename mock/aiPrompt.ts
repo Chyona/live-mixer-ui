@@ -16,7 +16,7 @@ const CURRENT_USER_ID = '222';
 const CURRENT_USER_NAME = 'userName';
 
 const PROMPT_TEMPLATES = [
-  { name: '同商品连贯性', content: '确保生成的视频整体都是在讲同一个商品', remark: '时间轴切片默认提示词' },
+  { name: '同商品连贯性', content: '确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品', remark: '时间轴切片默认提示词' },
   { name: '人工文案成片', content: '根据人工选择的文案片段生成成片', remark: '人工切片场景' },
   { name: '高光集锦', content: '提取直播中最有感染力和转化力的片段，生成 30 秒以内的短视频', remark: '' },
   { name: '开场引流', content: '保留直播开场 30 秒内最具吸引力的内容，突出主题与福利信息', remark: '' },
