@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Space, Table } from 'antd';
+import { Button, DatePicker, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuSearch, LuTextSelect } from 'react-icons/lu';
 
@@ -186,18 +186,22 @@ const SlicesPage = () => {
       description="管理每个源视频对应的剪辑项目，单视频对应一个可二次编辑的切片项目。"
       toolbar={
         <ListSearchToolbar
-          showDateRange
-          dateRange={dateRange}
-          onDateChange={onDateChange}
-          searches={[
-            {
-              key: 'keyword',
-              placeholder: '标题搜索：项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）',
-              value: keyword,
-              onChange: setKeyword,
-            },
-          ]}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          keywordPlaceholder="搜索项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          hasActiveAdvancedFilters={Boolean(dateRange?.[0])}
+          advanced={
+            <div className="list-page__filter-field">
+              <span className="list-page__filter-label">日期范围</span>
+              <DatePicker.RangePicker
+                value={dateRange}
+                allowClear
+                placeholder={['开始日期', '结束日期']}
+                onChange={onDateChange}
+              />
+            </div>
+          }
         />
       }
     >

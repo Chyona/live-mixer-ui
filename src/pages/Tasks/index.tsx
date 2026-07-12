@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button } from 'antd';
+import { Button, DatePicker } from 'antd';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
 import ListPageLayout from '~/components/ListPageLayout';
@@ -57,18 +57,22 @@ const TasksPage = () => {
       }
       toolbar={
         <ListSearchToolbar
-          showDateRange
-          dateRange={dateRange}
-          onDateChange={handleDateChange}
-          searches={[
-            {
-              key: 'keyword',
-              placeholder: '标题搜索：源视频名称 / 成片名称（支持 关键词A+关键词B）',
-              value: keyword,
-              onChange: setKeyword,
-            },
-          ]}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          keywordPlaceholder="任务名称 / 源视频名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          hasActiveAdvancedFilters={Boolean(dateRange?.[0])}
+          advanced={
+            <div className="list-page__filter-field">
+              <span className="list-page__filter-label">日期范围</span>
+              <DatePicker.RangePicker
+                value={dateRange}
+                allowClear
+                placeholder={['开始日期', '结束日期']}
+                onChange={handleDateChange}
+              />
+            </div>
+          }
         />
       }
     >

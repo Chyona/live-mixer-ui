@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Input, Popconfirm, Space, Table } from 'antd';
+import { Button, DatePicker, Input, Popconfirm, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuCirclePlay, LuPlus, LuSearch, LuTextSelect, LuTrash2 } from 'react-icons/lu';
+import { LuCirclePlay, LuPlus, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
@@ -351,6 +351,8 @@ const SourceVideosPage = () => {
     [deletingId, navigate, retryingAsrId]
   );
 
+  const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedGlobalKeyword);
+
   const handleTableChange = (pagination: Parameters<typeof handleTablePaginationChange>[0]) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
@@ -367,28 +369,33 @@ const SourceVideosPage = () => {
       }
       toolbar={
         <ListSearchToolbar
-          showDateRange
-          dateRange={dateRange}
-          onDateChange={onDateChange}
-          searches={[
-            {
-              key: 'keyword',
-              placeholder: '标题搜索：源视频名称 / 备注名称（支持 关键词A+关键词B）',
-              value: keyword,
-              onChange: setKeyword,
-            },
-          ]}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          keywordPlaceholder="搜索源视频名称 / 备注名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
-          extra={
-            <Input
-              className="list-page__search-input"
-              allowClear
-              prefix={<LuSearch size={14} />}
-              placeholder="全局搜索：匹配所有文本字段"
-              value={globalKeyword}
-              onChange={(event) => setGlobalKeyword(event.target.value)}
-              onPressEnter={applySearch}
-            />
+          hasActiveAdvancedFilters={hasActiveAdvancedFilters}
+          advanced={
+            <>
+              <div className="list-page__filter-field">
+                <span className="list-page__filter-label">日期范围</span>
+                <DatePicker.RangePicker
+                  value={dateRange}
+                  allowClear
+                  placeholder={['开始日期', '结束日期']}
+                  onChange={onDateChange}
+                />
+              </div>
+              <div className="list-page__filter-field">
+                <span className="list-page__filter-label">全局搜索</span>
+                <Input
+                  allowClear
+                  placeholder="匹配所有文本字段"
+                  value={globalKeyword}
+                  onChange={(event) => setGlobalKeyword(event.target.value)}
+                  onPressEnter={applySearch}
+                />
+              </div>
+            </>
           }
         />
       }

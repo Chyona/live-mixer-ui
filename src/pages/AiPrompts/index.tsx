@@ -222,14 +222,9 @@ const AiPromptsPage = () => {
       }
       toolbar={
         <ListSearchToolbar
-          searches={[
-            {
-              key: 'keyword',
-              placeholder: '搜索：名称 / 提示词 / 备注（支持 关键词A+关键词B）',
-              value: keyword,
-              onChange: setKeyword,
-            },
-          ]}
+          keyword={keyword}
+          onKeywordChange={setKeyword}
+          keywordPlaceholder="搜索名称 / 提示词 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
         />
       }
