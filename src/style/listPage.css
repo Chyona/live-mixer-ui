@@ -72,7 +72,7 @@
 .list-page__search-primary {
   flex: 1 1 320px;
   min-width: 220px;
-  max-width: 480px;
+  max-width: 520px;
 }
 
 .list-page__search-primary .ant-input-prefix {
@@ -90,6 +90,10 @@
   font-size: 14px;
   color: var(--text-secondary);
   white-space: nowrap;
+}
+
+.list-page__filter-inline-label::after {
+  content: '：';
 }
 
 .list-page__filter-inline .ant-select {
@@ -148,6 +152,10 @@
   color: var(--text-secondary);
   line-height: 1.4;
   white-space: nowrap;
+}
+
+.list-page__filter-label::after {
+  content: '：';
 }
 
 .list-page__filter-field .ant-picker,
