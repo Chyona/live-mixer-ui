@@ -1,5 +1,6 @@
-import { Input } from 'antd';
-import { useEffect, useState } from 'react';
+import { Input, type InputRef } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { LuPencil } from 'react-icons/lu';
 
 import './index.css';
 
@@ -22,30 +23,77 @@ const RemarkEditor = ({
   className,
 }: RemarkEditorProps) => {
   const [draft, setDraft] = useState(value);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<InputRef>(null);
 
   useEffect(() => {
     setDraft(value);
   }, [value]);
 
+  useEffect(() => {
+    if (!editing) return;
+    inputRef.current?.focus({ cursor: 'all' });
+  }, [editing]);
+
+  const exitEditing = () => {
+    setEditing(false);
+  };
+
   const handleBlur = async () => {
     const trimmed = draft.trim();
     if (required && !trimmed) {
       setDraft(value);
+      exitEditing();
       return;
     }
-    if (trimmed === value) return;
+    if (trimmed === value) {
+      exitEditing();
+      return;
+    }
 
     setSaving(true);
     try {
       await onSave(trimmed);
     } finally {
       setSaving(false);
+      exitEditing();
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setDraft(value);
+      exitEditing();
+    }
+  };
+
+  if (!editing) {
+    const isEmpty = !value.trim();
+
+    return (
+      <button
+        type="button"
+        className={[
+          'remark-editor__display',
+          isEmpty ? 'remark-editor__display_empty' : '',
+          className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        title={isEmpty ? placeholder : value}
+        onClick={() => setEditing(true)}
+      >
+        <span className="remark-editor__display-text">{isEmpty ? placeholder : value}</span>
+        <LuPencil className="remark-editor__display-icon" size={14} aria-hidden />
+      </button>
+    );
+  }
+
   return (
     <Input
+      ref={inputRef}
       className={['remark-editor', className].filter(Boolean).join(' ')}
       value={draft}
       placeholder={placeholder}
@@ -53,6 +101,7 @@ const RemarkEditor = ({
       disabled={saving}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => void handleBlur()}
+      onKeyDown={handleKeyDown}
       onPressEnter={(event) => event.currentTarget.blur()}
     />
   );
