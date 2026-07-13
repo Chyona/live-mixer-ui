@@ -58,6 +58,7 @@ const ManualVideoSlicePage = () => {
   const [paragraphs, setParagraphs] = useState<TranscriptParagraph[]>([]);
   const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [videoPanelHeight, setVideoPanelHeight] = useState<number | null>(null);
@@ -162,6 +163,7 @@ const ManualVideoSlicePage = () => {
   useEffect(() => {
     setVideoDuration(0);
     setCurrentTime(0);
+    setIsVideoPlaying(false);
     setSelectedSegments([]);
     setActiveSegmentId(null);
   }, [streamUrl]);
@@ -187,6 +189,29 @@ const ManualVideoSlicePage = () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [videoDuration]);
+
+  useEffect(() => {
+    const videoEl = playerRef.current?.video;
+    if (!videoEl || videoDuration <= 0) {
+      setIsVideoPlaying(false);
+      return;
+    }
+
+    const syncPlayingState = () => {
+      setIsVideoPlaying(!videoEl.paused && !videoEl.ended);
+    };
+
+    syncPlayingState();
+    videoEl.addEventListener('play', syncPlayingState);
+    videoEl.addEventListener('pause', syncPlayingState);
+    videoEl.addEventListener('ended', syncPlayingState);
+
+    return () => {
+      videoEl.removeEventListener('play', syncPlayingState);
+      videoEl.removeEventListener('pause', syncPlayingState);
+      videoEl.removeEventListener('ended', syncPlayingState);
+    };
+  }, [videoDuration, streamUrl]);
 
   const handleSeek = useCallback((time: number) => {
     const videoEl = playerRef.current?.video;
@@ -555,6 +580,7 @@ const ManualVideoSlicePage = () => {
                 }}
                 activeParagraphId={activeSync?.paragraphId ?? null}
                 activeSegmentId={activeSync?.segmentId ?? null}
+                isVideoPlaying={isVideoPlaying}
                 activeMatchIndex={activeMatchIndex}
                 matchParagraphIds={matchParagraphIds}
                 onSeek={handleSeek}

@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { Switch, Tooltip } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TranscriptParagraph } from '../types';
 import KeywordSearchBar from './KeywordSearchBar';
 import {
@@ -20,11 +21,14 @@ interface TranscriptPanelProps {
   embedded?: boolean;
   activeParagraphId: string | null;
   activeSegmentId: string | null;
+  isVideoPlaying?: boolean;
   activeMatchIndex: number;
   matchParagraphIds: string[];
   onSeek: (time: number) => void;
   onSelectSegment: (segment: ReturnType<typeof paragraphToCopySegment>) => void;
 }
+
+const TRANSCRIPT_AUTO_SCROLL_KEY = 'manual-slice-transcript-auto-scroll';
 
 const TranscriptPanel = ({
   paragraphs,
@@ -35,15 +39,66 @@ const TranscriptPanel = ({
   embedded = false,
   activeParagraphId,
   activeSegmentId,
+  isVideoPlaying = false,
   activeMatchIndex,
   matchParagraphIds,
   onSeek,
   onSelectSegment,
 }: TranscriptPanelProps) => {
+  const transcriptBodyRef = useRef<HTMLDivElement>(null);
+  const lastAutoScrolledParagraphRef = useRef<string | null>(null);
+  const autoScrollPauseTimerRef = useRef<number>(0);
+  const [autoScrollPaused, setAutoScrollPaused] = useState(false);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
+    return localStorage.getItem(TRANSCRIPT_AUTO_SCROLL_KEY) !== 'false';
+  });
+
   const speakerIds = useMemo(
     () => [...new Set(paragraphs.map((item) => item.speakerId))],
     [paragraphs]
   );
+
+  const pauseAutoScroll = useCallback(() => {
+    if (!autoScrollEnabled) return;
+
+    setAutoScrollPaused(true);
+    window.clearTimeout(autoScrollPauseTimerRef.current);
+    autoScrollPauseTimerRef.current = window.setTimeout(() => {
+      setAutoScrollPaused(false);
+      lastAutoScrolledParagraphRef.current = null;
+    }, 2500);
+  }, [autoScrollEnabled]);
+
+  const handleAutoScrollEnabledChange = (checked: boolean) => {
+    setAutoScrollEnabled(checked);
+    localStorage.setItem(TRANSCRIPT_AUTO_SCROLL_KEY, String(checked));
+    setAutoScrollPaused(false);
+    lastAutoScrolledParagraphRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(autoScrollPauseTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!autoScrollEnabled || !isVideoPlaying || autoScrollPaused || !activeParagraphId) return;
+    if (lastAutoScrolledParagraphRef.current === activeParagraphId) return;
+
+    const container = transcriptBodyRef.current;
+    const node = container?.querySelector<HTMLElement>(
+      `[data-paragraph-id="${activeParagraphId}"]`
+    );
+    if (!container || !node) return;
+
+    lastAutoScrolledParagraphRef.current = activeParagraphId;
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [activeParagraphId, autoScrollEnabled, autoScrollPaused, isVideoPlaying]);
+
+  useEffect(() => {
+    lastAutoScrolledParagraphRef.current = null;
+  }, [paragraphs]);
 
   const handleParagraphClick = (paragraph: TranscriptParagraph) => {
     const range = getParagraphRange(paragraph);
@@ -90,8 +145,24 @@ const TranscriptPanel = ({
           onPrevMatch={onPrevMatch}
           onNextMatch={onNextMatch}
         />
+        <Tooltip title="开启后，播放视频时文案列表会自动滚动，将当前朗读段落居中显示">
+          <label className="slice-editor-transcript-follow">
+            <Switch
+              size="small"
+              checked={autoScrollEnabled}
+              onChange={handleAutoScrollEnabledChange}
+            />
+            <span>定位跟随</span>
+          </label>
+        </Tooltip>
       </div>
-      <div className="slice-editor-transcript-body">
+      <div
+        ref={transcriptBodyRef}
+        className="slice-editor-transcript-body"
+        onWheel={pauseAutoScroll}
+        onTouchStart={pauseAutoScroll}
+        onMouseDown={pauseAutoScroll}
+      >
         {paragraphs.map((paragraph) => {
           const color = getSpeakerColor(paragraph.speakerId, speakerIds);
           const isActiveParagraph = activeParagraphId === paragraph.id;

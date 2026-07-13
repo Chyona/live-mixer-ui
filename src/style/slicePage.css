@@ -327,6 +327,23 @@
   flex-shrink: 0;
 }
 
+.slice-editor-transcript-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--text-gray);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.slice-editor-transcript-follow .ant-switch {
+  flex-shrink: 0;
+}
+
 .slice-editor-panel_copy {
   display: flex;
   flex-direction: column;
@@ -872,6 +889,11 @@
 
   .slice-editor-transcript-head .slice-editor-panel-title {
     width: 100%;
+  }
+
+  .slice-editor-transcript-follow {
+    margin-left: 0;
+    align-self: flex-end;
   }
 
   .slice-editor-copy-top {
