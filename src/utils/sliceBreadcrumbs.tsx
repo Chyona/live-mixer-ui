@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { BreadcrumbProps } from 'antd';
 import type { SliceEditorEntryFrom } from '~/routes/links';
-import { buildSourceVideoSliceLink } from '~/routes/links';
 
 type SlicePageKind = 'timeline' | 'manual';
 
@@ -27,14 +26,6 @@ export function buildSliceBreadcrumbItems(options: {
 
   if (entryFrom === 'tasks') {
     return [{ title: <Link to="/tasks">任务管理</Link> }, { title: currentTitle }];
-  }
-
-  if (pageKind === 'manual') {
-    return [
-      { title: <Link to="/source-videos">源视频管理</Link> },
-      { title: <Link to={buildSourceVideoSliceLink(sourceVideoId)}>时间轴切片</Link> },
-      { title: currentTitle },
-    ];
   }
 
   return [{ title: <Link to="/source-videos">源视频管理</Link> }, { title: currentTitle }];
