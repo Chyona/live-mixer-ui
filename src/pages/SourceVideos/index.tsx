@@ -21,7 +21,7 @@ import {
   updateSourceVideoRemark,
   type SourceVideo,
 } from '~/services/sourceVideo';
-import { formatToDate } from '~/utils/date';
+import { formatToDate, formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
@@ -274,11 +274,11 @@ const SourceVideosPage = () => {
         render: (duration: number) => formatVideoDuration(duration),
       },
       {
-        title: '时间',
+        title: '创建时间',
         dataIndex: 'created_at',
         key: 'created_at',
         width: 160,
-        render: (created_at: string) => formatToDate(created_at),
+        render: (created_at: string) => formatToDateTime(created_at),
       },
       {
         title: 'ASR解析进度',

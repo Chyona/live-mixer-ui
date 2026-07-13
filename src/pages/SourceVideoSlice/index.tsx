@@ -11,7 +11,7 @@ import { submitClip } from '~/services/slice';
 import { submitAiSliceSelection } from '~/services/aiSlice';
 import type { AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
-import { formatToDate } from '~/utils/date';
+import { formatToDate, formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
@@ -441,7 +441,7 @@ const SourceVideoSlicePage = () => {
             <Descriptions.Item label="时长">
               {video.duration > 0 ? formatVideoDuration(video.duration) : '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="日期">{formatToDate(video.created_at)}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">{formatToDateTime(video.created_at)}</Descriptions.Item>
             <Descriptions.Item label="预览状态">
               {canPreview ? `支持浏览器预览（${videoFormatLabel}）` : hasVideoUrl ? '格式不受支持' : '暂无播放地址'}
             </Descriptions.Item>

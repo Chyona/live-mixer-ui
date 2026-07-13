@@ -274,7 +274,7 @@
 
 .zt-sider-footer {
   margin-top: auto;
-  padding: 12px 8px 16px;
+  padding: 16px;
   /* border-top: 1px solid var(--sidebar-border-color); */
   flex-shrink: 0;
 }
