@@ -74,6 +74,18 @@
   min-height: 420px;
 }
 
+.slice-editor-transcript-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.slice-editor-transcript-head .slice-editor-panel-title {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
 .slice-editor-panel_copy {
   position: sticky;
   top: 12px;
@@ -90,21 +102,43 @@
   padding: 12px 14px;
 }
 
+.slice-editor-search_inline {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.slice-editor-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slice-editor-search_inline .slice-editor-search-row {
+  width: 100%;
+}
+
+.slice-editor-search_inline .slice-editor-search-input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.slice-editor-search_inline .slice-editor-search-meta {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
 .slice-editor-search-input-wrap {
-  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 .slice-editor-search-icon {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  z-index: 1;
-  transform: translateY(-50%);
   color: var(--text-gray);
-}
-
-.slice-editor-search-input-wrap .ant-input {
-  padding-left: 34px;
 }
 
 .slice-editor-search-meta {

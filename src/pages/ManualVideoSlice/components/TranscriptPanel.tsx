@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { TranscriptParagraph } from '../types';
+import KeywordSearchBar from './KeywordSearchBar';
 import {
   collectSegmentsFromSelection,
   getParagraphRange,
@@ -13,6 +14,9 @@ import {
 interface TranscriptPanelProps {
   paragraphs: TranscriptParagraph[];
   keyword: string;
+  onKeywordChange: (value: string) => void;
+  onPrevMatch: () => void;
+  onNextMatch: () => void;
   activeParagraphId: string | null;
   activeSegmentId: string | null;
   activeMatchIndex: number;
@@ -24,6 +28,9 @@ interface TranscriptPanelProps {
 const TranscriptPanel = ({
   paragraphs,
   keyword,
+  onKeywordChange,
+  onPrevMatch,
+  onNextMatch,
   activeParagraphId,
   activeSegmentId,
   activeMatchIndex,
@@ -65,7 +72,17 @@ const TranscriptPanel = ({
 
   return (
     <div className="slice-editor-panel slice-editor-panel_transcript">
-      <div className="slice-editor-panel-title">文案分段</div>
+      <div className="slice-editor-transcript-head">
+        <div className="slice-editor-panel-title">文案分段</div>
+        <KeywordSearchBar
+          value={keyword}
+          onChange={onKeywordChange}
+          matchCount={matchParagraphIds.length}
+          activeMatchIndex={activeMatchIndex}
+          onPrevMatch={onPrevMatch}
+          onNextMatch={onNextMatch}
+        />
+      </div>
       <div className="slice-editor-transcript-body">
         {paragraphs.map((paragraph) => {
           const color = getSpeakerColor(paragraph.speakerId, speakerIds);

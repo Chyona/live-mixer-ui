@@ -16,7 +16,6 @@ import { isPlayableVideoUrl } from '~/utils/videoUrl';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import type { SliceEditorEntryFrom } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
-import KeywordSearchBar from './components/KeywordSearchBar';
 import TranscriptPanel from './components/TranscriptPanel';
 import SelectedCopyPanel from './components/SelectedCopyPanel';
 import SegmentPreviewModal from './components/SegmentPreviewModal';
@@ -511,11 +510,13 @@ const ManualVideoSlicePage = () => {
               />
             </div>
 
-            <KeywordSearchBar
-              value={keyword}
-              onChange={setKeyword}
-              matchCount={matchParagraphIds.length}
-              activeMatchIndex={activeMatchIndex}
+            <TranscriptPanel
+              paragraphs={paragraphs.map((paragraph) => ({
+                ...paragraph,
+                id: paragraph.id,
+              }))}
+              keyword={keyword}
+              onKeywordChange={setKeyword}
               onPrevMatch={() => {
                 if (!matchParagraphIds.length) return;
                 const nextIndex =
@@ -529,14 +530,6 @@ const ManualVideoSlicePage = () => {
                 setActiveMatchIndex(nextIndex);
                 scrollToMatch(nextIndex);
               }}
-            />
-
-            <TranscriptPanel
-              paragraphs={paragraphs.map((paragraph) => ({
-                ...paragraph,
-                id: paragraph.id,
-              }))}
-              keyword={keyword}
               activeParagraphId={activeSync?.paragraphId ?? null}
               activeSegmentId={activeSync?.segmentId ?? null}
               activeMatchIndex={activeMatchIndex}
