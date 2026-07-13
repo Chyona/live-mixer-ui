@@ -10,6 +10,7 @@ import {
   highlightKeyword,
   paragraphToCopySegment,
   segmentsToCopySegment,
+  scrollElementIntoViewPreferUpper,
 } from '../utils';
 
 interface TranscriptPanelProps {
@@ -93,7 +94,7 @@ const TranscriptPanel = ({
     if (!container || !node) return;
 
     lastAutoScrolledParagraphRef.current = activeParagraphId;
-    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scrollElementIntoViewPreferUpper(container, node);
   }, [activeParagraphId, autoScrollEnabled, autoScrollPaused, isVideoPlaying]);
 
   useEffect(() => {
@@ -135,28 +136,30 @@ const TranscriptPanel = ({
           : 'slice-editor-panel slice-editor-panel_transcript'
       }
     >
-      <div className="slice-editor-transcript-head">
-        <div className="slice-editor-transcript-head-main">
-          <div className="slice-editor-panel-title">文案分段</div>
-          <Tooltip title="开启后，播放视频时文案列表会自动滚动，将当前朗读段落居中显示">
-            <label className="slice-editor-transcript-follow">
-              <Switch
-                size="small"
-                checked={autoScrollEnabled}
-                onChange={handleAutoScrollEnabledChange}
-              />
-              <span>定位跟随</span>
-            </label>
-          </Tooltip>
+      <div className="slice-editor-transcript-top">
+        <div className="slice-editor-transcript-head">
+          <div className="slice-editor-transcript-head-main">
+            <div className="slice-editor-panel-title">文案分段</div>
+            <Tooltip title="开启后，播放视频时文案列表会自动滚动，将当前朗读段落居中显示">
+              <label className="slice-editor-transcript-follow">
+                <Switch
+                  size="small"
+                  checked={autoScrollEnabled}
+                  onChange={handleAutoScrollEnabledChange}
+                />
+                <span>定位跟随</span>
+              </label>
+            </Tooltip>
+          </div>
+          <KeywordSearchBar
+            value={keyword}
+            onChange={onKeywordChange}
+            matchCount={matchParagraphIds.length}
+            activeMatchIndex={activeMatchIndex}
+            onPrevMatch={onPrevMatch}
+            onNextMatch={onNextMatch}
+          />
         </div>
-        <KeywordSearchBar
-          value={keyword}
-          onChange={onKeywordChange}
-          matchCount={matchParagraphIds.length}
-          activeMatchIndex={activeMatchIndex}
-          onPrevMatch={onPrevMatch}
-          onNextMatch={onNextMatch}
-        />
       </div>
       <div
         ref={transcriptBodyRef}
@@ -214,7 +217,12 @@ const TranscriptPanel = ({
                       data-segment-id={segment.id}
                       data-start={segment.start}
                       data-end={segment.end}
-                      className={activeSegmentId === segment.id ? 'segment-active' : ''}
+                      className={[
+                        'slice-editor-segment-clause',
+                        activeSegmentId === segment.id ? 'segment-active' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                       onClick={(event) => {
                         event.stopPropagation();
                         onSeek(segment.start);

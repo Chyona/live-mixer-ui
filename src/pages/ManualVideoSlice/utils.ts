@@ -46,6 +46,59 @@ export function getParagraphRange(paragraph: TranscriptParagraph) {
   };
 }
 
+const CLAUSE_SPLIT_RE = /(?<=[，。！？；])/g;
+
+export function splitTextToSegments(
+  text: string,
+  start: number,
+  end: number,
+  idPrefix: string
+): TranscriptSegment[] {
+  const parts = text.split(CLAUSE_SPLIT_RE).filter(Boolean);
+  if (parts.length <= 1) {
+    return [{ id: idPrefix, start, end, text }];
+  }
+
+  const duration = end - start;
+  let cursor = start;
+
+  return parts.map((part, index) => {
+    const ratio = part.length / text.length;
+    const segmentEnd = index === parts.length - 1 ? end : cursor + duration * ratio;
+    const segment = {
+      id: `${idPrefix}-${index}`,
+      start: cursor,
+      end: segmentEnd,
+      text: part,
+    };
+    cursor = segmentEnd;
+    return segment;
+  });
+}
+
+export function normalizeParagraphSegments(paragraph: TranscriptParagraph): TranscriptParagraph {
+  if (paragraph.segments.length > 1) {
+    return {
+      ...paragraph,
+      segments: paragraph.segments.flatMap((segment) =>
+        splitTextToSegments(segment.text, segment.start, segment.end, segment.id)
+      ),
+    };
+  }
+
+  const only = paragraph.segments[0];
+  if (!only) return paragraph;
+
+  return {
+    ...paragraph,
+    segments: splitTextToSegments(only.text, only.start, only.end, only.id),
+  };
+}
+
+export function normalizeTranscriptParagraphs(paragraphs: TranscriptParagraph[]) {
+  return paragraphs.map(normalizeParagraphSegments);
+}
+
 export function findActiveSegment(
   paragraphs: TranscriptParagraph[],
   currentTime: number
@@ -284,4 +337,24 @@ export function downloadTextFile(content: string, filename: string) {
 
 export function sanitizeDownloadFilename(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, '_').trim() || 'subtitle';
+}
+
+/** 文案列表滚动时，将目标元素置于视口偏上位置（默认约 36%，居中为 50%） */
+export function scrollElementIntoViewPreferUpper(
+  container: HTMLElement,
+  element: HTMLElement,
+  options?: { behavior?: ScrollBehavior; viewportRatio?: number }
+) {
+  const behavior = options?.behavior ?? 'smooth';
+  const viewportRatio = options?.viewportRatio ?? 0.36;
+  const containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const elementTop = elementRect.top - containerRect.top + container.scrollTop;
+  const elementCenter = elementTop + element.offsetHeight / 2;
+  const targetScrollTop = elementCenter - container.clientHeight * viewportRatio;
+
+  container.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior,
+  });
 }

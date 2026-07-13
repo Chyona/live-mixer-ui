@@ -5,10 +5,21 @@
 }
 
 .slice-page_manual {
+  --slice-editor-inner-padding: 16px;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.slice-page_manual .slice-editor-panel_left,
+.slice-page_manual .slice-editor-panel_copy {
+  padding: var(--slice-editor-inner-padding);
+}
+
+.slice-page_manual .slice-editor-video-block {
+  margin-inline: calc(-1 * var(--slice-editor-inner-padding));
+  padding-bottom: 16px;
 }
 
 .slice-page_manual > .slice-page-header {
@@ -276,14 +287,6 @@
   background: var(--color-primary-bg-subtle);
 }
 
-.slice-editor-transcript-section {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  padding-top: 16px;
-}
-
 .slice-editor-panel-title {
   margin-bottom: 10px;
   font-size: 14px;
@@ -302,8 +305,7 @@
   padding: 16px;
 }
 
-.slice-editor-panel_transcript,
-.slice-editor-transcript-section {
+.slice-editor-panel_transcript {
   display: flex;
   flex-direction: column;
   min-height: 420px;
@@ -312,6 +314,14 @@
 .slice-page_manual .slice-editor-panel_transcript,
 .slice-page_manual .slice-editor-transcript-section {
   min-height: 0;
+}
+
+.slice-editor-transcript-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
 }
 
 .slice-editor-transcript-head {
@@ -453,6 +463,9 @@
 }
 
 .slice-editor-transcript-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding-right: 2px;
 }
 
@@ -464,27 +477,30 @@
 }
 
 .slice-editor-paragraph {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border: 1px solid transparent;
+  margin-bottom: 0;
+  padding: 12px;
+  border: 1px solid var(--surface-item-border);
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--surface-item-bg);
   cursor: pointer;
   transition:
     border-color 0.2s ease,
     background 0.2s ease;
 }
 
-.slice-editor-paragraph:hover,
-.slice-editor-paragraph.active,
-.slice-editor-paragraph.matched-current {
-  border-color: var(--color-primary-border-subtle);
-  background: var(--color-primary-bg-subtle);
+.slice-editor-paragraph:hover {
+  border-color: #e8eaee;
+  background: var(--surface-item-active-bg);
 }
 
-.slice-editor-paragraph.active,
+.slice-editor-paragraph.active {
+  border-color: var(--surface-item-active-border);
+  background: var(--surface-item-reading-bg);
+}
+
 .slice-editor-paragraph.matched-current {
-  border-color: var(--color-primary-border-strong);
+  border-color: var(--surface-item-active-border);
+  background: var(--surface-item-active-bg);
 }
 
 .slice-editor-paragraph.matched mark {
@@ -515,21 +531,27 @@
 .slice-editor-paragraph-text {
   color: var(--text-color);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.9;
   user-select: text;
 }
 
 .slice-editor-paragraph-text .segment-active {
-  padding: 0 1px;
-  border-radius: 3px;
-  background: var(--color-primary-bg-soft);
+  display: inline;
+  padding: 2px 6px;
+  margin: 0 4px 4px 0;
+  border-radius: 6px;
+  background: var(--surface-item-reading-text-bg);
+  box-decoration-break: clone;
 }
 
-.slice-editor-transcript-tip {
+.slice-editor-transcript-tip,
+.slice-editor-copy-tip {
   flex-shrink: 0;
-  margin: 10px 0 0;
+  margin: 14px 0 0;
+  padding-top: 4px;
   color: var(--text-gray);
   font-size: 12px;
+  line-height: 1.6;
 }
 
 .slice-editor-paragraph:last-child {
@@ -538,8 +560,9 @@
 
 .slice-editor-copy-top {
   flex-shrink: 0;
-  margin: -16px -16px 12px;
-  padding: 12px 16px;
+  margin: calc(-1 * var(--slice-editor-inner-padding, 16px))
+    calc(-1 * var(--slice-editor-inner-padding, 16px)) 12px;
+  padding: 12px var(--slice-editor-inner-padding, 16px);
   border-bottom: none;
   box-shadow: inset 0 -1px 0 var(--surface-divider);
   background: var(--surface-card);
@@ -556,25 +579,6 @@
 
 .slice-editor-copy-head .slice-editor-panel-title {
   margin-bottom: 0;
-}
-
-.slice-editor-copy-head_empty {
-  margin-bottom: 0;
-}
-
-.slice-editor-copy-submit-empty {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border: 1px solid var(--primary-color);
-  border-radius: 8px;
-  background: var(--primary-color);
-  color: #fff;
-  font-size: 12px;
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
 }
 
 .slice-editor-copy-stats {
@@ -720,15 +724,23 @@
 
 .slice-editor-copy-item {
   padding: 12px;
-  border: 1px solid var(--border-color, #eef0f4);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: #fafbfd;
+  background: var(--surface-item-bg);
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.slice-editor-copy-item:hover {
+  border-color: #e8eaee;
+  background: var(--surface-item-active-bg);
 }
 
 .slice-editor-copy-item.active {
-  border-color: var(--color-primary-border-strong);
-  background: var(--color-primary-bg-subtle);
+  border-color: var(--surface-item-active-border);
+  background: var(--surface-item-active-bg);
 }
 
 .slice-editor-copy-item_dragging {
@@ -736,8 +748,8 @@
 }
 
 .slice-editor-copy-item_drag-over {
-  border-color: var(--color-primary-border-strong);
-  box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.18);
+  border-color: var(--surface-item-active-border);
+  background: var(--surface-item-active-bg);
 }
 
 .slice-editor-copy-item-head {
@@ -785,15 +797,7 @@
   padding: 8px 10px;
   border-radius: 8px;
   background: var(--surface-card);
-  border: 1px dashed var(--color-primary-border-subtle);
-}
-
-.slice-editor-copy-tip {
-  flex-shrink: 0;
-  margin: 10px 0 0;
-  color: var(--text-gray);
-  font-size: 12px;
-  line-height: 1.6;
+  border: 1px dashed var(--surface-item-active-border);
 }
 
 .slice-editor-copy-actions {
@@ -851,83 +855,6 @@
 .slice-editor-preview-meta p {
   margin: 0;
   line-height: 1.6;
-}
-
-@media (max-width: 1100px) {
-  .slice-editor-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .slice-page_manual {
-    height: auto;
-    overflow: visible;
-  }
-
-  .slice-page_manual .slice-editor-layout,
-  .slice-page_manual .slice-editor-main {
-    overflow: visible;
-  }
-
-  .slice-page_manual .slice-editor-transcript-body {
-    max-height: min(420px, 48vh);
-  }
-
-  .slice-page_manual .slice-editor-copy-list {
-    max-height: min(360px, 40vh);
-  }
-
-  .slice-page_manual .slice-editor-video-block {
-    padding-bottom: 10px;
-  }
-
-  .slice-page_manual .slice-editor-video-block .stream-video-player {
-    height: auto;
-    padding-inline: 0;
-  }
-
-  .slice-page_manual .slice-editor-video {
-    width: 100%;
-    height: auto;
-    max-height: min(36vh, 220px);
-    aspect-ratio: 16 / 9;
-    object-fit: contain;
-  }
-
-  .slice-editor-transcript-head {
-    gap: 8px;
-  }
-
-  .slice-editor-transcript-follow {
-    margin-left: auto;
-    align-self: auto;
-  }
-
-  .slice-editor-copy-top {
-    margin-inline: -12px;
-    padding-inline: 12px;
-  }
-
-  .slice-editor-copy-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .slice-editor-copy-toolbar-group,
-  .slice-editor-copy-toolbar-group_primary {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .slice-editor-copy-toolbar-group_primary {
-    padding-top: 8px;
-    border-top: 1px solid var(--border-color, #eef0f4);
-  }
-
-  .slice-editor-copy-toolbar button.primary {
-    flex: 1;
-    width: 100%;
-    justify-content: center;
-  }
 }
 
 /* 时间轴切片 */

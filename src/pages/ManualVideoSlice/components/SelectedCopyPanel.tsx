@@ -89,68 +89,48 @@ const SelectedCopyPanel = ({
   return (
     <div className="slice-editor-panel slice-editor-panel_copy">
       <div className="slice-editor-copy-top">
-        <div
-          className={[
-            'slice-editor-copy-head',
-            !hasSegments ? 'slice-editor-copy-head_empty' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
+        <div className="slice-editor-copy-head">
           <div className="slice-editor-panel-title">文案预览</div>
-          {hasSegments ? (
-            <span
-              className={[
-                'slice-editor-copy-stats',
-                isOverLimit ? 'slice-editor-copy-stats_over' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              已选 {segments.length} 段 · 总时长 {formatVideoDuration(Math.round(totalDuration))}
-              {isOverLimit ? ` · 超出 ${maxTotalDuration / 60} 分钟限制` : ''}
-            </span>
-          ) : null}
-          {!hasSegments ? (
-            <button
-              type="button"
-              className="slice-editor-copy-submit-empty primary"
-              disabled
-            >
-              提交成片
-            </button>
-          ) : null}
+          <span
+            className={[
+              'slice-editor-copy-stats',
+              isOverLimit ? 'slice-editor-copy-stats_over' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            已选 {segments.length} 段 · 总时长 {formatVideoDuration(Math.round(totalDuration))}
+            {isOverLimit ? ` · 超出 ${maxTotalDuration / 60} 分钟限制` : ''}
+          </span>
         </div>
 
-        {hasSegments ? (
-          <div className="slice-editor-copy-toolbar">
-            <div className="slice-editor-copy-toolbar-group">
-              <button type="button" onClick={onPreview}>
-                <LuPlay size={14} />
-                连续预览
-              </button>
-              <button type="button" onClick={onSave} disabled={savingProject}>
-                {savingProject ? '保存中...' : '保存'}
-              </button>
-              <button type="button" onClick={onSaveAs}>
-                另存为
-              </button>
-            </div>
-            <div className="slice-editor-copy-toolbar-group slice-editor-copy-toolbar-group_primary">
-              <button type="button" className="danger" onClick={onClearAll}>
-                清空
-              </button>
-              <button
-                type="button"
-                className="primary"
-                onClick={onSubmit}
-                disabled={submitting || isOverLimit}
-              >
-                {submitting ? '提交中...' : '提交成片'}
-              </button>
-            </div>
+        <div className="slice-editor-copy-toolbar">
+          <div className="slice-editor-copy-toolbar-group">
+            <button type="button" onClick={onPreview} disabled={!hasSegments}>
+              <LuPlay size={14} />
+              连续预览
+            </button>
+            <button type="button" onClick={onSave} disabled={!hasSegments || savingProject}>
+              {savingProject ? '保存中...' : '保存'}
+            </button>
+            <button type="button" onClick={onSaveAs} disabled={!hasSegments}>
+              另存为
+            </button>
           </div>
-        ) : null}
+          <div className="slice-editor-copy-toolbar-group slice-editor-copy-toolbar-group_primary">
+            <button type="button" className="danger" onClick={onClearAll} disabled={!hasSegments}>
+              清空
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={onSubmit}
+              disabled={!hasSegments || submitting || isOverLimit}
+            >
+              {submitting ? '提交中...' : '提交成片'}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div

@@ -99,6 +99,13 @@
   --content-bg: var(--light-color);
   --surface-card: #fff;
   --surface-card-muted: #f8faff;
+  --surface-item-bg: #f8f9fb;
+  --surface-item-border: #eef0f4;
+  --surface-item-active-bg: #f4f5f7;
+  --surface-item-reading-bg: rgba(var(--primary-color-rgb), 0.06);
+  --surface-item-reading-text-bg: rgba(var(--primary-color-rgb), 0.15);
+  --surface-item-highlight-bg: #eceef2;
+  --surface-item-active-border: rgba(var(--primary-color-rgb), 0.36);
   --dark-color: #2c3e50;
   --gray-color: #95a5a6;
 

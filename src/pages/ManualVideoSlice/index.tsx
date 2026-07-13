@@ -33,7 +33,9 @@ import {
   findActiveSegment,
   getParagraphText,
   getTextSelectionOffsets,
+  normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
+  scrollElementIntoViewPreferUpper,
 } from './utils';
 
 interface ManualSliceLocationState {
@@ -122,7 +124,7 @@ const ManualVideoSlicePage = () => {
         toast.notify.error(transcriptRes.message || '加载文案失败');
         setParagraphs([]);
       } else {
-        setParagraphs(transcriptRes.data.paragraphs);
+        setParagraphs(normalizeTranscriptParagraphs(transcriptRes.data.paragraphs));
       }
 
       setVideo(videoRes.data);
@@ -457,8 +459,13 @@ const ManualVideoSlicePage = () => {
     const paragraphId = matchParagraphIds[index];
     if (!paragraphId) return;
 
-    const node = document.querySelector(`[data-paragraph-id="${paragraphId}"]`);
-    node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const node = document.querySelector<HTMLElement>(`[data-paragraph-id="${paragraphId}"]`);
+    const container = node?.closest<HTMLElement>('.slice-editor-transcript-body');
+    if (node && container) {
+      scrollElementIntoViewPreferUpper(container, node);
+    } else {
+      node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     const paragraph = paragraphs.find((item) => item.id === paragraphId);
     if (paragraph?.segments[0]) {
