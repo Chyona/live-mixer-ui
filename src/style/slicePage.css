@@ -504,42 +504,41 @@
   margin-bottom: 0;
 }
 
-.slice-editor-copy-header {
+.slice-editor-copy-top {
   flex-shrink: 0;
+  margin: -16px -16px 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #eef0f4);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.slice-editor-copy-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.slice-editor-copy-head .slice-editor-panel-title {
+  margin-bottom: 0;
 }
 
 .slice-editor-copy-stats {
-  margin: 4px 0 0;
-  color: var(--text-gray);
-  font-size: 12px;
-}
-
-.slice-editor-mode-tabs {
   display: inline-flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: #f5f7fb;
-}
-
-.slice-editor-mode-tabs button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
   color: var(--text-gray);
   font-size: 12px;
-  cursor: pointer;
+  line-height: 1.6;
 }
 
-.slice-editor-mode-tabs button.active {
-  background: var(--surface-card);
-  color: var(--primary-color);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+.slice-editor-copy-stats_over {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-danger-dark);
 }
 
 .slice-editor-copy-toolbar {
@@ -547,37 +546,74 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+}
+
+.slice-editor-copy-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+}
+
+.slice-editor-copy-toolbar-group_primary {
+  margin-left: auto;
 }
 
 .slice-editor-copy-toolbar button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border: 1px solid var(--border-color, #eef0f4);
   border-radius: 8px;
   background: var(--surface-card);
   color: var(--text-color);
   font-size: 12px;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.slice-editor-copy-toolbar button:not(:disabled):hover {
+  border-color: var(--color-primary-border-subtle);
+  background: var(--color-primary-bg-subtle);
+  color: var(--primary-color);
 }
 
 .slice-editor-copy-toolbar button.primary {
-  margin-left: auto;
   border-color: var(--primary-color);
   background: var(--primary-color);
   color: #fff;
+  box-shadow: 0 1px 2px rgba(var(--primary-color-rgb), 0.24);
+}
+
+.slice-editor-copy-toolbar button.primary:not(:disabled):hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  filter: brightness(1.04);
 }
 
 .slice-editor-copy-toolbar button.danger {
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--color-danger-dark);
+}
+
+.slice-editor-copy-toolbar button.danger:not(:disabled):hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.06);
   color: var(--color-danger-dark);
 }
 
 .slice-editor-copy-toolbar button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .slice-editor-copy-empty {
@@ -602,6 +638,15 @@
   background: var(--color-primary-bg-subtle);
 }
 
+.slice-editor-copy-item_dragging {
+  opacity: 0.55;
+}
+
+.slice-editor-copy-item_drag-over {
+  border-color: var(--color-primary-border-strong);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.18);
+}
+
 .slice-editor-copy-item-head {
   display: flex;
   align-items: center;
@@ -611,8 +656,19 @@
 }
 
 .slice-editor-copy-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
   color: var(--text-gray);
   cursor: grab;
+  touch-action: none;
+}
+
+.slice-editor-copy-drag:hover {
+  color: var(--primary-color);
 }
 
 .slice-editor-copy-drag:active {
@@ -753,8 +809,29 @@
     width: 100%;
   }
 
-  .slice-editor-copy-toolbar button.primary {
+  .slice-editor-copy-top {
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .slice-editor-copy-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .slice-editor-copy-toolbar-group,
+  .slice-editor-copy-toolbar-group_primary {
+    width: 100%;
     margin-left: 0;
+  }
+
+  .slice-editor-copy-toolbar-group_primary {
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color, #eef0f4);
+  }
+
+  .slice-editor-copy-toolbar button.primary {
+    flex: 1;
     width: 100%;
     justify-content: center;
   }

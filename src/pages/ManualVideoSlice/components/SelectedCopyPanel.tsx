@@ -2,13 +2,11 @@ import { useRef, useState } from 'react';
 import {
   LuCopy,
   LuGripVertical,
-  LuMinus,
   LuPlay,
-  LuPlus,
   LuScissors,
   LuTrash2,
 } from 'react-icons/lu';
-import type { ManualSliceMode, SelectedCopySegment } from '../types';
+import type { SelectedCopySegment } from '../types';
 import {
   formatSliceTime,
   getSpeakerColor,
@@ -19,18 +17,14 @@ import {
 import { formatVideoDuration } from '~/utils/duration';
 
 interface SelectedCopyPanelProps {
-  mode: ManualSliceMode;
   segments: SelectedCopySegment[];
   activeSegmentId: string | null;
   speakerIds: string[];
-  videoDuration: number;
   maxTotalDuration: number;
   submitting: boolean;
-  onModeChange: (mode: ManualSliceMode) => void;
   onActiveSegmentChange: (segmentId: string | null) => void;
   onSeek: (time: number) => void;
   onReorder: (segments: SelectedCopySegment[]) => void;
-  onUpdateSegment: (segment: SelectedCopySegment) => void;
   onDeleteSegment: (segmentId: string) => void;
   onDeleteSelectedRange: (
     segmentId: string,
@@ -48,18 +42,14 @@ interface SelectedCopyPanelProps {
 }
 
 const SelectedCopyPanel = ({
-  mode,
   segments,
   activeSegmentId,
   speakerIds,
-  videoDuration,
   maxTotalDuration,
   submitting,
-  onModeChange,
   onActiveSegmentChange,
   onSeek,
   onReorder,
-  onUpdateSegment,
   onDeleteSegment,
   onDeleteSelectedRange,
   onCopySegment,
@@ -72,73 +62,77 @@ const SelectedCopyPanel = ({
   onSubmit,
 }: SelectedCopyPanelProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const textSelectionRef = useRef<{ segmentId: string; start: number; end: number } | null>(null);
   const totalDuration = getTotalSelectedDuration(segments);
   const isOverLimit = totalDuration > maxTotalDuration;
+  const canDragSort = segments.length > 1;
+
+  const resetDragState = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
 
   const handleDrop = (toIndex: number) => {
-    if (dragIndex == null) return;
+    if (dragIndex == null || dragIndex === toIndex) {
+      resetDragState();
+      return;
+    }
+
     onReorder(reorderSegments(segments, dragIndex, toIndex));
-    setDragIndex(null);
+    resetDragState();
   };
 
   return (
     <div className="slice-editor-panel slice-editor-panel_copy">
-      <div className="slice-editor-copy-header">
-        <div>
+      <div className="slice-editor-copy-top">
+        <div className="slice-editor-copy-head">
           <div className="slice-editor-panel-title">文案预览</div>
-          <p className="slice-editor-copy-stats">
+          <span
+            className={[
+              'slice-editor-copy-stats',
+              isOverLimit ? 'slice-editor-copy-stats_over' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
             已选 {segments.length} 段 · 总时长 {formatVideoDuration(Math.round(totalDuration))}
-            {isOverLimit && (
-              <span className="slice-over-limit">
-                （超出 {maxTotalDuration / 60} 分钟限制）
-              </span>
-            )}
-          </p>
+            {isOverLimit ? ` · 超出 ${maxTotalDuration / 60} 分钟限制` : ''}
+          </span>
         </div>
-        <div className="slice-editor-mode-tabs">
-          <button
-            type="button"
-            className={mode === 'select' ? 'active' : ''}
-            onClick={() => onModeChange('select')}
-          >
-            选择文案
-          </button>
-          <button
-            type="button"
-            className={mode === 'edit' ? 'active' : ''}
-            onClick={() => onModeChange('edit')}
-          >
-            编辑文案
-          </button>
-        </div>
-      </div>
 
-      <div className="slice-editor-copy-toolbar">
-        <button type="button" onClick={onPreview} disabled={segments.length === 0}>
-          <LuPlay size={14} />
-          连续预览
-        </button>
-        <button type="button" onClick={onSave} disabled={segments.length === 0 || savingProject}>
-          {savingProject ? '保存中...' : '保存'}
-        </button>
-        <button type="button" onClick={onSaveAs} disabled={segments.length === 0}>
-          另存为
-        </button>
-        {/* <button type="button" onClick={onExportDraft} disabled={segments.length === 0}>
-          导出草稿
-        </button> */}
-        <button type="button" className="danger" onClick={onClearAll} disabled={segments.length === 0}>
-          清空
-        </button>
-        <button
-          type="button"
-          className="primary"
-          onClick={onSubmit}
-          disabled={submitting || segments.length === 0 || isOverLimit}
-        >
-          {submitting ? '提交中...' : '提交成片'}
-        </button>
+        <div className="slice-editor-copy-toolbar">
+          <div className="slice-editor-copy-toolbar-group">
+            <button type="button" onClick={onPreview} disabled={segments.length === 0}>
+              <LuPlay size={14} />
+              连续预览
+            </button>
+            <button type="button" onClick={onSave} disabled={segments.length === 0 || savingProject}>
+              {savingProject ? '保存中...' : '保存'}
+            </button>
+            <button type="button" onClick={onSaveAs} disabled={segments.length === 0}>
+              另存为
+            </button>
+          </div>
+          <div className="slice-editor-copy-toolbar-group slice-editor-copy-toolbar-group_primary">
+            <button
+              type="button"
+              className="danger"
+              onClick={onClearAll}
+              disabled={segments.length === 0}
+            >
+              清空
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={onSubmit}
+              disabled={submitting || segments.length === 0 || isOverLimit}
+            >
+              {submitting ? '提交中...' : '提交成片'}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="slice-editor-copy-list">
@@ -154,33 +148,66 @@ const SelectedCopyPanel = ({
             return (
               <div
                 key={segment.id}
-                className={`slice-editor-copy-item${isActive ? ' active' : ''}`}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={() => handleDrop(index)}
+                className={[
+                  'slice-editor-copy-item',
+                  isActive ? 'active' : '',
+                  dragIndex === index ? 'slice-editor-copy-item_dragging' : '',
+                  dragOverIndex === index && dragIndex !== index
+                    ? 'slice-editor-copy-item_drag-over'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onDragEnter={(event) => {
+                  if (dragIndex == null) return;
+                  event.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDragOver={(event) => {
+                  if (dragIndex == null) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                  if (dragOverIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={(event) => {
+                  if (dragIndex == null) return;
+                  const related = event.relatedTarget as Node | null;
+                  if (related && event.currentTarget.contains(related)) return;
+                  setDragOverIndex((current) => (current === index ? null : current));
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleDrop(index);
+                }}
                 onClick={() => {
-                  const selection = window.getSelection();
-                  if (selection && !selection.isCollapsed) return;
-
                   onActiveSegmentChange(segment.id);
                   onSeek(segment.start);
                 }}
               >
                 <div className="slice-editor-copy-item-head">
-                  {mode === 'edit' && (
+                  {canDragSort ? (
                     <span
                       className="slice-editor-copy-drag"
                       draggable
+                      title="拖动排序"
+                      aria-label="拖动排序"
                       onDragStart={(event) => {
                         setDragIndex(index);
+                        setDragOverIndex(index);
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', segment.id);
                         event.stopPropagation();
                       }}
-                      onDragEnd={() => setDragIndex(null)}
+                      onDragEnd={resetDragState}
                       onClick={(event) => event.stopPropagation()}
                       onMouseDown={(event) => event.stopPropagation()}
                     >
                       <LuGripVertical size={14} />
                     </span>
-                  )}
+                  ) : null}
                   <span className="slice-editor-copy-index">片段 {index + 1}</span>
                   <span className="slice-editor-speaker" style={{ color }}>
                     {segment.speakerName}
@@ -196,70 +223,32 @@ const SelectedCopyPanel = ({
                   onMouseDown={(event) => event.stopPropagation()}
                   onMouseUp={(event) => {
                     event.stopPropagation();
-                    const offsets = getTextSelectionOffsets(event.currentTarget);
-                    textSelectionRef.current = offsets
-                      ? { segmentId: segment.id, ...offsets }
-                      : null;
+                    const target = event.currentTarget;
+                    requestAnimationFrame(() => {
+                      const offsets = getTextSelectionOffsets(target);
+                      textSelectionRef.current = offsets
+                        ? { segmentId: segment.id, ...offsets }
+                        : null;
+                      if (offsets) {
+                        onActiveSegmentChange(segment.id);
+                        onSeek(segment.start);
+                      }
+                    });
                   }}
-                  onClick={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const selection = window.getSelection();
+                    if (selection && !selection.isCollapsed) return;
+
+                    onActiveSegmentChange(segment.id);
+                    onSeek(segment.start);
+                  }}
                 >
                   {segment.text}
                 </p>
 
-                {mode === 'edit' && isActive && (
+                {isActive && (
                   <div className="slice-editor-copy-actions">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onUpdateSegment({
-                          ...segment,
-                          start: Math.max(0, segment.start - 0.5),
-                        });
-                      }}
-                    >
-                      <LuMinus size={14} />
-                      起点 -0.5s
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onUpdateSegment({
-                          ...segment,
-                          start: Math.min(segment.end - 0.5, segment.start + 0.5),
-                        });
-                      }}
-                    >
-                      <LuPlus size={14} />
-                      起点 +0.5s
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onUpdateSegment({
-                          ...segment,
-                          end: Math.max(segment.start + 0.5, segment.end - 0.5),
-                        });
-                      }}
-                    >
-                      <LuMinus size={14} />
-                      终点 -0.5s
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onUpdateSegment({
-                          ...segment,
-                          end: Math.min(videoDuration || segment.end + 0.5, segment.end + 0.5),
-                        });
-                      }}
-                    >
-                      <LuPlus size={14} />
-                      终点 +0.5s
-                    </button>
                     <button
                       type="button"
                       onClick={(event) => {
@@ -309,8 +298,12 @@ const SelectedCopyPanel = ({
           })
         )}
       </div>
-      {segments.length > 0 && mode === 'edit' ? (
-        <p className="slice-editor-copy-tip">在片段文案中拖选文字后，点击「删除选中区」可移除选中内容及其对应时长。</p>
+      {segments.length > 0 ? (
+        <p className="slice-editor-copy-tip">
+          {canDragSort
+            ? '拖动左侧把手可调整片段顺序；单击某一片段可对其进行编辑。'
+            : '单击该片段可对其进行编辑。'}
+        </p>
       ) : null}
     </div>
   );

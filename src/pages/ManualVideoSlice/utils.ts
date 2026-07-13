@@ -229,7 +229,13 @@ export function reorderSegments(
   const next = [...segments];
   const [moved] = next.splice(fromIndex, 1);
   if (!moved) return segments;
-  next.splice(toIndex, 0, moved);
+
+  let targetIndex = toIndex;
+  if (fromIndex < toIndex) {
+    targetIndex -= 1;
+  }
+
+  next.splice(targetIndex, 0, moved);
   return next;
 }
 

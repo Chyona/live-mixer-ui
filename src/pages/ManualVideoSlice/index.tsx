@@ -25,7 +25,7 @@ import VideoTranscriptResizeHandle from './components/VideoTranscriptResizeHandl
 import SelectedCopyPanel from './components/SelectedCopyPanel';
 import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
-import type { ManualSliceMode, SelectedCopySegment, TranscriptParagraph } from './types';
+import type { SelectedCopySegment, TranscriptParagraph } from './types';
 import {
   buildTranscriptSrt,
   deleteSelectedRangeFromSegment,
@@ -58,7 +58,6 @@ const ManualVideoSlicePage = () => {
   const [paragraphs, setParagraphs] = useState<TranscriptParagraph[]>([]);
   const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [mode, setMode] = useState<ManualSliceMode>('select');
   const [keyword, setKeyword] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [videoPanelHeight, setVideoPanelHeight] = useState<number | null>(null);
@@ -132,7 +131,6 @@ const ManualVideoSlicePage = () => {
       if (!hasAiSegments && projectRes?.code === 0 && projectRes.data.segments.length > 0) {
         setSelectedSegments(projectRes.data.segments);
         setDraftName(projectRes.data.projectName);
-        setMode('edit');
       }
     } catch (error) {
       setVideo(null);
@@ -157,7 +155,6 @@ const ManualVideoSlicePage = () => {
     if (!aiSelectedSegments?.length) return;
 
     setSelectedSegments(aiSelectedSegments);
-    setMode('edit');
     toast.notify.success('AI 选片结果已载入，可继续编辑文案片段');
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, location.state, navigate]);
@@ -207,14 +204,9 @@ const ManualVideoSlicePage = () => {
 
     setSelectedSegments((prev) => [...prev, segment]);
     setActiveSegmentId(segment.id);
-    setMode('edit');
     handleSeek(segment.start);
     toast.notify.success('已添加到文案预览');
   }, [handleSeek]);
-
-  const handleUpdateSegment = useCallback((segment: SelectedCopySegment) => {
-    setSelectedSegments((prev) => prev.map((item) => (item.id === segment.id ? segment : item)));
-  }, []);
 
   const handleDeleteSegment = useCallback((segmentId: string) => {
     setSelectedSegments((prev) => prev.filter((item) => item.id !== segmentId));
@@ -572,18 +564,14 @@ const ManualVideoSlicePage = () => {
           </div>
 
           <SelectedCopyPanel
-            mode={mode}
             segments={selectedSegments}
             activeSegmentId={activeSegmentId}
             speakerIds={speakerIds}
-            videoDuration={videoDuration}
             maxTotalDuration={MAX_TOTAL_DURATION}
             submitting={submitting}
-            onModeChange={setMode}
             onActiveSegmentChange={setActiveSegmentId}
             onSeek={handleSeek}
             onReorder={setSelectedSegments}
-            onUpdateSegment={handleUpdateSegment}
             onDeleteSegment={handleDeleteSegment}
             onDeleteSelectedRange={handleDeleteSelectedRange}
             onCopySegment={handleCopySegment}

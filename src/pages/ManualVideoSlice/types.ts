@@ -33,5 +33,3 @@ export interface ManualSliceDraft {
   segments: SelectedCopySegment[];
   updatedAt: string;
 }
-
-export type ManualSliceMode = 'select' | 'edit';
