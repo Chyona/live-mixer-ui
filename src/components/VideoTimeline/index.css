@@ -135,31 +135,6 @@
     overflow-y: visible;
     padding-inline: var(--timeline-edge-gutter, 20px);
     padding-bottom: 4px;
-    scrollbar-width: auto;
-    scrollbar-color: rgba(var(--primary-color-rgb), 0.36) rgba(var(--primary-color-rgb), 0.08);
-
-    &::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: rgba(var(--primary-color-rgb), 0.08);
-      border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: rgba(var(--primary-color-rgb), 0.36);
-      border-radius: 4px;
-      transition: background 0.2s ease;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background: rgba(var(--primary-color-rgb), 0.52);
-    }
-
-    &::-webkit-scrollbar-corner {
-      background: transparent;
-    }
   }
 }
 

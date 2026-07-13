@@ -32,10 +32,38 @@
   background-color: var(--content-bg);
 }
 
+/* main 直接子节点（页面根）统一最小高度，见 --app-min-height */
+.zt-app-main > * {
+  min-height: max(100%, var(--app-min-height));
+  box-sizing: border-box;
+}
+
 .zt-app-main:has(.list-page),
 .zt-app-main:has(.slice-page_manual),
 .zt-app-main:has(.slice-page_timeline) {
   overflow: hidden;
+}
+
+/* 视口高度低于最小高度时，改由 main 滚动 */
+@media (max-height: 720px) {
+  .zt-app-main:has(.list-page),
+  .zt-app-main:has(.slice-page_manual),
+  .zt-app-main:has(.slice-page_timeline) {
+    overflow-y: auto;
+  }
+
+  .list-page,
+  .slice-page_manual,
+  .slice-page_timeline {
+    height: auto;
+    min-height: var(--app-min-height);
+    overflow: visible;
+  }
+
+  .slice-page_manual .slice-editor-layout,
+  .slice-page_manual .slice-editor-main {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 1100px) {

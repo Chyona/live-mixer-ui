@@ -170,12 +170,13 @@
   --surface-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   --surface-divider: rgba(0, 0, 0, 0.04);
 
-  /* 定义滚动条颜色变量 */
-  --scrollbar-track: #f1f1f1;
-  --scrollbar-thumb: #c1c1c1;
-  --scrollbar-thumb-hover: #a8a8a8;
-  --scrollbar-width: 12px;
-  --scrollbar-border-radius: 6px;
+  /* 滚动条（中性灰） */
+  --scrollbar-width: 8px;
+  --scrollbar-border-radius: 4px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #c8ced8;
+  --scrollbar-thumb-hover: #aeb6c2;
+  --scrollbar-thumb-active: #98a2b3;
 
   /* 边框与圆角 */
   --border-color: #e0e7ff;
@@ -206,6 +207,7 @@
   --sidebar-collapsed-width: 72px;
   --content-padding: 16px;
   --app-min-width: 1280px;
+  --app-min-height: 720px;
 
   --bs-header-height: 54px;
 

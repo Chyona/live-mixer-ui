@@ -1,7 +1,6 @@
 /* 切片页公共壳层 */
 .slice-page {
   padding: var(--content-padding);
-  min-height: 100%;
   box-sizing: border-box;
 }
 
@@ -9,7 +8,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0;
   overflow: hidden;
 }
 
@@ -108,7 +106,6 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
-  padding-bottom: 0;
 }
 
 .slice-editor-video-block_customized .ant-collapse {
@@ -426,8 +423,6 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--primary-color-rgb), 0.28) transparent;
 }
 
 .slice-editor-transcript-body {
@@ -439,37 +434,6 @@
   flex-direction: column;
   gap: 10px;
   padding-right: 2px;
-}
-
-.slice-editor-transcript-body::-webkit-scrollbar,
-.slice-editor-copy-list::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.slice-editor-transcript-body::-webkit-scrollbar-track,
-.slice-editor-copy-list::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 4px;
-}
-
-.slice-editor-transcript-body::-webkit-scrollbar-thumb,
-.slice-editor-copy-list::-webkit-scrollbar-thumb {
-  background: rgba(var(--primary-color-rgb), 0.22);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.slice-editor-transcript-body::-webkit-scrollbar-thumb:hover,
-.slice-editor-copy-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-color-rgb), 0.38);
-  background-clip: padding-box;
-}
-
-.slice-editor-transcript-body::-webkit-scrollbar-corner,
-.slice-editor-copy-list::-webkit-scrollbar-corner {
-  background: transparent;
 }
 
 .slice-editor-paragraph {
@@ -761,6 +725,23 @@
 
   .slice-page_manual .slice-editor-copy-list {
     max-height: min(360px, 40vh);
+  }
+
+  .slice-page_manual .slice-editor-video-block {
+    padding-bottom: 10px;
+  }
+
+  .slice-page_manual .slice-editor-video-block .stream-video-player {
+    height: auto;
+    padding-inline: 0;
+  }
+
+  .slice-page_manual .slice-editor-video {
+    width: 100%;
+    height: auto;
+    max-height: min(36vh, 220px);
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
   }
 
   .slice-editor-transcript-head {
@@ -1212,6 +1193,18 @@
 .slice-source-descriptions .ant-descriptions-item-label {
   color: var(--text-gray);
   width: 88px;
+}
+
+@media (max-height: 900px) {
+  .slice-page_manual .slice-editor-video {
+    max-height: min(30vh, 220px);
+  }
+
+  .slice-page_manual
+    .slice-editor-video-block.slice-editor-video-block_customized
+    .slice-editor-video {
+    max-height: 100%;
+  }
 }
 
 @media (max-width: 992px) {

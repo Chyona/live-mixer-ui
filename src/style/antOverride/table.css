@@ -1,8 +1,3 @@
-/* 覆盖组件原生的滚动条配置，使自定义的生效 */
-.ant-table-wrapper .ant-table {
-  scrollbar-color: auto;
-}
-
 .ant-table-wrapper .ant-table-pagination.ant-pagination {
   margin: 16px;
 }
