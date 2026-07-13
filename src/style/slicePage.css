@@ -58,7 +58,7 @@
 
 .slice-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
   gap: 16px;
   align-items: stretch;
 }
