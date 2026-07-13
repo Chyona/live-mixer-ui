@@ -166,13 +166,12 @@ const SelectedCopyPanel = ({
             <div className="slice-editor-copy-empty-icon" aria-hidden>
               <LuTextSelect size={22} />
             </div>
-            <p className="slice-editor-copy-empty-title">等待选片</p>
             <p className="slice-editor-copy-empty-desc">
-              从左侧文案中选择整段或部分文字，选中内容会出现在这里。
+              从左侧「文案分段」中选择整段或部分文字，内容将显示在这里
             </p>
             <span className="slice-editor-copy-empty-hint">
               <LuArrowLeft size={14} />
-              在左侧「文案分段」中操作
+              双击选整段，拖选提取片段
             </span>
           </div>
         ) : (
