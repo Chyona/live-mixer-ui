@@ -2,18 +2,17 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
 
 type MockAiPrompt = {
-  id: string;
+  id: number;
   name: string;
   content: string;
   remark: string;
-  creatorName: string;
-  createdAt: string;
-  updatedAt: string;
-  ownerId: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  is_editable: number;
 };
 
-const CURRENT_USER_ID = '222';
-const CURRENT_USER_NAME = 'userName';
+const CURRENT_USER_ID = 1;
 
 const PROMPT_TEMPLATES = [
   { name: '同商品连贯性', content: '确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品', remark: '时间轴切片默认提示词' },
@@ -42,18 +41,19 @@ const PROMPT_TEMPLATES = [
 
 function buildMockAiPrompts(): MockAiPrompt[] {
   return PROMPT_TEMPLATES.map((item, index) => {
-    const id = String(index + 1).padStart(3, '0');
+    const id = index + 1;
     const day = String((index % 28) + 1).padStart(2, '0');
+    const timestamp = `2026-06-${day}T10:00:00.000000+08:00`;
 
     return {
-      id: `prompt-${id}`,
+      id,
       name: item.name,
       content: item.content,
       remark: item.remark,
-      creatorName: CURRENT_USER_NAME,
-      createdAt: `2026-06-${day} 10:00:00`,
-      updatedAt: `2026-06-${day} 10:00:00`,
-      ownerId: CURRENT_USER_ID,
+      created_by: CURRENT_USER_ID,
+      created_at: timestamp,
+      updated_at: timestamp,
+      is_editable: 1,
     };
   });
 }
@@ -61,21 +61,23 @@ function buildMockAiPrompts(): MockAiPrompt[] {
 const aiPrompts: MockAiPrompt[] = [
   ...buildMockAiPrompts(),
   {
-    id: 'prompt-999',
+    id: 999,
     name: '其他用户提示词',
     content: '不应展示',
     remark: '',
-    creatorName: 'otherUser',
-    createdAt: '2026-06-01 10:00:00',
-    updatedAt: '2026-06-01 10:00:00',
-    ownerId: 'other-user',
+    created_by: 2,
+    created_at: '2026-06-01T10:00:00.000000+08:00',
+    updated_at: '2026-06-01T10:00:00.000000+08:00',
+    is_editable: 0,
   },
 ];
+
+let nextId = 1000;
 
 function parseKeywords(input?: string) {
   if (!input?.trim()) return [];
   return input
-    .split(/[+＋]/)
+    .split(/[,，+＋]/)
     .map((part) => part.trim())
     .filter(Boolean);
 }
@@ -87,35 +89,49 @@ function matchKeywords(text: string, keywords: string[]) {
 }
 
 function toPublicItem(item: MockAiPrompt) {
-  const { ownerId: _ownerId, ...rest } = item;
-  return rest;
+  return item;
 }
 
 function formatNow() {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  return new Date().toISOString().replace('Z', '+08:00');
+}
+
+function parsePromptId(id: string | number | undefined) {
+  const numericId = Number(id);
+  return Number.isFinite(numericId) ? numericId : NaN;
+}
+
+function findOwnedPrompt(id: string | number | undefined) {
+  const numericId = parsePromptId(id);
+  if (!Number.isFinite(numericId)) return undefined;
+  return aiPrompts.find((prompt) => prompt.id === numericId && prompt.created_by === CURRENT_USER_ID);
 }
 
 function filterList(query: Record<string, string | string[] | undefined>) {
-  const keyword = typeof query.keyword === 'string' ? query.keyword : undefined;
-  const keywords = parseKeywords(keyword);
+  const keywordsParam = typeof query.keywords === 'string' ? query.keywords : undefined;
+  const keywords = parseKeywords(keywordsParam);
+  const startDate = typeof query.start_date === 'string' ? query.start_date : undefined;
+  const endDate = typeof query.end_date === 'string' ? query.end_date : undefined;
 
   return aiPrompts.filter((item) => {
-    if (item.ownerId !== CURRENT_USER_ID) return false;
+    if (item.created_by !== CURRENT_USER_ID) return false;
 
-    const searchText = `${item.name} ${item.content} ${item.remark} ${item.creatorName}`;
+    const createdDate = item.created_at.slice(0, 10);
+    if (startDate && createdDate < startDate) return false;
+    if (endDate && createdDate > endDate) return false;
+
+    const searchText = `${item.name} ${item.content} ${item.remark}`;
     return matchKeywords(searchText, keywords);
   });
 }
 
 export default [
   {
-    url: `${API_PREFIX}/v1/prompts`,
+    url: `${API_PREFIX}/v1/llm-system-prompts`,
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
       const page = Number(query.page || 1);
-      const pageSize = Number(query.pageSize || 10);
+      const pageSize = Number(query.page_size || 10);
       const filtered = filterList(query);
       const start = (page - 1) * pageSize;
 
@@ -130,7 +146,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/prompts`,
+    url: `${API_PREFIX}/v1/llm-system-prompts`,
     method: 'post',
     response: ({
       body,
@@ -150,14 +166,14 @@ export default [
 
       const now = formatNow();
       const item: MockAiPrompt = {
-        id: `prompt-${Date.now()}`,
+        id: nextId++,
         name,
         content,
         remark: body.remark?.trim() || '',
-        creatorName: CURRENT_USER_NAME,
-        createdAt: now,
-        updatedAt: now,
-        ownerId: CURRENT_USER_ID,
+        created_by: CURRENT_USER_ID,
+        created_at: now,
+        updated_at: now,
+        is_editable: 1,
       };
 
       aiPrompts.unshift(item);
@@ -166,7 +182,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/prompts/:id`,
+    url: `${API_PREFIX}/v1/llm-system-prompts/:id`,
     method: 'put',
     response: ({
       body,
@@ -179,9 +195,13 @@ export default [
       };
       query: { id: string };
     }) => {
-      const item = aiPrompts.find((prompt) => prompt.id === query.id && prompt.ownerId === CURRENT_USER_ID);
+      const item = findOwnedPrompt(query.id);
       if (!item) {
         return { code: 404, message: '提示词不存在', data: null };
+      }
+
+      if (item.is_editable !== 1) {
+        return { code: 403, message: '该提示词不可编辑', data: null };
       }
 
       const name = body?.name?.trim();
@@ -193,37 +213,44 @@ export default [
       item.name = name;
       item.content = content;
       item.remark = body.remark?.trim() || '';
-      item.updatedAt = formatNow();
+      item.updated_at = formatNow();
 
       return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
   {
-    url: `${API_PREFIX}/v1/prompts/:id/remark`,
+    url: `${API_PREFIX}/v1/llm-system-prompts/:id/remark`,
     method: 'put',
     response: ({ body, query }: { body: { remark?: string }; query: { id: string } }) => {
-      const item = aiPrompts.find((prompt) => prompt.id === query.id && prompt.ownerId === CURRENT_USER_ID);
+      const item = findOwnedPrompt(query.id);
       if (!item) {
         return { code: 404, message: '提示词不存在', data: null };
       }
 
+      if (item.is_editable !== 1) {
+        return { code: 403, message: '该提示词不可编辑', data: null };
+      }
+
       item.remark = body?.remark?.trim() || '';
-      item.updatedAt = formatNow();
+      item.updated_at = formatNow();
 
       return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
   {
-    url: `${API_PREFIX}/v1/prompts/:id`,
+    url: `${API_PREFIX}/v1/llm-system-prompts/:id`,
     method: 'delete',
     response: ({ query }: { query: { id: string } }) => {
-      const index = aiPrompts.findIndex(
-        (prompt) => prompt.id === query.id && prompt.ownerId === CURRENT_USER_ID
-      );
-      if (index < 0) {
+      const item = findOwnedPrompt(query.id);
+      if (!item) {
         return { code: 404, message: '提示词不存在', data: null };
       }
 
+      if (item.is_editable !== 1) {
+        return { code: 403, message: '该提示词不可删除', data: null };
+      }
+
+      const index = aiPrompts.findIndex((prompt) => prompt.id === item.id);
       aiPrompts.splice(index, 1);
       return { code: 0, message: '', data: null };
     },

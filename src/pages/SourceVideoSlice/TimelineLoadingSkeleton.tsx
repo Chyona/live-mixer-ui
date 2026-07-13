@@ -1,6 +1,14 @@
 import './TimelineLoadingSkeleton.css';
 
-const TimelineLoadingSkeleton = () => {
+interface TimelineLoadingSkeletonProps {
+  statusText?: string;
+  footerStatusText?: string;
+}
+
+const TimelineLoadingSkeleton = ({
+  statusText = '视频加载中，时间轴准备就绪…',
+  footerStatusText = '解析视频时长',
+}: TimelineLoadingSkeletonProps) => {
   return (
     <div className="slice-timeline-loading" aria-busy="true" aria-label="时间轴加载中">
       <div className="slice-timeline-loading__panel">
@@ -28,7 +36,7 @@ const TimelineLoadingSkeleton = () => {
           </div>
           <div className="slice-timeline-loading__pill slice-timeline-loading__pill_sm" />
         </div>
-        <p className="slice-timeline-loading__status">视频加载中，时间轴准备就绪…</p>
+        <p className="slice-timeline-loading__status">{statusText}</p>
       </div>
 
       <div className="slice-timeline-loading__timeline">
@@ -53,7 +61,7 @@ const TimelineLoadingSkeleton = () => {
 
         <div className="slice-timeline-loading__footer">
           <span>0:00</span>
-          <span className="slice-timeline-loading__footer-status">解析视频时长</span>
+          <span className="slice-timeline-loading__footer-status">{footerStatusText}</span>
           <span>--:--</span>
         </div>
       </div>

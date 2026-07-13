@@ -4,7 +4,7 @@ import { request } from './http';
 
 export interface AiSliceSelectParams {
   prompt: string;
-  promptId?: string;
+  promptId?: number;
   clips: ClipRange[];
   sourceVideoName?: string;
 }

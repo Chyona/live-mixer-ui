@@ -3,6 +3,7 @@ import { Button, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
+import AiPromptFormModal from '~/components/AiPromptFormModal';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListPageTable from '~/components/ListPageTable';
@@ -23,8 +24,6 @@ import { showAppError, showScopedError, handleRequestError, toast } from '~/util
 
 const PROMPTS_LIST_ERROR_SCOPE = 'prompts-list';
 
-import AddAiPromptModal from './AddAiPromptModal';
-
 const AiPromptsPage = () => {
   useAppSEO({
     title: '提示词管理',
@@ -40,8 +39,9 @@ const AiPromptsPage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<AiPrompt | null>(null);
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
     const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
@@ -55,9 +55,9 @@ const AiPromptsPage = () => {
 
     try {
       const response = await fetchAiPromptList({
-        keyword: appliedKeyword || undefined,
+        keywords: appliedKeyword ? appliedKeyword.replace(/[+＋]/g, ',') : undefined,
         page,
-        pageSize,
+        page_size: pageSize,
       });
 
       if (response.code !== 0) {
@@ -92,7 +92,7 @@ const AiPromptsPage = () => {
     setPage(1);
   };
 
-  const handleRemarkSave = async (id: string, remark: string) => {
+  const handleRemarkSave = async (id: number, remark: string) => {
     try {
       const response = await updateAiPromptRemark(id, remark);
       if (response.code !== 0) {
@@ -102,7 +102,7 @@ const AiPromptsPage = () => {
 
       setList((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, remark: response.data.remark, updatedAt: response.data.updatedAt } : item
+          item.id === id ? { ...item, remark: response.data.remark, updated_at: response.data.updated_at } : item
         )
       );
       toast.notify.success('备注已保存');
@@ -115,7 +115,7 @@ const AiPromptsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     setDeletingId(id);
     try {
       const response = await deleteAiPrompt(id);
@@ -141,6 +141,36 @@ const AiPromptsPage = () => {
     }
   };
 
+  const openCreate = () => {
+    setEditingPrompt(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (prompt: AiPrompt) => {
+    setEditingPrompt(prompt);
+    setFormOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setFormOpen(false);
+    setEditingPrompt(null);
+  };
+
+  const handleFormSuccess = (prompt: AiPrompt) => {
+    if (editingPrompt) {
+      setList((prev) => prev.map((item) => (item.id === prompt.id ? prompt : item)));
+      handleFormClose();
+      return;
+    }
+
+    handleFormClose();
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      void loadList();
+    }
+  };
+
   const columns = useMemo<ColumnsType<AiPrompt>>(
     () => [
       {
@@ -149,7 +179,18 @@ const AiPromptsPage = () => {
         key: 'name',
         width: 220,
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />,
+        render: (name: string, record) =>
+          record.is_editable === 1 ? (
+            <button
+              type="button"
+              className="list-page__cell-link"
+              onClick={() => openEdit(record)}
+            >
+              <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />
+            </button>
+          ) : (
+            <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />
+          ),
       },
       {
         title: '提示词信息',
@@ -165,35 +206,38 @@ const AiPromptsPage = () => {
         dataIndex: 'remark',
         key: 'remark',
         width: 220,
-        render: (remark: string, record) => (
-          <RemarkEditor
-            value={remark}
-            maxLength={128}
-            onSave={(value) => handleRemarkSave(record.id, value)}
-          />
-        ),
+        render: (remark: string, record) =>
+          record.is_editable === 1 ? (
+            <RemarkEditor
+              value={remark}
+              maxLength={128}
+              onSave={(value) => handleRemarkSave(record.id, value)}
+            />
+          ) : (
+            <EllipsisTooltip text={remark || '—'} className="list-page__cell-ellipsis" />
+          ),
       },
       {
         title: '创建者',
-        dataIndex: 'creatorName',
-        key: 'creatorName',
+        dataIndex: 'created_by',
+        key: 'created_by',
         width: 120,
         ellipsis: true,
-        render: (creatorName: string) => (
-          <EllipsisTooltip text={creatorName} className="prompts-cell-ellipsis" />
+        render: (createdBy: number) => (
+          <EllipsisTooltip text={String(createdBy)} className="prompts-cell-ellipsis" />
         ),
       },
       {
         title: '创建时间',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
+        dataIndex: 'created_at',
+        key: 'created_at',
         width: 160,
         render: (createdAt: string) => formatToDateTime(createdAt),
       },
       {
         title: '编辑时间',
-        dataIndex: 'updatedAt',
-        key: 'updatedAt',
+        dataIndex: 'updated_at',
+        key: 'updated_at',
         width: 160,
         render: (updatedAt: string) => formatToDateTime(updatedAt),
       },
@@ -202,26 +246,29 @@ const AiPromptsPage = () => {
         key: 'actions',
         width: 100,
         fixed: 'right',
-        render: (_, record) => (
-          <Popconfirm
-            title="确认删除该提示词？"
-            description="删除后不可恢复。"
-            okText="删除"
-            cancelText="取消"
-            okButtonProps={{ danger: true, loading: deletingId === record.id }}
-            onConfirm={() => void handleDelete(record.id)}
-          >
-            <Button
-              type="link"
-              danger
-              className="list-page__action-btn"
-              icon={<LuTrash2 size={14} />}
-              loading={deletingId === record.id}
+        render: (_, record) =>
+          record.is_editable === 1 ? (
+            <Popconfirm
+              title="确认删除该提示词？"
+              description="删除后不可恢复。"
+              okText="删除"
+              cancelText="取消"
+              okButtonProps={{ danger: true, loading: deletingId === record.id }}
+              onConfirm={() => void handleDelete(record.id)}
             >
-              删除
-            </Button>
-          </Popconfirm>
-        ),
+              <Button
+                type="link"
+                danger
+                className="list-page__action-btn"
+                icon={<LuTrash2 size={14} />}
+                loading={deletingId === record.id}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          ) : (
+            '—'
+          ),
       },
     ],
     [deletingId]
@@ -231,7 +278,7 @@ const AiPromptsPage = () => {
     <ListPageLayout
       className="prompts-page"
       title="提示词管理"
-      description="管理 AI 切片使用的提示词，支持添加、搜索、备注与删除。"
+      description="管理 AI 切片使用的提示词，支持添加、编辑、搜索、备注与删除。"
       toolbar={
         <ListSearchToolbar
           keyword={keyword}
@@ -241,7 +288,7 @@ const AiPromptsPage = () => {
           onRefresh={() => void loadList({ refresh: true })}
           refreshing={refreshing}
           extra={
-            <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
+            <Button type="primary" icon={<LuPlus size={16} />} onClick={openCreate}>
               添加提示词
             </Button>
           }
@@ -254,6 +301,23 @@ const AiPromptsPage = () => {
         columns={columns}
         dataSource={list}
         scrollX={1200}
+        empty={
+          appliedKeyword
+            ? {
+                title: '未找到匹配的提示词',
+                description: '试试更换关键词，或使用 关键词A+关键词B 组合搜索',
+              }
+            : {
+                title: '暂无提示词',
+                description: '添加提示词后，可在 AI 切片时快速选用',
+                tone: 'primary',
+                action: (
+                  <Button type="primary" icon={<LuPlus size={16} />} onClick={openCreate}>
+                    添加提示词
+                  </Button>
+                ),
+              }
+        }
         pagination={{
           current: page,
           pageSize,
@@ -263,16 +327,11 @@ const AiPromptsPage = () => {
         onChange={(pagination) => handleTablePaginationChange(pagination, setPage, setPageSize, pageSize)}
       />
 
-      <AddAiPromptModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSuccess={() => {
-          if (page !== 1) {
-            setPage(1);
-          } else {
-            void loadList();
-          }
-        }}
+      <AiPromptFormModal
+        open={formOpen}
+        prompt={editingPrompt}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
       />
     </ListPageLayout>
   );

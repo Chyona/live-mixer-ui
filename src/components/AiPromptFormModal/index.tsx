@@ -49,7 +49,7 @@ const AiPromptFormModal = ({ open, prompt, onClose, onSuccess }: AiPromptFormMod
     try {
       const payload = {
         name: values.name.trim(),
-        content: values.content.trim(),
+        content: values.content?.trim(),
         remark: values.remark?.trim(),
       };
 

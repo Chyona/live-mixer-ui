@@ -5,6 +5,7 @@ import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { LuCopy, LuDownload, LuEye, LuInfo, LuRefreshCw, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
+import ListTableEmpty, { type ListTableEmptyProps } from '~/components/ListTableEmpty';
 import { AppError } from '~/services/http';
 import {
   deleteClipTask,
@@ -28,6 +29,7 @@ interface ClipTaskListProps {
   onTableChange: (pagination: TablePaginationConfig) => void;
   onChanged: () => Promise<void>;
   onRefreshTask: (taskId: string) => Promise<void>;
+  empty?: ListTableEmptyProps;
 }
 
 function renderTaskTypeLabel(taskType: GenerationTaskType) {
@@ -63,6 +65,7 @@ function ClipTaskList({
   onTableChange,
   onChanged,
   onRefreshTask,
+  empty,
 }: ClipTaskListProps) {
   const navigate = useNavigate();
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
@@ -239,14 +242,6 @@ function ClipTaskList({
     [deletingId, handleCopyDraft, handleDelete, handleRefresh, handleViewAiResult, refreshingId]
   );
 
-  if (total === 0) {
-    return (
-      <div className="tasks-empty">
-        暂无生成任务，请从源视频切片页提交「一键成片」或「AI 选片」任务。
-      </div>
-    );
-  }
-
   return (
     <>
       <Table
@@ -255,6 +250,7 @@ function ClipTaskList({
         columns={columns}
         dataSource={tasks}
         pagination={pagination}
+        locale={{ emptyText: <ListTableEmpty {...empty} /> }}
         onChange={(nextPagination) => onTableChange(nextPagination)}
         scroll={{ x: 1200, ...(scrollY !== undefined ? { y: scrollY } : {}) }}
       />

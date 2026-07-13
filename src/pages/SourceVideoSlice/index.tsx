@@ -18,8 +18,8 @@ import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
-import PageLoading from '~/components/PageLoading';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
+import SourceVideoSlicePageSkeleton from './SourceVideoSlicePageSkeleton';
 import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
 import PromptPickerPanel from './PromptPickerPanel';
 
@@ -198,7 +198,8 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
-    if (!selectedPrompt?.content.trim()) {
+    const promptText = selectedPrompt?.content?.trim();
+    if (!promptText) {
       toast.notify.warning('请先选择一个 AI 提示词');
       return;
     }
@@ -213,7 +214,7 @@ const SourceVideoSlicePage = () => {
       const response = await submitClip({
         m3u8_url: streamUrl,
         clips,
-        prompt: selectedPrompt.content.trim(),
+        prompt: promptText,
         water_text: 'www',
         count: 1,
         source_video_id: String(video.id),
@@ -248,7 +249,8 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
-    if (!selectedPrompt?.content.trim()) {
+    const promptText = selectedPrompt?.content?.trim();
+    if (!selectedPrompt || !promptText) {
       toast.notify.warning('请先选择一个 AI 提示词');
       return;
     }
@@ -261,7 +263,7 @@ const SourceVideoSlicePage = () => {
     setAiSelecting(true);
     try {
       const response = await submitAiSliceSelection(String(video.id), {
-        prompt: selectedPrompt.content.trim(),
+        prompt: promptText,
         promptId: selectedPrompt.id,
         clips,
         sourceVideoName: video.name,
@@ -297,11 +299,7 @@ const SourceVideoSlicePage = () => {
   );
 
   if (loading) {
-    return (
-      <div className="slice-page slice-page_timeline">
-        <PageLoading />
-      </div>
-    );
+    return <SourceVideoSlicePageSkeleton breadcrumbItems={breadcrumbItems} />;
   }
 
   if (!video) {
@@ -390,7 +388,7 @@ const SourceVideoSlicePage = () => {
                 onAiSelect={() => void handleAiSelect()}
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
-                hasSelectedPrompt={Boolean(selectedPrompt?.content.trim())}
+                hasSelectedPrompt={Boolean(selectedPrompt?.content?.trim())}
               />
               <VideoTimeline
                 duration={videoDuration}

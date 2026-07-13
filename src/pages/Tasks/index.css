@@ -4,12 +4,6 @@
   font-size: 13px;
 }
 
-.tasks-empty {
-  padding: 48px 16px;
-  text-align: center;
-  color: var(--text-gray);
-}
-
 .tasks-type-label {
   display: inline-flex;
   align-items: center;

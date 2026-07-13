@@ -14,7 +14,7 @@ import './PromptPickerPanel.css';
 const PAGE_SIZE = 8;
 
 interface PromptPickerPanelProps {
-  selectedId: string | null;
+  selectedId: number | null;
   onSelect: (prompt: AiPrompt) => void;
 }
 
@@ -46,9 +46,9 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
 
       try {
         const response = await fetchAiPromptList({
-          keyword: keywordValue || undefined,
+          keywords: keywordValue ? keywordValue.replace(/[+＋]/g, ',') : undefined,
           page: nextPage,
-          pageSize: PAGE_SIZE,
+          page_size: PAGE_SIZE,
         });
 
         if (response.code !== 0) {
@@ -187,14 +187,16 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
                 <div className="slice-prompt-panel__item-body">
                   <div className="slice-prompt-panel__item-head">
                     <span className="slice-prompt-panel__item-name">{item.name}</span>
-                    <button
-                      type="button"
-                      className="slice-prompt-panel__edit-btn"
-                      aria-label={`编辑 ${item.name}`}
-                      onClick={(event) => openEdit(item, event)}
-                    >
-                      <LuPencil size={13} />
-                    </button>
+                    {item.is_editable === 1 ? (
+                      <button
+                        type="button"
+                        className="slice-prompt-panel__edit-btn"
+                        aria-label={`编辑 ${item.name}`}
+                        onClick={(event) => openEdit(item, event)}
+                      >
+                        <LuPencil size={13} />
+                      </button>
+                    ) : null}
                   </div>
                   <EllipsisTooltip
                     text={item.content}

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, DatePicker, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuSearch, LuTextSelect } from 'react-icons/lu';
+import { LuSearch, LuTextSelect, LuVideo } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
@@ -127,6 +127,8 @@ const SlicesPage = () => {
     }
   };
 
+  const hasActiveFilters = Boolean(appliedKeyword || dateRange?.[0]);
+
   const columns = useMemo<ColumnsType<SliceProject>>(
     () => [
       {
@@ -230,6 +232,25 @@ const SlicesPage = () => {
         columns={columns}
         dataSource={list}
         scrollX={1100}
+        empty={
+          hasActiveFilters
+            ? {
+                title: '未找到匹配的剪辑项目',
+                description: '试试更换关键词或调整日期范围后重新搜索',
+              }
+            : {
+                title: '暂无剪辑项目',
+                description: '在源视频中完成切片后，对应项目会自动汇总到这里',
+                tone: 'primary',
+                action: (
+                  <Link to="/source-videos">
+                    <Button type="primary" icon={<LuVideo size={16} />}>
+                      前往源视频管理
+                    </Button>
+                  </Link>
+                ),
+              }
+        }
         pagination={{
           current: page,
           pageSize,

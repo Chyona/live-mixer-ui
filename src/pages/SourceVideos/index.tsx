@@ -352,6 +352,7 @@ const SourceVideosPage = () => {
   );
 
   const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedGlobalKeyword);
+  const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
 
   const handleTableChange = (pagination: Parameters<typeof handleTablePaginationChange>[0]) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
@@ -408,6 +409,23 @@ const SourceVideosPage = () => {
         columns={columns}
         dataSource={list}
         scrollX={1200}
+        empty={
+          hasActiveFilters
+            ? {
+                title: '未找到匹配的源视频',
+                description: '试试更换关键词，或调整日期范围与全局搜索条件',
+              }
+            : {
+                title: '暂无源视频',
+                description: '添加源视频后即可进行切片、人工剪辑与 AI 选片',
+                tone: 'primary',
+                action: (
+                  <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
+                    添加源视频
+                  </Button>
+                ),
+              }
+        }
         pagination={{
           current: page,
           pageSize,

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DatePicker, Select } from 'antd';
+import { Link } from 'react-router-dom';
+import { Button, DatePicker, Select } from 'antd';
 import type { TablePaginationConfig } from 'antd/es/table';
+import { LuVideo } from 'react-icons/lu';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListTableScrollY } from '~/hooks/useListTableScrollY';
@@ -87,6 +89,9 @@ const TasksPage = () => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
 
+  const hasActiveFilters = Boolean(appliedKeyword || dateRange?.[0] || status);
+  const isEmpty = !loading && total === 0;
+
   return (
     <ListPageLayout
       className="tasks-page"
@@ -141,9 +146,15 @@ const TasksPage = () => {
           'list-page__panel',
           needScroll ? 'list-page__table-wrap--scrollable' : '',
           compactPagination ? 'list-page__table-wrap--compact-pagination' : '',
+          isEmpty ? 'list-page__table-wrap--empty' : '',
         ]
           .filter(Boolean)
           .join(' ')}
+        style={
+          needScroll && scrollY !== undefined
+            ? ({ '--list-table-body-height': `${scrollY}px` } as React.CSSProperties)
+            : undefined
+        }
       >
         {loading && tasks.length === 0 ? (
           <PageLoading />
@@ -156,6 +167,25 @@ const TasksPage = () => {
             onTableChange={handleTableChange}
             onChanged={reload}
             onRefreshTask={refreshTask}
+            empty={
+              hasActiveFilters
+                ? {
+                    title: '未找到匹配的任务',
+                    description: '试试更换关键词，或调整状态与日期范围后重新搜索',
+                  }
+                : {
+                    title: '暂无生成任务',
+                    description: '在源视频切片页提交「一键成片」或「AI 选片」后，任务进度会显示在这里',
+                    tone: 'primary',
+                    action: (
+                      <Link to="/source-videos">
+                        <Button type="primary" icon={<LuVideo size={16} />}>
+                          前往源视频管理
+                        </Button>
+                      </Link>
+                    ),
+                  }
+            }
           />
         )}
       </div>
