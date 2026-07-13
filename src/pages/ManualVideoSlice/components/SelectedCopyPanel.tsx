@@ -394,7 +394,7 @@ const SelectedCopyPanel = ({
         <p className="slice-editor-copy-tip">
           {canDragSort
             ? '拖动左侧把手可调整片段顺序；单击某一片段可对其进行编辑。'
-            : '单击该片段可对其进行编辑。'}
+            : ''}
         </p>
       ) : null}
     </div>

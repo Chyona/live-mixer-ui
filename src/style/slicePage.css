@@ -474,6 +474,7 @@
   flex-direction: column;
   gap: 10px;
   padding-right: 2px;
+  scroll-behavior: smooth;
 }
 
 .slice-editor-copy-list {

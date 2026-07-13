@@ -553,3 +553,39 @@ export function scrollElementIntoViewPreferUpper(
     behavior,
   });
 }
+
+const FOLLOW_COMFORT_TOP_RATIO = 0.24;
+const FOLLOW_COMFORT_BOTTOM_RATIO = 0.68;
+
+/** 播放跟随时，仅在目标离开舒适区时做最小增量滚动，避免段落切换大幅跳转 */
+export function scrollFollowElement(
+  container: HTMLElement,
+  element: HTMLElement,
+  options?: { behavior?: ScrollBehavior }
+) {
+  const behavior = options?.behavior ?? 'smooth';
+  const containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const comfortTop = containerRect.top + container.clientHeight * FOLLOW_COMFORT_TOP_RATIO;
+  const comfortBottom = containerRect.top + container.clientHeight * FOLLOW_COMFORT_BOTTOM_RATIO;
+  const elementTop = elementRect.top;
+  const elementBottom = elementRect.bottom;
+
+  if (elementTop >= comfortTop && elementBottom <= comfortBottom) {
+    return false;
+  }
+
+  let scrollDelta = 0;
+  if (elementBottom > comfortBottom) {
+    scrollDelta = elementBottom - comfortBottom;
+  } else if (elementTop < comfortTop) {
+    scrollDelta = elementTop - comfortTop;
+  }
+
+  if (Math.abs(scrollDelta) < 6) {
+    return false;
+  }
+
+  container.scrollBy({ top: scrollDelta, behavior });
+  return true;
+}

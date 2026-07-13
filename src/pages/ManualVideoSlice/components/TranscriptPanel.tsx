@@ -10,6 +10,7 @@ import {
   paragraphSelectionToCopySegment,
   paragraphToCopySegment,
   scrollElementIntoViewPreferUpper,
+  scrollFollowElement,
   type TranscriptHighlight,
 } from '../utils';
 
@@ -47,7 +48,7 @@ const TranscriptPanel = ({
   onSelectSegment,
 }: TranscriptPanelProps) => {
   const transcriptBodyRef = useRef<HTMLDivElement>(null);
-  const lastAutoScrolledParagraphRef = useRef<string | null>(null);
+  const lastAutoScrolledTargetRef = useRef<string | null>(null);
   const autoScrollPauseTimerRef = useRef<number>(0);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
@@ -66,7 +67,7 @@ const TranscriptPanel = ({
     window.clearTimeout(autoScrollPauseTimerRef.current);
     autoScrollPauseTimerRef.current = window.setTimeout(() => {
       setAutoScrollPaused(false);
-      lastAutoScrolledParagraphRef.current = null;
+      lastAutoScrolledTargetRef.current = null;
     }, 2500);
   }, [autoScrollEnabled]);
 
@@ -74,7 +75,7 @@ const TranscriptPanel = ({
     setAutoScrollEnabled(checked);
     localStorage.setItem(TRANSCRIPT_AUTO_SCROLL_KEY, String(checked));
     setAutoScrollPaused(false);
-    lastAutoScrolledParagraphRef.current = null;
+    lastAutoScrolledTargetRef.current = null;
   };
 
   useEffect(() => {
@@ -85,24 +86,33 @@ const TranscriptPanel = ({
 
   useEffect(() => {
     if (!autoScrollEnabled || autoScrollPaused || !activeParagraphId) return;
-    if (transcriptHighlight?.mode === 'copy') return;
+    if (transcriptHighlight?.mode !== 'playback') return;
     if (!isVideoPlaying) return;
-    if (lastAutoScrolledParagraphRef.current === activeParagraphId) return;
+
+    const activeSegmentId = transcriptHighlight.segmentIds[0] ?? '';
+    const scrollTargetKey = `${activeParagraphId}:${activeSegmentId}`;
+    if (lastAutoScrolledTargetRef.current === scrollTargetKey) return;
 
     const container = transcriptBodyRef.current;
-    const node = container?.querySelector<HTMLElement>(
+    if (!container) return;
+
+    const segmentNode = activeSegmentId
+      ? container.querySelector<HTMLElement>(`[data-segment-id="${activeSegmentId}"]`)
+      : null;
+    const paragraphNode = container.querySelector<HTMLElement>(
       `[data-paragraph-id="${activeParagraphId}"]`
     );
-    if (!container || !node) return;
+    const target = segmentNode ?? paragraphNode;
+    if (!target) return;
 
-    lastAutoScrolledParagraphRef.current = activeParagraphId;
-    scrollElementIntoViewPreferUpper(container, node);
+    lastAutoScrolledTargetRef.current = scrollTargetKey;
+    scrollFollowElement(container, target);
   }, [
     activeParagraphId,
     autoScrollEnabled,
     autoScrollPaused,
     isVideoPlaying,
-    transcriptHighlight?.mode,
+    transcriptHighlight,
   ]);
 
   useEffect(() => {
@@ -118,7 +128,7 @@ const TranscriptPanel = ({
   }, [activeParagraphId, transcriptHighlight]);
 
   useEffect(() => {
-    lastAutoScrolledParagraphRef.current = null;
+    lastAutoScrolledTargetRef.current = null;
   }, [paragraphs]);
 
   const handleParagraphClick = (paragraph: TranscriptParagraph) => {
