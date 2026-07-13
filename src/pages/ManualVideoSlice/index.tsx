@@ -32,6 +32,8 @@ import {
   deleteSelectedRangeFromSegment,
   downloadTextFile,
   findActiveSegment,
+  buildTranscriptHighlight,
+  findActiveCopySegment,
   getParagraphText,
   getTextSelectionOffsets,
   normalizeTranscriptParagraphs,
@@ -100,6 +102,28 @@ const ManualVideoSlicePage = () => {
     () => findActiveSegment(paragraphs, currentTime),
     [paragraphs, currentTime]
   );
+
+  const activeCopySegment = useMemo(
+    () => selectedSegments.find((segment) => segment.id === activeSegmentId) ?? null,
+    [selectedSegments, activeSegmentId]
+  );
+
+  const transcriptHighlight = useMemo(
+    () =>
+      buildTranscriptHighlight(paragraphs, {
+        activeCopySegment,
+        playbackSync: activeSync,
+        isVideoPlaying,
+      }),
+    [paragraphs, activeCopySegment, activeSync, isVideoPlaying]
+  );
+
+  const playbackActiveCopySegmentId = useMemo(() => {
+    if (!isVideoPlaying) return null;
+    return findActiveCopySegment(selectedSegments, currentTime)?.id ?? null;
+  }, [isVideoPlaying, selectedSegments, currentTime]);
+
+  const effectiveActiveCopySegmentId = playbackActiveCopySegmentId ?? activeSegmentId;
 
   const loadPageData = useCallback(async () => {
     if (!id) return;
@@ -589,8 +613,8 @@ const ManualVideoSlicePage = () => {
                   setActiveMatchIndex(nextIndex);
                   scrollToMatch(nextIndex);
                 }}
-                activeParagraphId={activeSync?.paragraphId ?? null}
-                activeSegmentId={activeSync?.segmentId ?? null}
+                activeParagraphId={transcriptHighlight?.paragraphId ?? null}
+                transcriptHighlight={transcriptHighlight}
                 isVideoPlaying={isVideoPlaying}
                 activeMatchIndex={activeMatchIndex}
                 matchParagraphIds={matchParagraphIds}
@@ -602,7 +626,7 @@ const ManualVideoSlicePage = () => {
 
           <SelectedCopyPanel
             segments={selectedSegments}
-            activeSegmentId={activeSegmentId}
+            activeSegmentId={effectiveActiveCopySegmentId}
             speakerIds={speakerIds}
             maxTotalDuration={MAX_TOTAL_DURATION}
             submitting={submitting}

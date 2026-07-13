@@ -505,6 +505,11 @@
   background: var(--surface-item-reading-bg);
 }
 
+.slice-editor-paragraph_copy-linked {
+  border-color: var(--surface-item-border);
+  background: var(--surface-item-bg);
+}
+
 .slice-editor-paragraph.matched-current {
   border-color: var(--surface-item-active-border);
   background: var(--surface-item-active-bg);
@@ -542,13 +547,21 @@
   user-select: text;
 }
 
-.slice-editor-paragraph-text .segment-active {
+.slice-editor-paragraph-text .segment-active,
+.slice-editor-paragraph-text .segment-copy-active {
   display: inline;
   padding: 2px 6px;
   margin: 0 4px 4px 0;
-  border-radius: 6px;
-  background: var(--surface-item-reading-text-bg);
   box-decoration-break: clone;
+}
+
+.slice-editor-paragraph-text .segment-active {
+  background: var(--surface-item-reading-text-bg);
+}
+
+.slice-editor-paragraph-text .segment-copy-active {
+  background: rgba(var(--primary-color-rgb), 0.18);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.28);
 }
 
 .slice-editor-transcript-tip,

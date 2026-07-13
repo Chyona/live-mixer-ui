@@ -113,6 +113,201 @@ export function findActiveSegment(
   return null;
 }
 
+const HIGHLIGHT_TIME_EPS = 0.15;
+
+export type TranscriptHighlightMode = 'copy' | 'playback';
+
+export interface TranscriptHighlight {
+  paragraphId: string;
+  segmentIds: string[];
+  mode: TranscriptHighlightMode;
+  useTextRange?: boolean;
+  textRange?: { start: number; end: number };
+}
+
+function findCopyTextRangeInParagraph(
+  paragraph: TranscriptParagraph,
+  copy: SelectedCopySegment
+): { start: number; end: number } | null {
+  const paragraphText = getParagraphText(paragraph);
+  const copyText = copy.text;
+  if (!copyText) return null;
+
+  const candidates: Array<{ start: number; end: number }> = [];
+  let searchFrom = 0;
+
+  while (searchFrom <= paragraphText.length) {
+    const index = paragraphText.indexOf(copyText, searchFrom);
+    if (index < 0) break;
+
+    candidates.push({ start: index, end: index + copyText.length });
+    searchFrom = index + Math.max(copyText.length, 1);
+  }
+
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0]!;
+
+  const paragraphRange = getParagraphRange(paragraph);
+  const duration = paragraphRange.end - paragraphRange.start;
+  if (duration <= 0) return candidates[0]!;
+
+  let best = candidates[0]!;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  candidates.forEach((candidate) => {
+    const startTime = paragraphRange.start + (duration * candidate.start) / paragraphText.length;
+    const endTime = paragraphRange.start + (duration * candidate.end) / paragraphText.length;
+    const score = Math.abs(startTime - copy.start) + Math.abs(endTime - copy.end);
+    if (score < bestScore) {
+      bestScore = score;
+      best = candidate;
+    }
+  });
+
+  return best;
+}
+
+export function paragraphSelectionToCopySegment(
+  container: HTMLElement,
+  paragraph: TranscriptParagraph
+): SelectedCopySegment | null {
+  const offsets = getTextSelectionOffsets(container);
+  if (!offsets) return null;
+
+  const paragraphText = getParagraphText(paragraph);
+  const text = paragraphText.slice(offsets.start, offsets.end);
+  if (!text.trim()) return null;
+
+  const paragraphRange = getParagraphRange(paragraph);
+  const duration = paragraphRange.end - paragraphRange.start;
+  if (duration <= 0) return null;
+
+  const start = paragraphRange.start + (duration * offsets.start) / paragraphText.length;
+  const end = paragraphRange.start + (duration * offsets.end) / paragraphText.length;
+  if (end <= start) return null;
+
+  return {
+    id: `copy-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    speakerId: paragraph.speakerId,
+    speakerName: paragraph.speakerName,
+    text,
+    start,
+    end,
+  };
+}
+
+export function findCopyTranscriptHighlight(
+  paragraphs: TranscriptParagraph[],
+  copy: SelectedCopySegment
+): Omit<TranscriptHighlight, 'mode'> | null {
+  let bestParagraph: TranscriptParagraph | null = null;
+  let bestOverlap = -1;
+
+  for (const paragraph of paragraphs) {
+    const range = getParagraphRange(paragraph);
+    const overlapStart = Math.max(range.start, copy.start);
+    const overlapEnd = Math.min(range.end, copy.end);
+    const overlap = overlapEnd - overlapStart;
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      bestParagraph = paragraph;
+    }
+  }
+
+  if (!bestParagraph || bestOverlap <= 0) return null;
+
+  const copyText = copy.text;
+  const textRange = findCopyTextRangeInParagraph(bestParagraph, copy);
+  if (textRange) {
+    return {
+      paragraphId: bestParagraph.id,
+      segmentIds: [],
+      useTextRange: true,
+      textRange,
+    };
+  }
+
+  const segmentIds = new Set<string>();
+  const containedSegments = bestParagraph.segments.filter(
+    (segment) =>
+      segment.start >= copy.start - HIGHLIGHT_TIME_EPS &&
+      segment.end <= copy.end + HIGHLIGHT_TIME_EPS
+  );
+
+  if (containedSegments.length > 0) {
+    containedSegments.forEach((segment) => segmentIds.add(segment.id));
+    return {
+      paragraphId: bestParagraph.id,
+      segmentIds: [...segmentIds],
+      useTextRange: false,
+    };
+  }
+
+  bestParagraph.segments.forEach((segment) => {
+    const overlapsTime =
+      segment.end > copy.start + HIGHLIGHT_TIME_EPS &&
+      segment.start < copy.end - HIGHLIGHT_TIME_EPS;
+    if (overlapsTime && copyText.includes(segment.text.trim())) {
+      segmentIds.add(segment.id);
+    }
+  });
+
+  if (segmentIds.size > 0) {
+    return {
+      paragraphId: bestParagraph.id,
+      segmentIds: [...segmentIds],
+      useTextRange: false,
+    };
+  }
+
+  return null;
+}
+
+export function buildTranscriptHighlight(
+  paragraphs: TranscriptParagraph[],
+  options: {
+    activeCopySegment: SelectedCopySegment | null;
+    playbackSync: { paragraphId: string; segmentId: string } | null;
+    isVideoPlaying?: boolean;
+  }
+): TranscriptHighlight | null {
+  if (options.isVideoPlaying && options.playbackSync) {
+    return {
+      paragraphId: options.playbackSync.paragraphId,
+      segmentIds: [options.playbackSync.segmentId],
+      mode: 'playback',
+      useTextRange: false,
+    };
+  }
+
+  if (options.activeCopySegment) {
+    const copyHighlight = findCopyTranscriptHighlight(paragraphs, options.activeCopySegment);
+    if (copyHighlight) {
+      return { ...copyHighlight, mode: 'copy' };
+    }
+  }
+
+  if (options.playbackSync) {
+    return {
+      paragraphId: options.playbackSync.paragraphId,
+      segmentIds: [options.playbackSync.segmentId],
+      mode: 'playback',
+      useTextRange: false,
+    };
+  }
+
+  return null;
+}
+
+export function findActiveCopySegment(
+  segments: SelectedCopySegment[],
+  currentTime: number
+): SelectedCopySegment | null {
+  return (
+    segments.find((segment) => currentTime >= segment.start && currentTime < segment.end) ?? null
+  );
+}
+
 export function collectSegmentsFromSelection(
   container: HTMLElement,
   selection: Selection
