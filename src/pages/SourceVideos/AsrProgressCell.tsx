@@ -22,22 +22,26 @@ function getProgressStatus(status: AsrStatus): 'success' | 'exception' | 'active
 interface AsrProgressCellProps {
   status: AsrStatus;
   progress: number;
-  message?: string;
+  errorMessage?: string;
   retrying?: boolean;
   onRetry?: () => void;
 }
 
-const AsrProgressCell = ({ status, progress, message, retrying, onRetry }: AsrProgressCellProps) => {
+const AsrProgressCell = ({ status, progress, errorMessage, retrying, onRetry }: AsrProgressCellProps) => {
   const label = ASR_STATUS_LABEL[status];
 
   if (status === 'failed') {
-    const failedTooltip = message ? `解析失败：${message}` : '解析失败';
+    const tooltipMessage = errorMessage?.trim();
 
     return (
       <div className="source-videos-asr source-videos-asr_failed">
-        <Tooltip title={failedTooltip}>
+        {tooltipMessage ? (
+          <Tooltip title={tooltipMessage}>
+            <span className="source-videos-asr-failed-text">解析失败</span>
+          </Tooltip>
+        ) : (
           <span className="source-videos-asr-failed-text">解析失败</span>
-        </Tooltip>
+        )}
         {onRetry ? (
           <Button
             type="link"

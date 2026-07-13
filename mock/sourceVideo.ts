@@ -1,20 +1,12 @@
 import type { MockMethod } from 'vite-plugin-mock';
+import {
+  createInitialAsrState,
+  type SourceVideo,
+} from '../src/services/sourceVideo';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 
-type MockSourceVideo = {
-  id: number;
-  name: string;
-  live_url: string;
-  remark: string;
-  duration: number;
-  ext: string;
-  live_asr: string;
-  asr_status: 'pending' | 'processing' | 'success' | 'failed';
-  asr_progress: number;
-  created_at: string;
-  updated_at: string;
-  created_by: number;
+type MockSourceVideo = SourceVideo & {
   ownerId: string;
 };
 
@@ -45,33 +37,87 @@ const MOCK_LIVE_TEMPLATES = [
 
 const DEMO_VIDEO_URLS = [...LIVE_URL];
 
-function isoAt(day: string, hour = 10) {
-  return `2026-06-${day}T${String(hour).padStart(2, '0')}:00:00.000Z`;
+const FAILED_ASR_ERROR_MESSAGES = [
+  '下载直播素材失败: write file: no space left on device',
+  '转写服务超时，请稍后重试',
+  'ASR 引擎返回错误: invalid audio stream',
+];
+
+function isoAt(day: string, hour = 10, minute = 0, second = 0) {
+  const hh = String(hour).padStart(2, '0');
+  const mm = String(minute).padStart(2, '0');
+  const ss = String(second).padStart(2, '0');
+  return `2026-06-${day}T${hh}:${mm}:${ss}.000000+08:00`;
+}
+
+function nowIso() {
+  const date = new Date();
+  const pad = (value: number, length = 2) => String(value).padStart(length, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}000+08:00`;
+}
+
+function resolveMockAsrState(
+  index: number,
+  created_at: string
+): Pick<SourceVideo, 'asr_status' | 'asr_progress' | 'asr_error_msg' | 'asr_started_at' | 'asr_updated_at' | 'duration'> {
+  const mod = index % 5;
+
+  if (mod === 0) {
+    return {
+      asr_status: 'failed',
+      asr_progress: 10,
+      asr_error_msg: FAILED_ASR_ERROR_MESSAGES[index % FAILED_ASR_ERROR_MESSAGES.length],
+      asr_started_at: created_at,
+      asr_updated_at: created_at,
+      duration: 0,
+    };
+  }
+
+  if (mod === 1) {
+    return {
+      ...createInitialAsrState(),
+      duration: 0,
+    };
+  }
+
+  if (mod === 2) {
+    return {
+      asr_status: 'processing',
+      asr_progress: 35 + (index % 40),
+      asr_error_msg: '',
+      asr_started_at: created_at,
+      asr_updated_at: created_at,
+      duration: 0,
+    };
+  }
+
+  return {
+    asr_status: 'success',
+    asr_progress: 100,
+    asr_error_msg: '',
+    asr_started_at: created_at,
+    asr_updated_at: created_at,
+    duration: 3600 + index * 317,
+  };
 }
 
 function buildMockSourceVideos(): MockSourceVideo[] {
   return MOCK_LIVE_TEMPLATES.map((item, index) => {
     const id = index + 1;
     const day = String((index % 28) + 1).padStart(2, '0');
-    const created_at = isoAt(day);
-    const failed = index % 4 === 0;
+    const created_at = isoAt(day, 10 + (index % 8), index % 60);
 
     return {
       id,
       name: item.name,
       live_url: DEMO_VIDEO_URLS[index % DEMO_VIDEO_URLS.length],
       remark: item.remark,
-      duration: failed ? 0 : 3600 + index * 317,
       ext: '',
-      live_asr: failed
-        ? JSON.stringify({ message: '转写服务超时，请稍后重试' })
-        : '{}',
-      asr_status: failed ? 'failed' : 'success',
-      asr_progress: failed ? 36 : 100,
       created_at,
       updated_at: created_at,
       created_by: 1,
       ownerId: CURRENT_USER_ID,
+      ...resolveMockAsrState(index, created_at),
     };
   });
 }
@@ -85,7 +131,9 @@ const sourceVideos: MockSourceVideo[] = [
     remark: '不应展示',
     duration: 1200,
     ext: '',
-    live_asr: '{}',
+    asr_error_msg: '',
+    asr_started_at: isoAt('05', 12),
+    asr_updated_at: isoAt('05', 12),
     asr_status: 'success',
     asr_progress: 100,
     created_at: isoAt('05', 12),
@@ -109,7 +157,7 @@ function matchKeywords(text: string, keywords: string[]) {
   return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
 }
 
-function toPublicItem(item: MockSourceVideo) {
+function toPublicItem(item: MockSourceVideo): SourceVideo {
   const { ownerId: _ownerId, ...rest } = item;
   return rest;
 }
@@ -117,9 +165,13 @@ function toPublicItem(item: MockSourceVideo) {
 function advanceAsrProgress(item: MockSourceVideo) {
   if (item.asr_status === 'success' || item.asr_status === 'failed') return;
 
+  const now = nowIso();
+
   if (item.asr_status === 'pending') {
     item.asr_status = 'processing';
     item.asr_progress = 8;
+    item.asr_started_at = now;
+    item.asr_updated_at = now;
     return;
   }
 
@@ -128,13 +180,14 @@ function advanceAsrProgress(item: MockSourceVideo) {
   if (item.asr_progress >= 100) {
     item.asr_progress = 100;
     item.asr_status = 'success';
-    item.live_asr = '{}';
+    item.asr_error_msg = '';
     if (item.duration === 0) {
       item.duration = 1800 + Math.floor(Math.random() * 3600);
     }
   }
 
-  item.updated_at = new Date().toISOString();
+  item.asr_updated_at = now;
+  item.updated_at = now;
 }
 
 function tickAllAsrJobs() {
@@ -209,7 +262,7 @@ export default [
         return { code: 400, message: '请填写完整信息', data: null };
       }
 
-      const now = new Date().toISOString();
+      const now = nowIso();
       const item: MockSourceVideo = {
         id: Date.now(),
         name,
@@ -217,9 +270,7 @@ export default [
         remark: body.remark?.trim() || '',
         duration: 0,
         ext: '',
-        live_asr: '{}',
-        asr_status: 'pending',
-        asr_progress: 0,
+        ...createInitialAsrState(),
         created_at: now,
         updated_at: now,
         created_by: 1,
@@ -256,7 +307,7 @@ export default [
         return { code: 404, message: '源视频不存在', data: null };
       }
       item.remark = body?.remark?.trim() || '';
-      item.updated_at = new Date().toISOString();
+      item.updated_at = nowIso();
       return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
@@ -288,10 +339,8 @@ export default [
         return { code: 400, message: '当前 ASR 状态不可重新解析', data: null };
       }
 
-      item.asr_status = 'pending';
-      item.asr_progress = 0;
-      item.live_asr = '{}';
-      item.updated_at = new Date().toISOString();
+      Object.assign(item, createInitialAsrState());
+      item.updated_at = nowIso();
 
       return { code: 0, message: '', data: toPublicItem(item) };
     },

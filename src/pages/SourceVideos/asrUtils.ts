@@ -11,23 +11,8 @@ export function isAsrReady(status: AsrStatus): boolean {
   return status === 'success';
 }
 
-export function parseLiveAsrMessage(live_asr: string): string | undefined {
-  if (!live_asr?.trim()) return undefined;
-
-  try {
-    const parsed = JSON.parse(live_asr) as { message?: string; error?: string; errorMessage?: string };
-    return parsed.message || parsed.error || parsed.errorMessage;
-  } catch {
-    return undefined;
-  }
-}
-
-export function getAsrActionDisabledReason(
-  status: AsrStatus,
-  live_asr?: string,
-  message?: string
-): string | null {
-  const resolvedMessage = message ?? (live_asr ? parseLiveAsrMessage(live_asr) : undefined);
+export function getAsrActionDisabledReason(status: AsrStatus, asr_error_msg?: string): string | null {
+  const resolvedMessage = asr_error_msg?.trim();
 
   if (isAsrReady(status)) return null;
 

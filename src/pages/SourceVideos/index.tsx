@@ -28,7 +28,7 @@ import { showAppError, toast } from '~/utils/toast';
 
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
-import { getAsrActionDisabledReason, parseLiveAsrMessage } from './asrUtils';
+import { getAsrActionDisabledReason } from './asrUtils';
 import './index.css';
 
 function renderSliceAction(options: {
@@ -290,7 +290,7 @@ const SourceVideosPage = () => {
           <AsrProgressCell
             status={record.asr_status}
             progress={record.asr_progress}
-            message={parseLiveAsrMessage(record.live_asr)}
+            errorMessage={record.asr_error_msg}
             retrying={retryingAsrId === record.id}
             onRetry={
               record.asr_status === 'failed'
@@ -306,7 +306,10 @@ const SourceVideosPage = () => {
         width: 280,
         fixed: 'right',
         render: (_, record) => {
-          const asrDisabledReason = getAsrActionDisabledReason(record.asr_status, record.live_asr);
+          const asrDisabledReason = getAsrActionDisabledReason(
+            record.asr_status,
+            record.asr_error_msg
+          );
 
           return (
             <Space size={8}>
