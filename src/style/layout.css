@@ -32,8 +32,16 @@
   background-color: var(--content-bg);
 }
 
-.zt-app-main:has(.list-page) {
+.zt-app-main:has(.list-page),
+.zt-app-main:has(.slice-page_manual),
+.zt-app-main:has(.slice-page_timeline) {
   overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .zt-app-main:has(.slice-page_manual) {
+    overflow-y: auto;
+  }
 }
 
 .zt-app--top-nav .zt-app-main:has(.list-page):not(.zt-app-main_full):not(.zt-app-main_with-sider) {

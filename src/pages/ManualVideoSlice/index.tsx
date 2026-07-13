@@ -476,11 +476,11 @@ const ManualVideoSlicePage = () => {
   }
 
   return (
-    <div className="slice-page">
+    <div className="slice-page slice-page_manual">
       <SlicePageHeader
         breadcrumbItems={breadcrumbItems}
         title={`${video.name} - 视频人工切片`}
-        description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
+        // description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
           <Space size={12}>
             <Button icon={<LuDownload size={16} />} onClick={handleDownloadSubtitle}>
@@ -500,43 +500,48 @@ const ManualVideoSlicePage = () => {
       ) : (
         <div className="slice-editor-layout">
           <div className="slice-editor-main">
-            <div className="slice-editor-panel slice-editor-panel_video">
-              <div className="slice-editor-panel-title">视频预览</div>
-              <StreamVideoPlayer
-                ref={playerRef}
-                url={streamUrl}
-                className="slice-editor-video"
-                onDurationChange={setVideoDuration}
+            <div className="slice-editor-panel slice-editor-panel_left">
+              <div className="slice-editor-video-block">
+                {/* <div className="slice-editor-panel-title">视频预览</div> */}
+                <StreamVideoPlayer
+                  ref={playerRef}
+                  url={streamUrl}
+                  className="slice-editor-video"
+                  onDurationChange={setVideoDuration}
+                />
+              </div>
+
+              <div className="slice-editor-section-divider" aria-hidden />
+
+              <TranscriptPanel
+                embedded
+                paragraphs={paragraphs.map((paragraph) => ({
+                  ...paragraph,
+                  id: paragraph.id,
+                }))}
+                keyword={keyword}
+                onKeywordChange={setKeyword}
+                onPrevMatch={() => {
+                  if (!matchParagraphIds.length) return;
+                  const nextIndex =
+                    (activeMatchIndex - 1 + matchParagraphIds.length) % matchParagraphIds.length;
+                  setActiveMatchIndex(nextIndex);
+                  scrollToMatch(nextIndex);
+                }}
+                onNextMatch={() => {
+                  if (!matchParagraphIds.length) return;
+                  const nextIndex = (activeMatchIndex + 1) % matchParagraphIds.length;
+                  setActiveMatchIndex(nextIndex);
+                  scrollToMatch(nextIndex);
+                }}
+                activeParagraphId={activeSync?.paragraphId ?? null}
+                activeSegmentId={activeSync?.segmentId ?? null}
+                activeMatchIndex={activeMatchIndex}
+                matchParagraphIds={matchParagraphIds}
+                onSeek={handleSeek}
+                onSelectSegment={handleSelectSegment}
               />
             </div>
-
-            <TranscriptPanel
-              paragraphs={paragraphs.map((paragraph) => ({
-                ...paragraph,
-                id: paragraph.id,
-              }))}
-              keyword={keyword}
-              onKeywordChange={setKeyword}
-              onPrevMatch={() => {
-                if (!matchParagraphIds.length) return;
-                const nextIndex =
-                  (activeMatchIndex - 1 + matchParagraphIds.length) % matchParagraphIds.length;
-                setActiveMatchIndex(nextIndex);
-                scrollToMatch(nextIndex);
-              }}
-              onNextMatch={() => {
-                if (!matchParagraphIds.length) return;
-                const nextIndex = (activeMatchIndex + 1) % matchParagraphIds.length;
-                setActiveMatchIndex(nextIndex);
-                scrollToMatch(nextIndex);
-              }}
-              activeParagraphId={activeSync?.paragraphId ?? null}
-              activeSegmentId={activeSync?.segmentId ?? null}
-              activeMatchIndex={activeMatchIndex}
-              matchParagraphIds={matchParagraphIds}
-              onSeek={handleSeek}
-              onSelectSegment={handleSelectSegment}
-            />
           </div>
 
           <SelectedCopyPanel

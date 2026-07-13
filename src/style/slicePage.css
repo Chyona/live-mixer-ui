@@ -2,6 +2,25 @@
 .slice-page {
   padding: var(--content-padding);
   min-height: 100%;
+  box-sizing: border-box;
+}
+
+.slice-page_manual {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slice-page_manual > .slice-page-header {
+  flex-shrink: 0;
+}
+
+.slice-page_manual > .slice-editor-layout {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .slice-page_timeline {
@@ -36,11 +55,19 @@
 }
 
 /* 人工切片编辑器布局 */
+.slice-page_manual .slice-page-header {
+  margin-bottom: 12px;
+}
+
 .slice-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+}
+
+.slice-page_manual .slice-editor-layout > * {
+  min-height: 0;
 }
 
 .slice-editor-main {
@@ -48,6 +75,46 @@
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
+}
+
+.slice-page_manual .slice-editor-main {
+  gap: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.slice-editor-panel_left {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.slice-editor-video-block {
+  flex-shrink: 0;
+  padding: 14px 14px 12px;
+}
+
+.slice-editor-video-block .slice-editor-panel-title {
+  margin-bottom: 10px;
+}
+
+.slice-editor-section-divider {
+  flex-shrink: 0;
+  height: 1px;
+  margin: 0 14px;
+  background: var(--surface-divider, #eef0f4);
+}
+
+.slice-editor-transcript-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 14px 14px;
 }
 
 .slice-editor-panel-title {
@@ -68,10 +135,16 @@
   padding: 14px;
 }
 
-.slice-editor-panel_transcript {
+.slice-editor-panel_transcript,
+.slice-editor-transcript-section {
   display: flex;
   flex-direction: column;
   min-height: 420px;
+}
+
+.slice-page_manual .slice-editor-panel_transcript,
+.slice-page_manual .slice-editor-transcript-section {
+  min-height: 0;
 }
 
 .slice-editor-transcript-head {
@@ -79,6 +152,7 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .slice-editor-transcript-head .slice-editor-panel-title {
@@ -87,8 +161,14 @@
 }
 
 .slice-editor-panel_copy {
-  position: sticky;
-  top: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slice-page_manual .slice-editor-panel_copy {
+  height: 100%;
 }
 
 .slice-editor-video {
@@ -124,7 +204,11 @@
 
 .slice-editor-search_inline .slice-editor-search-input-wrap {
   flex: 1;
-  min-width: 0;
+  min-width: 180px;
+}
+
+.slice-editor-search_inline .ant-input-affix-wrapper {
+  padding-block: 4px;
 }
 
 .slice-editor-search_inline .slice-editor-search-meta {
@@ -165,11 +249,57 @@
   cursor: not-allowed;
 }
 
-.slice-editor-transcript-body {
+.slice-editor-transcript-body,
+.slice-editor-copy-list {
   flex: 1;
+  min-height: 0;
   overflow: auto;
-  max-height: 520px;
-  padding-right: 4px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--primary-color-rgb), 0.28) transparent;
+}
+
+.slice-editor-transcript-body {
+  padding-right: 2px;
+}
+
+.slice-editor-copy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.slice-editor-transcript-body::-webkit-scrollbar,
+.slice-editor-copy-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.slice-editor-transcript-body::-webkit-scrollbar-track,
+.slice-editor-copy-list::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.slice-editor-transcript-body::-webkit-scrollbar-thumb,
+.slice-editor-copy-list::-webkit-scrollbar-thumb {
+  background: rgba(var(--primary-color-rgb), 0.22);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.slice-editor-transcript-body::-webkit-scrollbar-thumb:hover,
+.slice-editor-copy-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--primary-color-rgb), 0.38);
+  background-clip: padding-box;
+}
+
+.slice-editor-transcript-body::-webkit-scrollbar-corner,
+.slice-editor-copy-list::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .slice-editor-paragraph {
@@ -230,12 +360,18 @@
 }
 
 .slice-editor-transcript-tip {
+  flex-shrink: 0;
   margin: 10px 0 0;
   color: var(--text-gray);
   font-size: 12px;
 }
 
+.slice-editor-paragraph:last-child {
+  margin-bottom: 0;
+}
+
 .slice-editor-copy-header {
+  flex-shrink: 0;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -273,8 +409,10 @@
 }
 
 .slice-editor-copy-toolbar {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -293,6 +431,7 @@
 }
 
 .slice-editor-copy-toolbar button.primary {
+  margin-left: auto;
   border-color: var(--primary-color);
   background: var(--primary-color);
   color: #fff;
@@ -305,14 +444,6 @@
 .slice-editor-copy-toolbar button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.slice-editor-copy-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: calc(100vh - 280px);
-  overflow: auto;
 }
 
 .slice-editor-copy-empty {
@@ -375,6 +506,7 @@
 }
 
 .slice-editor-copy-tip {
+  flex-shrink: 0;
   margin: 10px 0 0;
   color: var(--text-gray);
   font-size: 12px;
@@ -443,8 +575,37 @@
     grid-template-columns: 1fr;
   }
 
-  .slice-editor-panel_copy {
-    position: static;
+  .slice-page_manual {
+    height: auto;
+    overflow: visible;
+  }
+
+  .slice-page_manual .slice-editor-layout,
+  .slice-page_manual .slice-editor-main {
+    overflow: visible;
+  }
+
+  .slice-page_manual .slice-editor-transcript-body {
+    max-height: min(420px, 48vh);
+  }
+
+  .slice-page_manual .slice-editor-copy-list {
+    max-height: min(360px, 40vh);
+  }
+
+  .slice-editor-transcript-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .slice-editor-transcript-head .slice-editor-panel-title {
+    width: 100%;
+  }
+
+  .slice-editor-copy-toolbar button.primary {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
 }
 

@@ -17,6 +17,7 @@ interface TranscriptPanelProps {
   onKeywordChange: (value: string) => void;
   onPrevMatch: () => void;
   onNextMatch: () => void;
+  embedded?: boolean;
   activeParagraphId: string | null;
   activeSegmentId: string | null;
   activeMatchIndex: number;
@@ -31,6 +32,7 @@ const TranscriptPanel = ({
   onKeywordChange,
   onPrevMatch,
   onNextMatch,
+  embedded = false,
   activeParagraphId,
   activeSegmentId,
   activeMatchIndex,
@@ -71,7 +73,13 @@ const TranscriptPanel = ({
   };
 
   return (
-    <div className="slice-editor-panel slice-editor-panel_transcript">
+    <div
+      className={
+        embedded
+          ? 'slice-editor-transcript-section'
+          : 'slice-editor-panel slice-editor-panel_transcript'
+      }
+    >
       <div className="slice-editor-transcript-head">
         <div className="slice-editor-panel-title">文案分段</div>
         <KeywordSearchBar
