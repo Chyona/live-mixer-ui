@@ -10,7 +10,7 @@ import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
 import { submitClip } from '~/services/slice';
 import { submitAiSliceSelection } from '~/services/aiSlice';
-import type { AiPrompt } from '~/services/aiPrompt';
+import { getAiPromptContent, type AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
@@ -198,9 +198,14 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
-    const promptText = selectedPrompt?.content?.trim();
-    if (!promptText) {
+    if (!selectedPrompt) {
       toast.notify.warning('请先选择一个 AI 提示词');
+      return;
+    }
+
+    const promptText = getAiPromptContent(selectedPrompt);
+    if (!promptText) {
+      toast.notify.warning('所选提示词内容为空，请编辑后重试');
       return;
     }
 
@@ -249,9 +254,11 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
-    const promptText = selectedPrompt?.content?.trim();
+    const promptText = getAiPromptContent(selectedPrompt);
     if (!selectedPrompt || !promptText) {
-      toast.notify.warning('请先选择一个 AI 提示词');
+      toast.notify.warning(
+        !selectedPrompt ? '请先选择一个 AI 提示词' : '所选提示词内容为空，请编辑后重试'
+      );
       return;
     }
 
@@ -388,7 +395,7 @@ const SourceVideoSlicePage = () => {
                 onAiSelect={() => void handleAiSelect()}
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
-                hasSelectedPrompt={Boolean(selectedPrompt?.content?.trim())}
+                hasSelectedPrompt={selectedPrompt != null}
               />
               <VideoTimeline
                 duration={videoDuration}
