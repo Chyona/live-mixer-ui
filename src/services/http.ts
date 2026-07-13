@@ -10,6 +10,8 @@ import { apiPath } from '~/utils/api';
 
 export type { BaseResponse } from '~/services/types';
 
+export const HTTP_STATUS_UNAUTHORIZED = 401;
+
 export class AppError extends Error {
   errorMessage: string;
   errorCode: number;
@@ -22,6 +24,33 @@ export class AppError extends Error {
     this.name = 'AppError';
     this.resp = resp;
   }
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof AppError && error.errorCode === HTTP_STATUS_UNAUTHORIZED;
+}
+
+let handlingUnauthorized = false;
+
+function handleUnauthorized(navigate: NavigateFunction) {
+  if (handlingUnauthorized) return;
+
+  handlingUnauthorized = true;
+  const { pathname, search, hash } = window.location;
+  clearAuthSession();
+
+  if (isLoginPageMode && pathname !== '/login') {
+    navigate('/login', {
+      replace: true,
+      state: { from: { pathname, search, hash } },
+    });
+  } else {
+    openLogin({ pathname, search, hash });
+  }
+
+  window.setTimeout(() => {
+    handlingUnauthorized = false;
+  }, 3000);
 }
 
 axios.interceptors.request.use(
@@ -45,23 +74,16 @@ axios.interceptors.request.use(
 export function setupHttpInterceptors(navigate: NavigateFunction) {
   const interceptorId = axios.interceptors.response.use(
     (response) => response,
-    (error): Promise<AppError> | void => {
+    (error): Promise<AppError> => {
       let message: string;
       let code: number;
 
       if (error.response) {
-        if (error.response.status === 401) {
-          const { pathname, search, hash } = window.location;
-          clearAuthSession();
-          if (isLoginPageMode && pathname !== '/login') {
-            navigate('/login', {
-              replace: true,
-              state: { from: { pathname, search, hash } },
-            });
-          } else {
-            openLogin({ pathname, search, hash });
-          }
-          return;
+        if (error.response.status === HTTP_STATUS_UNAUTHORIZED) {
+          handleUnauthorized(navigate);
+          return Promise.reject(
+            new AppError('未登录或登录已过期', HTTP_STATUS_UNAUTHORIZED, error)
+          );
         }
 
         try {

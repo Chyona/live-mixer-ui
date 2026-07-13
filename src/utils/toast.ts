@@ -1,7 +1,7 @@
 import { message as staticMessage, notification as staticNotification } from 'antd';
 import type { MessageInstance } from 'antd/es/message/interface';
 import type { NotificationInstance } from 'antd/es/notification/interface';
-import type { AppError } from '~/services/http';
+import { isUnauthorizedError, type AppError } from '~/services/http';
 
 type ToastApis = {
   message: MessageInstance;
@@ -101,5 +101,6 @@ export const toast = {
 
 /** 展示 HTTP / 业务层 AppError */
 export function showAppError(error: AppError) {
+  if (isUnauthorizedError(error)) return;
   toast.notify.error(error.errorMessage);
 }

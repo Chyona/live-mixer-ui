@@ -51,6 +51,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    const handleLoginChange = (event: Event) => {
+      const detail = (event as CustomEvent<Partial<UserLoginResult> & { state?: string }>).detail;
+      if (detail?.state === 'logout') {
+        setUserInfo({});
+        return;
+      }
+      if (detail?.state === 'login') {
+        setUserInfo(detail);
+      }
+    };
+
+    window.addEventListener(LOGIN_CHANGE_EVENT, handleLoginChange as EventListener);
+    return () => {
+      window.removeEventListener(LOGIN_CHANGE_EVENT, handleLoginChange as EventListener);
+    };
+  }, []);
+
   const updateAuthInfo = (tokenData: Partial<UserLoginResult>) => {
     let oldData = {};
     try {

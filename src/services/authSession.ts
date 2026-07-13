@@ -1,4 +1,4 @@
-import { AUTH_TOKEN_KEY } from '~/context/AuthContext';
+import { AUTH_TOKEN_KEY, LOGIN_CHANGE_EVENT } from '~/context/AuthContext';
 import { openLogin } from '~/utils/loginFlow';
 
 const redirectToLogin = (() => {
@@ -10,7 +10,7 @@ const redirectToLogin = (() => {
     }
 
     redirectId = setTimeout(() => {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      clearAuthSession();
       openLogin();
       redirectId = null;
     }, 1000);
@@ -21,6 +21,9 @@ const redirectToLogin = (() => {
 
 export function clearAuthSession() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.dispatchEvent(
+    new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { state: 'logout' } })
+  );
 }
 
 export function requireLoginRedirect() {

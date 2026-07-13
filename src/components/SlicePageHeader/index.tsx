@@ -7,7 +7,7 @@ import './index.css';
 
 export interface SlicePageToolbarProps {
   title: string;
-  description: string;
+  description?: string;
   actions?: ReactNode;
   tip?: {
     text: string;
@@ -35,7 +35,7 @@ export const SlicePageToolbar = ({
     <div className={['slice-page-header-main', className].filter(Boolean).join(' ')}>
       <div>
         <h1 className="slice-page-title">{title}</h1>
-        <p className="slice-page-desc">{description}</p>
+        {description && <p className="slice-page-desc">{description}</p>}
       </div>
       {tip || actions ? (
         <div className="slice-page-header-right">
