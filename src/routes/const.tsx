@@ -59,7 +59,7 @@ export const RoutesCfg: RouteCfgType[] = [
     iconProps: { strokeWidth: 1.75 },
   },
   {
-    path: '/source-videos/:id/slice',
+    path: '/videos-slice/:id',
     text: '视频切片',
     icon: LuScissors,
     element: SourceVideoSlicePage,

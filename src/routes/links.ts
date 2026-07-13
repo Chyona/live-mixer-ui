@@ -2,8 +2,10 @@ import type { SliceProjectSource } from '~/services/sliceProject';
 
 export type SliceEditorEntryFrom = 'source-videos' | 'slices' | 'tasks';
 
+export const LIVE_SLICE_PATH = '/videos-slice';
+
 export function buildSourceVideoSliceLink(sourceVideoId: string) {
-  return `/source-videos/${sourceVideoId}/slice`;
+  return `${LIVE_SLICE_PATH}/${sourceVideoId}`;
 }
 
 export function buildManualVideoSliceLink(sourceVideoId: string) {

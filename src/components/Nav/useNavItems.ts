@@ -9,8 +9,8 @@ export const getNavActive = (
   entryFrom?: SliceEditorEntryFrom
 ) => {
   const isSliceEditor =
-    currentPath.includes('/source-videos/') &&
-    (currentPath.endsWith('/slice') || currentPath.endsWith('/manual-slice'));
+    currentPath.startsWith('/videos-slice/') ||
+    (currentPath.includes('/source-videos/') && currentPath.endsWith('/manual-slice'));
 
   if (isSliceEditor) {
     if (entryFrom === 'slices') {

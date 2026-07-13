@@ -15,6 +15,10 @@ import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import type { SliceEditorEntryFrom } from '~/routes/links';
+import {
+  buildManualVideoSliceLink,
+  buildSourceVideoSliceLink,
+} from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import TranscriptPanel from './components/TranscriptPanel';
 import VideoTranscriptResizeHandle from './components/VideoTranscriptResizeHandle';
@@ -69,7 +73,7 @@ const ManualVideoSlicePage = () => {
 
   useAppSEO({
     title: video ? `${video.name} - 人工切片` : '人工切片',
-    path: id ? `/source-videos/${id}/manual-slice` : '/source-videos',
+    path: id ? buildManualVideoSliceLink(id) : '/source-videos',
     robots: 'noindex, nofollow',
   });
 
@@ -491,7 +495,7 @@ const ManualVideoSlicePage = () => {
               字幕下载
             </Button>
             {entryFrom !== 'slices' ? (
-              <Link to={`/source-videos/${id}/slice`}>
+              <Link to={buildSourceVideoSliceLink(id)}>
                 <Button>切换到时间轴切片</Button>
               </Link>
             ) : null}

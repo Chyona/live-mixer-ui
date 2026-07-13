@@ -14,6 +14,7 @@ import { showAppError, toast } from '~/utils/toast';
 import { formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
+import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import PageLoading from '~/components/PageLoading';
@@ -46,7 +47,7 @@ const SourceVideoSlicePage = () => {
 
   useAppSEO({
     title: video ? `${video.name} - 切片` : '视频切片',
-    path: id ? `/source-videos/${id}/slice` : '/source-videos',
+    path: id ? buildSourceVideoSliceLink(id) : '/source-videos',
     robots: 'noindex, nofollow',
   });
 
@@ -323,7 +324,7 @@ const SourceVideoSlicePage = () => {
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
           {entryFrom !== 'slices' ? (
-            <Link to={`/source-videos/${id}/manual-slice`}>
+            <Link to={buildManualVideoSliceLink(id)}>
               <Button>切换到人工切片</Button>
             </Link>
           ) : null}
