@@ -616,13 +616,61 @@
   box-shadow: none;
 }
 
+.slice-editor-copy-list_empty {
+  justify-content: center;
+  align-items: center;
+}
+
 .slice-editor-copy-empty {
-  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  padding: 28px 20px;
   border: 1px dashed var(--border-color, #eef0f4);
-  border-radius: 10px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.slice-editor-copy-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: var(--text-gray);
+}
+
+.slice-editor-copy-empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.slice-editor-copy-empty-desc {
+  margin: 0;
   color: var(--text-gray);
   font-size: 13px;
-  text-align: center;
+  line-height: 1.7;
+}
+
+.slice-editor-copy-empty-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-primary-bg-subtle);
+  color: var(--primary-color);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .slice-editor-copy-item {

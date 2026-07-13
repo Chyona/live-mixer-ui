@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
 import {
+  LuArrowLeft,
   LuCopy,
   LuGripVertical,
   LuPlay,
   LuScissors,
+  LuTextSelect,
   LuTrash2,
 } from 'react-icons/lu';
 import type { SelectedCopySegment } from '../types';
@@ -135,10 +137,27 @@ const SelectedCopyPanel = ({
         </div>
       </div>
 
-      <div className="slice-editor-copy-list">
+      <div
+        className={[
+          'slice-editor-copy-list',
+          segments.length === 0 ? 'slice-editor-copy-list_empty' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {segments.length === 0 ? (
           <div className="slice-editor-copy-empty">
-            请从左侧文案中选择整段或部分文字，选中内容会出现在这里。
+            <div className="slice-editor-copy-empty-icon" aria-hidden>
+              <LuTextSelect size={22} />
+            </div>
+            <p className="slice-editor-copy-empty-title">等待选片</p>
+            <p className="slice-editor-copy-empty-desc">
+              从左侧文案中选择整段或部分文字，选中内容会出现在这里。
+            </p>
+            <span className="slice-editor-copy-empty-hint">
+              <LuArrowLeft size={14} />
+              在左侧「文案分段」中操作
+            </span>
           </div>
         ) : (
           segments.map((segment, index) => {
