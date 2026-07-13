@@ -95,6 +95,59 @@
 .slice-editor-video-block {
   flex-shrink: 0;
   padding-bottom: 16px;
+
+  .ant-collapse > .ant-collapse-item > .ant-collapse-header {
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.slice-editor-video-block_customized {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.slice-editor-video-block_customized .ant-collapse {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.slice-editor-video-block_customized .ant-collapse-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  border: none;
+}
+
+.slice-editor-video-block_customized .ant-collapse-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.slice-editor-video-block_customized .ant-collapse-content-box {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 8px 0 0 !important;
+}
+
+.slice-editor-video-block_customized .slice-editor-video {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  height: auto;
 }
 
 .slice-editor-video-block .slice-editor-panel-title {
@@ -105,6 +158,125 @@
   flex-shrink: 0;
   height: 1px;
   background: var(--surface-divider, #eef0f4);
+}
+
+.slice-editor-section-divider_resizable {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  margin: 2px 0 4px;
+  background: transparent;
+  cursor: ns-resize;
+}
+
+.slice-editor-section-divider-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.slice-editor-section-divider-grip {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-color, #e5e8ef);
+  border-radius: 999px;
+  background: var(--surface-card);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  pointer-events: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.slice-editor-section-divider-grip span {
+  display: block;
+  width: 12px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: rgba(var(--primary-color-rgb), 0.35);
+  transition:
+    background 0.2s ease,
+    width 0.2s ease;
+}
+
+.slice-editor-section-divider_resizable::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--surface-divider, #eef0f4);
+  transform: translateY(-50%);
+  transition:
+    height 0.15s ease,
+    background 0.15s ease;
+}
+
+.slice-editor-section-divider_resizable:hover,
+.slice-editor-section-divider_active {
+  background: rgba(var(--primary-color-rgb), 0.04);
+}
+
+.slice-editor-section-divider_resizable:hover::before,
+.slice-editor-section-divider_active::before,
+.slice-editor-section-divider_customized::before {
+  height: 2px;
+  background: rgba(var(--primary-color-rgb), 0.2);
+}
+
+.slice-editor-section-divider_resizable:hover .slice-editor-section-divider-grip,
+.slice-editor-section-divider_active .slice-editor-section-divider-grip,
+.slice-editor-section-divider_customized .slice-editor-section-divider-grip {
+  border-color: var(--color-primary-border-subtle);
+  background: var(--color-primary-bg-subtle);
+  box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.12);
+  transform: translateY(0);
+}
+
+.slice-editor-section-divider_resizable:hover .slice-editor-section-divider-grip span,
+.slice-editor-section-divider_active .slice-editor-section-divider-grip span,
+.slice-editor-section-divider_customized .slice-editor-section-divider-grip span {
+  width: 14px;
+  background: var(--primary-color);
+}
+
+.slice-editor-section-divider-reset {
+  position: absolute;
+  right: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-color, #eef0f4);
+  border-radius: 6px;
+  background: var(--surface-card);
+  color: var(--text-gray);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.slice-editor-section-divider-reset:hover {
+  color: var(--primary-color);
+  border-color: var(--color-primary-border-subtle);
+  background: var(--color-primary-bg-subtle);
 }
 
 .slice-editor-transcript-section {
@@ -130,7 +302,7 @@
 }
 
 .slice-editor-panel {
-  padding: 14px;
+  padding: 16px;
 }
 
 .slice-editor-panel_transcript,

@@ -17,6 +17,7 @@ import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import type { SliceEditorEntryFrom } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import TranscriptPanel from './components/TranscriptPanel';
+import VideoTranscriptResizeHandle from './components/VideoTranscriptResizeHandle';
 import SelectedCopyPanel from './components/SelectedCopyPanel';
 import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
@@ -44,6 +45,8 @@ const ManualVideoSlicePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const playerRef = useRef<StreamVideoPlayerHandle>(null);
+  const panelLeftRef = useRef<HTMLDivElement>(null);
+  const videoBlockRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
 
   const [loading, setLoading] = useState(true);
@@ -54,6 +57,7 @@ const ManualVideoSlicePage = () => {
   const [mode, setMode] = useState<ManualSliceMode>('select');
   const [keyword, setKeyword] = useState('');
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+  const [videoPanelHeight, setVideoPanelHeight] = useState<number | null>(null);
   const [selectedSegments, setSelectedSegments] = useState<SelectedCopySegment[]>([]);
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -500,8 +504,21 @@ const ManualVideoSlicePage = () => {
       ) : (
         <div className="slice-editor-layout">
           <div className="slice-editor-main">
-            <div className="slice-editor-panel slice-editor-panel_left">
-              <div className="slice-editor-video-block">
+            <div ref={panelLeftRef} className="slice-editor-panel  slice-editor-panel_left">
+              <div
+                ref={videoBlockRef}
+                className={[
+                  'slice-editor-video-block',
+                  videoPanelHeight != null ? 'slice-editor-video-block_customized' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={
+                  videoPanelHeight != null
+                    ? { height: videoPanelHeight, flex: `0 0 ${videoPanelHeight}px` }
+                    : undefined
+                }
+              >
                 {/* <div className="slice-editor-panel-title">视频预览</div> */}
                 <StreamVideoPlayer
                   ref={playerRef}
@@ -511,7 +528,13 @@ const ManualVideoSlicePage = () => {
                 />
               </div>
 
-              <div className="slice-editor-section-divider" aria-hidden />
+              <VideoTranscriptResizeHandle
+                isCustomized={videoPanelHeight != null}
+                onResize={setVideoPanelHeight}
+                onMeasureStart={() => videoBlockRef.current?.getBoundingClientRect().height ?? 0}
+                onMeasurePanel={() => panelLeftRef.current?.getBoundingClientRect().height ?? 0}
+                onReset={() => setVideoPanelHeight(null)}
+              />
 
               <TranscriptPanel
                 embedded
