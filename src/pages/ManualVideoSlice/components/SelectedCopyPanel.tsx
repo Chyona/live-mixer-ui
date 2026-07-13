@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   LuArrowLeft,
   LuCopy,
@@ -17,6 +17,24 @@ import {
   reorderSegments,
 } from '../utils';
 import { formatVideoDuration } from '~/utils/duration';
+
+type DropMarker = {
+  index: number;
+  placement: 'before' | 'after';
+};
+
+function getReorderToIndex(target: DropMarker, length: number) {
+  if (target.placement === 'before') return target.index;
+  return Math.min(target.index + 1, length - 1);
+}
+
+function wouldReorder(fromIndex: number, target: DropMarker, length: number) {
+  let insertIndex = target.placement === 'before' ? target.index : Math.min(target.index + 1, length);
+  if (fromIndex < insertIndex) {
+    insertIndex -= 1;
+  }
+  return insertIndex !== fromIndex;
+}
 
 interface SelectedCopyPanelProps {
   segments: SelectedCopySegment[];
@@ -64,7 +82,11 @@ const SelectedCopyPanel = ({
   onSubmit,
 }: SelectedCopyPanelProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dropMarker, setDropMarker] = useState<DropMarker | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const pointerDraggingRef = useRef(false);
+  const suppressItemClickRef = useRef(false);
   const textSelectionRef = useRef<{ segmentId: string; start: number; end: number } | null>(null);
   const totalDuration = getTotalSelectedDuration(segments);
   const isOverLimit = totalDuration > maxTotalDuration;
@@ -72,17 +94,86 @@ const SelectedCopyPanel = ({
   const hasSegments = segments.length > 0;
 
   const resetDragState = () => {
+    pointerDraggingRef.current = false;
+    dragIndexRef.current = null;
     setDragIndex(null);
-    setDragOverIndex(null);
+    setDropMarker(null);
   };
 
-  const handleDrop = (toIndex: number) => {
-    if (dragIndex == null || dragIndex === toIndex) {
-      resetDragState();
-      return;
+  const getDropTarget = useCallback((clientY: number): DropMarker | null => {
+    const items = listRef.current?.querySelectorAll<HTMLElement>('.slice-editor-copy-item');
+    if (!items?.length) return null;
+
+    const itemElements = Array.from(items);
+    const lastIndex = itemElements.length - 1;
+    for (let i = 0; i < itemElements.length; i += 1) {
+      const item = itemElements[i];
+      if (!item) continue;
+      const rect = item.getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        return { index: i, placement: 'before' };
+      }
     }
 
-    onReorder(reorderSegments(segments, dragIndex, toIndex));
+    return { index: lastIndex, placement: 'after' };
+  }, []);
+
+  const finishPointerDrag = useCallback(
+    (clientY: number) => {
+      const fromIndex = dragIndexRef.current;
+      const target = getDropTarget(clientY);
+      if (fromIndex != null && target && wouldReorder(fromIndex, target, segments.length)) {
+        const toIndex = getReorderToIndex(target, segments.length);
+        onReorder(reorderSegments(segments, fromIndex, toIndex));
+        suppressItemClickRef.current = true;
+      }
+      resetDragState();
+    },
+    [getDropTarget, onReorder, segments]
+  );
+
+  const handleDragHandlePointerDown = (index: number) => (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!canDragSort) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressItemClickRef.current = false;
+    pointerDraggingRef.current = true;
+    dragIndexRef.current = index;
+    setDragIndex(index);
+    setDropMarker({ index, placement: 'before' });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleDragHandlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pointerDraggingRef.current || dragIndexRef.current == null) return;
+
+    const target = getDropTarget(event.clientY);
+    if (!target) return;
+
+    setDropMarker(target);
+    if (wouldReorder(dragIndexRef.current, target, segments.length)) {
+      suppressItemClickRef.current = true;
+    }
+  };
+
+  const handleDragHandlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pointerDraggingRef.current) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    finishPointerDrag(event.clientY);
+  };
+
+  const handleDragHandlePointerCancel = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pointerDraggingRef.current) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
     resetDragState();
   };
 
@@ -134,9 +225,11 @@ const SelectedCopyPanel = ({
       </div>
 
       <div
+        ref={listRef}
         className={[
           'slice-editor-copy-list',
           segments.length === 0 ? 'slice-editor-copy-list_empty' : '',
+          dragIndex != null ? 'slice-editor-copy-list_dragging' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -158,6 +251,16 @@ const SelectedCopyPanel = ({
           segments.map((segment, index) => {
             const color = getSpeakerColor(segment.speakerId, speakerIds);
             const isActive = activeSegmentId === segment.id;
+            const showInsertBefore =
+              dragIndex != null &&
+              dropMarker?.index === index &&
+              dropMarker.placement === 'before' &&
+              wouldReorder(dragIndex, dropMarker, segments.length);
+            const showInsertAfter =
+              dragIndex != null &&
+              dropMarker?.index === index &&
+              dropMarker.placement === 'after' &&
+              wouldReorder(dragIndex, dropMarker, segments.length);
 
             return (
               <div
@@ -166,61 +269,36 @@ const SelectedCopyPanel = ({
                   'slice-editor-copy-item',
                   isActive ? 'active' : '',
                   dragIndex === index ? 'slice-editor-copy-item_dragging' : '',
-                  dragOverIndex === index && dragIndex !== index
-                    ? 'slice-editor-copy-item_drag-over'
-                    : '',
+                  showInsertBefore ? 'slice-editor-copy-item_insert-before' : '',
+                  showInsertAfter ? 'slice-editor-copy-item_insert-after' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                onDragEnter={(event) => {
-                  if (dragIndex == null) return;
-                  event.preventDefault();
-                  setDragOverIndex(index);
-                }}
-                onDragOver={(event) => {
-                  if (dragIndex == null) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'move';
-                  if (dragOverIndex !== index) {
-                    setDragOverIndex(index);
-                  }
-                }}
-                onDragLeave={(event) => {
-                  if (dragIndex == null) return;
-                  const related = event.relatedTarget as Node | null;
-                  if (related && event.currentTarget.contains(related)) return;
-                  setDragOverIndex((current) => (current === index ? null : current));
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleDrop(index);
-                }}
                 onClick={() => {
+                  if (suppressItemClickRef.current) {
+                    suppressItemClickRef.current = false;
+                    return;
+                  }
+                  if (pointerDraggingRef.current) return;
                   onActiveSegmentChange(segment.id);
                   onSeek(segment.start);
                 }}
               >
                 <div className="slice-editor-copy-item-head">
                   {canDragSort ? (
-                    <span
+                    <button
+                      type="button"
                       className="slice-editor-copy-drag"
-                      draggable
                       title="拖动排序"
                       aria-label="拖动排序"
-                      onDragStart={(event) => {
-                        setDragIndex(index);
-                        setDragOverIndex(index);
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', segment.id);
-                        event.stopPropagation();
-                      }}
-                      onDragEnd={resetDragState}
+                      onPointerDown={handleDragHandlePointerDown(index)}
+                      onPointerMove={handleDragHandlePointerMove}
+                      onPointerUp={handleDragHandlePointerUp}
+                      onPointerCancel={handleDragHandlePointerCancel}
                       onClick={(event) => event.stopPropagation()}
-                      onMouseDown={(event) => event.stopPropagation()}
                     >
                       <LuGripVertical size={14} />
-                    </span>
+                    </button>
                   ) : null}
                   <span className="slice-editor-copy-index">片段 {index + 1}</span>
                   <span className="slice-editor-speaker" style={{ color }}>

@@ -730,6 +730,7 @@
 }
 
 .slice-editor-copy-item {
+  position: relative;
   padding: 12px;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -754,9 +755,26 @@
   opacity: 0.55;
 }
 
-.slice-editor-copy-item_drag-over {
-  border-color: var(--surface-item-active-border);
-  background: var(--surface-item-active-bg);
+.slice-editor-copy-item_insert-before::before,
+.slice-editor-copy-item_insert-after::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.12);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.slice-editor-copy-item_insert-before::before {
+  top: -6px;
+}
+
+.slice-editor-copy-item_insert-after::after {
+  bottom: -6px;
 }
 
 .slice-editor-copy-item-head {
@@ -767,6 +785,14 @@
   margin-bottom: 8px;
 }
 
+.slice-editor-copy-list_dragging {
+  cursor: grabbing;
+}
+
+.slice-editor-copy-list_dragging .slice-editor-copy-item {
+  cursor: grabbing;
+}
+
 .slice-editor-copy-drag {
   display: inline-flex;
   align-items: center;
@@ -774,9 +800,17 @@
   flex-shrink: 0;
   width: 20px;
   height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: var(--text-gray);
   cursor: grab;
   touch-action: none;
+  user-select: none;
+}
+
+.slice-editor-copy-drag svg {
+  pointer-events: none;
 }
 
 .slice-editor-copy-drag:hover {
