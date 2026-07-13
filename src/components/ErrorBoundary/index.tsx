@@ -1,45 +1,30 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { Button, Result } from 'antd';
 import { DEFAULT_APP_PATH } from '~/routes/const';
+import { markHmrRecoveryPending } from '~/utils/hmrRecovery';
 
 type Props = { children: ReactNode };
-type State = { hasError: boolean };
+type State = { hasError: boolean; resetKey: number };
 
 class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, resetKey: 0 };
 
-  private hmrCleanup?: () => void;
-
-  componentDidMount() {
-    if (!import.meta.env.DEV || !import.meta.hot) return;
-
-    const resetErrorState = () => {
-      this.setState((state) => (state.hasError ? { hasError: false } : null));
-    };
-
-    import.meta.hot.on('vite:beforeUpdate', resetErrorState);
-    import.meta.hot.on('vite:afterUpdate', resetErrorState);
-
-    this.hmrCleanup = () => {
-      import.meta.hot?.off('vite:beforeUpdate', resetErrorState);
-      import.meta.hot?.off('vite:afterUpdate', resetErrorState);
-    };
-  }
-
-  componentWillUnmount() {
-    this.hmrCleanup?.();
-  }
-
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): Partial<State> {
     return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (import.meta.env.DEV) {
+      markHmrRecoveryPending();
+    }
     console.error('ErrorBoundary caught:', error, info.componentStack);
   }
 
   private handleReset = () => {
-    this.setState({ hasError: false });
+    this.setState((state) => ({
+      hasError: false,
+      resetKey: state.resetKey + 1,
+    }));
     window.location.assign(DEFAULT_APP_PATH);
   };
 
@@ -59,7 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return <Fragment key={this.state.resetKey}>{this.props.children}</Fragment>;
   }
 }
 

@@ -1,4 +1,4 @@
-export type AsrStatus = 'pending' | 'processing' | 'success' | 'failed';
+export type AsrStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface SourceVideo {
   id: number;

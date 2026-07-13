@@ -11,7 +11,7 @@ import { submitClip } from '~/services/slice';
 import { submitAiSliceSelection } from '~/services/aiSlice';
 import type { AiPrompt } from '~/services/aiPrompt';
 import { showAppError, toast } from '~/utils/toast';
-import { formatToDate, formatToDateTime } from '~/utils/date';
+import { formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';

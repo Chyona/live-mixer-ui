@@ -92,7 +92,7 @@ function resolveMockAsrState(
   }
 
   return {
-    asr_status: 'success',
+    asr_status: 'completed',
     asr_progress: 100,
     asr_error_msg: '',
     asr_started_at: created_at,
@@ -134,7 +134,7 @@ const sourceVideos: MockSourceVideo[] = [
     asr_error_msg: '',
     asr_started_at: isoAt('05', 12),
     asr_updated_at: isoAt('05', 12),
-    asr_status: 'success',
+    asr_status: 'completed',
     asr_progress: 100,
     created_at: isoAt('05', 12),
     updated_at: isoAt('05', 12),
@@ -163,7 +163,7 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
 }
 
 function advanceAsrProgress(item: MockSourceVideo) {
-  if (item.asr_status === 'success' || item.asr_status === 'failed') return;
+  if (item.asr_status === 'completed' || item.asr_status === 'failed') return;
 
   const now = nowIso();
 
@@ -179,7 +179,7 @@ function advanceAsrProgress(item: MockSourceVideo) {
 
   if (item.asr_progress >= 100) {
     item.asr_progress = 100;
-    item.asr_status = 'success';
+    item.asr_status = 'completed';
     item.asr_error_msg = '';
     if (item.duration === 0) {
       item.duration = 1800 + Math.floor(Math.random() * 3600);

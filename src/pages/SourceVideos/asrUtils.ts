@@ -1,14 +1,14 @@
 import type { AsrStatus } from '~/services/sourceVideo';
 
 export const ASR_STATUS_LABEL: Record<AsrStatus, string> = {
-  pending: '等待 ASR解析',
+  pending: '等待解析',
   processing: 'ASR转写中',
-  success: 'ASR已完成',
+  completed: 'ASR已完成',
   failed: 'ASR失败',
 };
 
 export function isAsrReady(status: AsrStatus): boolean {
-  return status === 'success';
+  return status === 'completed';
 }
 
 export function getAsrActionDisabledReason(status: AsrStatus, asr_error_msg?: string): string | null {

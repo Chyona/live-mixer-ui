@@ -7,7 +7,7 @@ import { ASR_STATUS_LABEL } from './asrUtils';
 
 function getProgressStatus(status: AsrStatus): 'success' | 'exception' | 'active' | 'normal' {
   switch (status) {
-    case 'success':
+    case 'completed':
       return 'success';
     case 'failed':
       return 'exception';

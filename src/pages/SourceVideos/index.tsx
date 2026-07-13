@@ -21,7 +21,7 @@ import {
   updateSourceVideoRemark,
   type SourceVideo,
 } from '~/services/sourceVideo';
-import { formatToDate, formatToDateTime } from '~/utils/date';
+import { formatToDateTime } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
