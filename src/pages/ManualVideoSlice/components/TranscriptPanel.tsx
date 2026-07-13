@@ -136,7 +136,19 @@ const TranscriptPanel = ({
       }
     >
       <div className="slice-editor-transcript-head">
-        <div className="slice-editor-panel-title">文案分段</div>
+        <div className="slice-editor-transcript-head-main">
+          <div className="slice-editor-panel-title">文案分段</div>
+          <Tooltip title="开启后，播放视频时文案列表会自动滚动，将当前朗读段落居中显示">
+            <label className="slice-editor-transcript-follow">
+              <Switch
+                size="small"
+                checked={autoScrollEnabled}
+                onChange={handleAutoScrollEnabledChange}
+              />
+              <span>定位跟随</span>
+            </label>
+          </Tooltip>
+        </div>
         <KeywordSearchBar
           value={keyword}
           onChange={onKeywordChange}
@@ -145,16 +157,6 @@ const TranscriptPanel = ({
           onPrevMatch={onPrevMatch}
           onNextMatch={onNextMatch}
         />
-        <Tooltip title="开启后，播放视频时文案列表会自动滚动，将当前朗读段落居中显示">
-          <label className="slice-editor-transcript-follow">
-            <Switch
-              size="small"
-              checked={autoScrollEnabled}
-              onChange={handleAutoScrollEnabledChange}
-            />
-            <span>定位跟随</span>
-          </label>
-        </Tooltip>
       </div>
       <div
         ref={transcriptBodyRef}
