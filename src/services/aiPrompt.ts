@@ -19,7 +19,7 @@ type AiPromptRaw = Partial<AiPrompt> & {
 };
 
 export function normalizeAiPrompt(raw: AiPromptRaw): AiPrompt {
-  const content = String(raw.content ?? raw.content_preview ?? '').trim();
+  const content = String(raw.content_preview ?? raw.content ?? '').trim();
 
   return {
     id: Number(raw.id),
