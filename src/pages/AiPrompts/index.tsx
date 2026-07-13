@@ -19,7 +19,9 @@ import {
 } from '~/services/aiPrompt';
 import { formatToDateTime } from '~/utils/date';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
-import { showAppError, toast } from '~/utils/toast';
+import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
+
+const AI_PROMPTS_LIST_ERROR_SCOPE = 'ai-prompts-list';
 
 import AddAiPromptModal from './AddAiPromptModal';
 
@@ -60,7 +62,7 @@ const AiPromptsPage = () => {
 
       if (response.code !== 0) {
         if (!silent && !refresh) {
-          toast.notify.error(response.message || '加载提示词列表失败');
+          showScopedError(AI_PROMPTS_LIST_ERROR_SCOPE, response.message || '加载提示词列表失败');
         }
         return;
       }
@@ -70,11 +72,7 @@ const AiPromptsPage = () => {
       hasLoadedRef.current = true;
     } catch (error) {
       if (!silent && !refresh) {
-        if (error instanceof AppError) {
-          showAppError(error);
-        } else {
-          toast.notify.error('加载提示词列表失败');
-        }
+        handleRequestError(AI_PROMPTS_LIST_ERROR_SCOPE, error, '加载提示词列表失败');
       }
     } finally {
       if (refresh) {

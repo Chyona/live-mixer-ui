@@ -1,7 +1,7 @@
 import { message as staticMessage, notification as staticNotification } from 'antd';
 import type { MessageInstance } from 'antd/es/message/interface';
 import type { NotificationInstance } from 'antd/es/notification/interface';
-import { isUnauthorizedError, type AppError } from '~/services/http';
+import { AppError, isUnauthorizedError } from '~/services/http';
 
 type ToastApis = {
   message: MessageInstance;
@@ -100,7 +100,39 @@ export const toast = {
 };
 
 /** 展示 HTTP / 业务层 AppError */
-export function showAppError(error: AppError) {
+const ERROR_DEDUPE_MS = 3000;
+const recentErrorKeys = new Map<string, number>();
+
+function shouldShowError(key: string): boolean {
+  const now = Date.now();
+  const lastShownAt = recentErrorKeys.get(key);
+  if (lastShownAt != null && now - lastShownAt < ERROR_DEDUPE_MS) {
+    return false;
+  }
+  recentErrorKeys.set(key, now);
+  return true;
+}
+
+/** 同一 scope 短时间内只展示一条错误，避免重复请求叠加提示 */
+export function showScopedError(scope: string, title: string) {
+  const message = title.trim();
+  if (!message || !shouldShowError(scope)) return;
+  toast.notify.error(message);
+}
+
+export function showAppError(error: AppError, scope?: string) {
   if (isUnauthorizedError(error)) return;
+  const key = scope ?? `msg:${error.errorMessage}`;
+  if (!shouldShowError(key)) return;
   toast.notify.error(error.errorMessage);
+}
+
+/** 列表/页面加载等场景的统一错误处理，优先展示接口错误信息 */
+export function handleRequestError(scope: string, error: unknown, fallbackMessage: string) {
+  if (error instanceof AppError) {
+    if (isUnauthorizedError(error)) return;
+    showScopedError(scope, error.errorMessage || fallbackMessage);
+    return;
+  }
+  showScopedError(scope, fallbackMessage);
 }

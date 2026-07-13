@@ -1,10 +1,10 @@
 import type { AsrStatus } from '~/services/sourceVideo';
 
 export const ASR_STATUS_LABEL: Record<AsrStatus, string> = {
-  pending: '等待 ASR',
-  processing: 'ASR 转写中',
-  success: 'ASR 已完成',
-  failed: 'ASR 失败',
+  pending: '等待 ASR解析',
+  processing: 'ASR转写中',
+  success: 'ASR已完成',
+  failed: 'ASR失败',
 };
 
 export function isAsrReady(status: AsrStatus): boolean {

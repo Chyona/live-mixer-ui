@@ -9,6 +9,19 @@
   gap: 4px;
 }
 
+.source-videos-asr_pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-gray);
+}
+
+.source-videos-asr-pending-text {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 .source-videos-asr-failed-text {
   flex: 1;
   min-width: 0;

@@ -20,7 +20,9 @@ import {
 } from '~/services/sliceProject';
 import { formatToDateTime } from '~/utils/date';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
-import { showAppError, toast } from '~/utils/toast';
+import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
+
+const SLICES_LIST_ERROR_SCOPE = 'slices-list';
 
 const SlicesPage = () => {
   const navigate = useNavigate();
@@ -69,7 +71,7 @@ const SlicesPage = () => {
 
       if (response.code !== 0) {
         if (!silent && !refresh) {
-          toast.notify.error(response.message || '加载剪辑项目失败');
+          showScopedError(SLICES_LIST_ERROR_SCOPE, response.message || '加载剪辑项目失败');
         }
         return;
       }
@@ -79,11 +81,7 @@ const SlicesPage = () => {
       hasLoadedRef.current = true;
     } catch (error) {
       if (!silent && !refresh) {
-        if (error instanceof AppError) {
-          showAppError(error);
-        } else {
-          toast.notify.error('加载剪辑项目失败');
-        }
+        handleRequestError(SLICES_LIST_ERROR_SCOPE, error, '加载剪辑项目失败');
       }
     } finally {
       if (refresh) {

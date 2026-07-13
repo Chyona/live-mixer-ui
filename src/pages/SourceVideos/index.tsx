@@ -24,7 +24,9 @@ import {
 import { formatToDate } from '~/utils/date';
 import { formatVideoDuration } from '~/utils/duration';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
-import { showAppError, toast } from '~/utils/toast';
+import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
+
+const SOURCE_VIDEOS_LIST_ERROR_SCOPE = 'source-videos-list';
 
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
@@ -107,7 +109,7 @@ const SourceVideosPage = () => {
 
       if (response.code !== 0) {
         if (!silent && !refresh) {
-          toast.notify.error(response.message || '加载源视频列表失败');
+          showScopedError(SOURCE_VIDEOS_LIST_ERROR_SCOPE, response.message || '加载源视频列表失败');
         }
         return;
       }
@@ -117,11 +119,7 @@ const SourceVideosPage = () => {
       hasLoadedRef.current = true;
     } catch (error) {
       if (!silent && !refresh) {
-        if (error instanceof AppError) {
-          showAppError(error);
-        } else {
-          toast.notify.error('加载源视频列表失败');
-        }
+        handleRequestError(SOURCE_VIDEOS_LIST_ERROR_SCOPE, error, '加载源视频列表失败');
       }
     } finally {
       if (refresh) {

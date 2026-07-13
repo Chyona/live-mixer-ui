@@ -1,4 +1,4 @@
-import { Button, Progress, Tooltip } from 'antd';
+import { Button, Progress, Spin, Tooltip } from 'antd';
 import { LuRotateCw } from 'react-icons/lu';
 
 import type { AsrStatus } from '~/services/sourceVideo';
@@ -12,7 +12,6 @@ function getProgressStatus(status: AsrStatus): 'success' | 'exception' | 'active
     case 'failed':
       return 'exception';
     case 'processing':
-    case 'pending':
       return 'active';
     default:
       return 'normal';
@@ -29,6 +28,15 @@ interface AsrProgressCellProps {
 
 const AsrProgressCell = ({ status, progress, errorMessage, retrying, onRetry }: AsrProgressCellProps) => {
   const label = ASR_STATUS_LABEL[status];
+
+  if (status === 'pending') {
+    return (
+      <div className="source-videos-asr source-videos-asr_pending">
+        <Spin size="small" />
+        <span className="source-videos-asr-pending-text">{label}</span>
+      </div>
+    );
+  }
 
   if (status === 'failed') {
     const tooltipMessage = errorMessage?.trim();
@@ -58,20 +66,16 @@ const AsrProgressCell = ({ status, progress, errorMessage, retrying, onRetry }: 
     );
   }
 
-  const tooltipTitle = label;
-
   return (
     <div className="source-videos-asr">
-      <Tooltip title={tooltipTitle}>
-        <div className="source-videos-asr-progress">
-          <Progress
-            percent={progress}
-            size="small"
-            status={getProgressStatus(status)}
-            showInfo={status !== 'pending'}
-          />
-        </div>
-      </Tooltip>
+      <div className="source-videos-asr-progress" title={label}>
+        <Progress
+          percent={progress}
+          size="small"
+          status={getProgressStatus(status)}
+          showInfo
+        />
+      </div>
     </div>
   );
 };
