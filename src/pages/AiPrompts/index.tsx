@@ -21,14 +21,14 @@ import { formatToDateTime } from '~/utils/date';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
-const AI_PROMPTS_LIST_ERROR_SCOPE = 'ai-prompts-list';
+const PROMPTS_LIST_ERROR_SCOPE = 'prompts-list';
 
 import AddAiPromptModal from './AddAiPromptModal';
 
 const AiPromptsPage = () => {
   useAppSEO({
     title: '提示词管理',
-    path: '/ai-prompts',
+    path: '/prompts',
     robots: 'noindex, nofollow',
   });
 
@@ -62,7 +62,7 @@ const AiPromptsPage = () => {
 
       if (response.code !== 0) {
         if (!silent && !refresh) {
-          showScopedError(AI_PROMPTS_LIST_ERROR_SCOPE, response.message || '加载提示词列表失败');
+          showScopedError(PROMPTS_LIST_ERROR_SCOPE, response.message || '加载提示词列表失败');
         }
         return;
       }
@@ -72,7 +72,7 @@ const AiPromptsPage = () => {
       hasLoadedRef.current = true;
     } catch (error) {
       if (!silent && !refresh) {
-        handleRequestError(AI_PROMPTS_LIST_ERROR_SCOPE, error, '加载提示词列表失败');
+        handleRequestError(PROMPTS_LIST_ERROR_SCOPE, error, '加载提示词列表失败');
       }
     } finally {
       if (refresh) {
@@ -180,7 +180,7 @@ const AiPromptsPage = () => {
         width: 120,
         ellipsis: true,
         render: (creatorName: string) => (
-          <EllipsisTooltip text={creatorName} className="ai-prompts-cell-ellipsis" />
+          <EllipsisTooltip text={creatorName} className="prompts-cell-ellipsis" />
         ),
       },
       {
@@ -229,7 +229,7 @@ const AiPromptsPage = () => {
 
   return (
     <ListPageLayout
-      className="ai-prompts-page"
+      className="prompts-page"
       title="提示词管理"
       description="管理 AI 切片使用的提示词，支持添加、搜索、备注与删除。"
       toolbar={

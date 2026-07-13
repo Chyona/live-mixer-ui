@@ -37,7 +37,7 @@ export interface UpdateAiPromptParams {
 export async function fetchAiPromptList(
   params: AiPromptListParams
 ): Promise<BaseResponse<AiPromptListResult>> {
-  return await request('/v1/ai-prompts', {
+  return await request('/v1/prompts', {
     method: 'get',
     params,
   });
@@ -46,7 +46,7 @@ export async function fetchAiPromptList(
 export async function createAiPrompt(
   params: CreateAiPromptParams
 ): Promise<BaseResponse<AiPrompt>> {
-  return await request('/v1/ai-prompts', {
+  return await request('/v1/prompts', {
     method: 'post',
     data: params,
   });
@@ -56,7 +56,7 @@ export async function updateAiPrompt(
   id: string,
   params: UpdateAiPromptParams
 ): Promise<BaseResponse<AiPrompt>> {
-  return await request(`/v1/ai-prompts/${id}`, {
+  return await request(`/v1/prompts/${id}`, {
     method: 'put',
     data: params,
   });
@@ -66,14 +66,14 @@ export async function updateAiPromptRemark(
   id: string,
   remark: string
 ): Promise<BaseResponse<AiPrompt>> {
-  return await request(`/v1/ai-prompts/${id}/remark`, {
+  return await request(`/v1/prompts/${id}/remark`, {
     method: 'put',
     data: { remark },
   });
 }
 
 export async function deleteAiPrompt(id: string): Promise<BaseResponse<null>> {
-  return await request(`/v1/ai-prompts/${id}`, {
+  return await request(`/v1/prompts/${id}`, {
     method: 'delete',
   });
 }

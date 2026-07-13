@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getSliceEditorEntryFrom, type SliceEditorEntryFrom } from '~/routes/links';
+import { getSliceEditorEntryFrom, LIVE_SLICE_PATH, VIDEOS_MANUAL_SLICE_PATH, type SliceEditorEntryFrom } from '~/routes/links';
 import { RoutesCfg, type RouteCfgType } from '~/routes/const';
 
 export const getNavActive = (
@@ -9,8 +9,8 @@ export const getNavActive = (
   entryFrom?: SliceEditorEntryFrom
 ) => {
   const isSliceEditor =
-    currentPath.startsWith('/videos-slice/') ||
-    (currentPath.includes('/source-videos/') && currentPath.endsWith('/manual-slice'));
+    currentPath.startsWith(`${LIVE_SLICE_PATH}/`) ||
+    currentPath.startsWith(`${VIDEOS_MANUAL_SLICE_PATH}/`);
 
   if (isSliceEditor) {
     if (entryFrom === 'slices') {

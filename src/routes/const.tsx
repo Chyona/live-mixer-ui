@@ -52,7 +52,7 @@ export const RoutesCfg: RouteCfgType[] = [
     iconProps: { strokeWidth: 1.75 },
   },
   {
-    path: '/ai-prompts',
+    path: '/prompts',
     text: '提示词管理',
     icon: LuMessageSquareText,
     element: AiPromptsPage,
@@ -67,7 +67,7 @@ export const RoutesCfg: RouteCfgType[] = [
     iconProps: { strokeWidth: 1.75 },
   },
   {
-    path: '/source-videos/:id/manual-slice',
+    path: '/videos-manual-slice/:id',
     text: '人工切片',
     icon: LuScissors,
     element: ManualVideoSlicePage,

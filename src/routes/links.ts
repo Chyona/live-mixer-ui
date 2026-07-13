@@ -3,13 +3,14 @@ import type { SliceProjectSource } from '~/services/sliceProject';
 export type SliceEditorEntryFrom = 'source-videos' | 'slices' | 'tasks';
 
 export const LIVE_SLICE_PATH = '/videos-slice';
+export const VIDEOS_MANUAL_SLICE_PATH = '/videos-manual-slice';
 
 export function buildSourceVideoSliceLink(sourceVideoId: string) {
   return `${LIVE_SLICE_PATH}/${sourceVideoId}`;
 }
 
 export function buildManualVideoSliceLink(sourceVideoId: string) {
-  return `/source-videos/${sourceVideoId}/manual-slice`;
+  return `${VIDEOS_MANUAL_SLICE_PATH}/${sourceVideoId}`;
 }
 
 export function buildSliceProjectEditLink(

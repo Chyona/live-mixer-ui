@@ -111,7 +111,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
 
 export default [
   {
-    url: `${API_PREFIX}/v1/ai-prompts`,
+    url: `${API_PREFIX}/v1/prompts`,
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
       const page = Number(query.page || 1);
@@ -130,7 +130,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/ai-prompts`,
+    url: `${API_PREFIX}/v1/prompts`,
     method: 'post',
     response: ({
       body,
@@ -166,7 +166,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/ai-prompts/:id`,
+    url: `${API_PREFIX}/v1/prompts/:id`,
     method: 'put',
     response: ({
       body,
@@ -199,7 +199,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/ai-prompts/:id/remark`,
+    url: `${API_PREFIX}/v1/prompts/:id/remark`,
     method: 'put',
     response: ({ body, query }: { body: { remark?: string }; query: { id: string } }) => {
       const item = aiPrompts.find((prompt) => prompt.id === query.id && prompt.ownerId === CURRENT_USER_ID);
@@ -214,7 +214,7 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/ai-prompts/:id`,
+    url: `${API_PREFIX}/v1/prompts/:id`,
     method: 'delete',
     response: ({ query }: { query: { id: string } }) => {
       const index = aiPrompts.findIndex(
