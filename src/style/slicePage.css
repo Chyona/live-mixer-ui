@@ -455,6 +455,11 @@
   background: var(--color-primary-bg-subtle);
 }
 
+.slice-editor-paragraph.active,
+.slice-editor-paragraph.matched-current {
+  border-color: var(--color-primary-border-strong);
+}
+
 .slice-editor-paragraph.matched mark {
   padding: 0 2px;
   border-radius: 3px;
