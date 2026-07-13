@@ -106,7 +106,14 @@ const TranscriptPanel = ({
     onSeek(range.start);
   };
 
-  const handleParagraphDoubleClick = (paragraph: TranscriptParagraph) => {
+  const handleParagraphDoubleClick = (
+    event: React.MouseEvent<HTMLDivElement>,
+    paragraph: TranscriptParagraph
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.getSelection()?.removeAllRanges();
+
     const copySegment = paragraphToCopySegment(paragraph);
     if (copySegment) {
       onSelectSegment(copySegment);
@@ -117,6 +124,8 @@ const TranscriptPanel = ({
     event: React.MouseEvent<HTMLDivElement>,
     paragraph: TranscriptParagraph
   ) => {
+    if (event.detail >= 2) return;
+
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
 
@@ -190,7 +199,7 @@ const TranscriptPanel = ({
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => handleParagraphClick(paragraph)}
-              onDoubleClick={() => handleParagraphDoubleClick(paragraph)}
+              onDoubleClick={(event) => handleParagraphDoubleClick(event, paragraph)}
             >
               <div className="slice-editor-paragraph-head">
                 <span className="slice-editor-speaker" style={{ color }}>
@@ -202,7 +211,10 @@ const TranscriptPanel = ({
               </div>
               <div
                 className="slice-editor-paragraph-text"
-                onMouseUp={(event) => handleTextSelection(event, paragraph)}
+                onMouseUp={(event) => {
+                  event.stopPropagation();
+                  handleTextSelection(event, paragraph);
+                }}
               >
                 {keyword.trim() ? (
                   <span
