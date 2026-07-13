@@ -2,7 +2,7 @@ import type { MockMethod } from 'vite-plugin-mock';
 import {
   createInitialAsrState,
   type SourceVideo,
-} from '../src/services/sourceVideo';
+} from '../src/services/sourceVideo.model';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 
