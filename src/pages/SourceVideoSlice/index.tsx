@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Descriptions, Empty, Modal, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
-import SlicePageHeader, { SlicePageBreadcrumb, SlicePageToolbar } from '~/components/SlicePageHeader';
+import SlicePageHeader from '~/components/SlicePageHeader';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
@@ -315,46 +315,45 @@ const SourceVideoSlicePage = () => {
     );
   }
 
-  const pageToolbarProps = {
-    title: `${video.name} - 视频切片`,
-    actions: (
-      <>
-        <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-        {entryFrom !== 'slices' ? (
-          <Link to={`/source-videos/${id}/manual-slice`}>
-            <Button>切换到人工切片</Button>
-          </Link>
-        ) : null}
-      </>
-    ),
-    tip: {
-      text: '请自觉遵守平台链接导入规范',
-      onClick: () => setTipVisible(true),
-    },
-  };
+  const pageHeader = (
+    <SlicePageHeader
+      breadcrumbItems={breadcrumbItems}
+      title={`${video.name} - 视频切片`}
+      actions={
+        <>
+          <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
+          {entryFrom !== 'slices' ? (
+            <Link to={`/source-videos/${id}/manual-slice`}>
+              <Button>切换到人工切片</Button>
+            </Link>
+          ) : null}
+        </>
+      }
+      tip={{
+        text: '请自觉遵守平台链接导入规范',
+        onClick: () => setTipVisible(true),
+      }}
+    />
+  );
 
   return (
     <div className="slice-page slice-page_timeline">
-      <SlicePageBreadcrumb items={breadcrumbItems} />
+      {pageHeader}
 
       {!hasVideoUrl ? (
         <div className="slice-workspace-card">
-          <SlicePageToolbar {...pageToolbarProps} className="slice-workspace-header" />
           <div className="slice-workspace-empty">
             <Empty description="当前源视频暂无播放地址" />
           </div>
         </div>
       ) : !canPreview ? (
         <div className="slice-workspace-card">
-          <SlicePageToolbar {...pageToolbarProps} className="slice-workspace-header" />
           <div className="slice-workspace-empty">
             <Empty description="当前播放地址格式不受支持，请使用 m3u8、mp4 等可播放链接" />
           </div>
         </div>
       ) : (
         <div className="slice-workspace-card">
-          <SlicePageToolbar {...pageToolbarProps} className="slice-workspace-header" />
-
           <div className="slice-main-section">
             <div className="slice-video-section">
               <StreamVideoPlayer

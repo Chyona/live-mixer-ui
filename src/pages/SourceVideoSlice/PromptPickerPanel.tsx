@@ -151,7 +151,7 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
             allowClear
             size="small"
             prefix={<LuSearch size={14} />}
-            placeholder="搜索名称 / 内容"
+            placeholder="搜索名称 / 提示词"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={handleSearch}

@@ -8,6 +8,28 @@ type State = { hasError: boolean };
 class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
+  private hmrCleanup?: () => void;
+
+  componentDidMount() {
+    if (!import.meta.env.DEV || !import.meta.hot) return;
+
+    const resetErrorState = () => {
+      this.setState((state) => (state.hasError ? { hasError: false } : null));
+    };
+
+    import.meta.hot.on('vite:beforeUpdate', resetErrorState);
+    import.meta.hot.on('vite:afterUpdate', resetErrorState);
+
+    this.hmrCleanup = () => {
+      import.meta.hot?.off('vite:beforeUpdate', resetErrorState);
+      import.meta.hot?.off('vite:afterUpdate', resetErrorState);
+    };
+  }
+
+  componentWillUnmount() {
+    this.hmrCleanup?.();
+  }
+
   static getDerivedStateFromError(): State {
     return { hasError: true };
   }
