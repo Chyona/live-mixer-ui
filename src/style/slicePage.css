@@ -525,6 +525,25 @@
   margin-bottom: 0;
 }
 
+.slice-editor-copy-head_empty {
+  margin-bottom: 0;
+}
+
+.slice-editor-copy-submit-empty {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 12px;
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .slice-editor-copy-stats {
   display: inline-flex;
   align-items: center;
