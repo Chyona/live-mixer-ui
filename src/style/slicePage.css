@@ -63,6 +63,13 @@
 }
 
 /* 人工切片编辑器布局 */
+.slice-page-empty-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .slice-page_manual .slice-page-header {
   margin-bottom: 12px;
 }

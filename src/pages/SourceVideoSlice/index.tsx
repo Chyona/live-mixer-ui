@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, Descriptions, Empty, Modal, Typography } from 'antd';
+import { Button, Descriptions, Modal, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
+import SlicePageEmptyState from '~/components/SlicePageEmptyState';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
@@ -306,12 +307,10 @@ const SourceVideoSlicePage = () => {
   if (!video) {
     return (
       <div className="slice-page slice-page_timeline">
-        <SlicePageHeader
-          breadcrumbItems={breadcrumbItems}
-          title="视频切片"
-          description="源视频不存在或无权访问。"
-        />
-        <Empty description="源视频不存在或无权访问" />
+        <SlicePageHeader breadcrumbItems={breadcrumbItems} title="视频切片" />
+        <div className="slice-page-empty-shell">
+          <SlicePageEmptyState variant="video-unavailable" entryFrom={entryFrom} />
+        </div>
       </div>
     );
   }
@@ -342,16 +341,12 @@ const SourceVideoSlicePage = () => {
       {pageHeader}
 
       {!hasVideoUrl ? (
-        <div className="slice-workspace-card">
-          <div className="slice-workspace-empty">
-            <Empty description="当前源视频暂无播放地址" />
-          </div>
+        <div className="slice-page-empty-shell">
+          <SlicePageEmptyState variant="no-playback-url" entryFrom={entryFrom} />
         </div>
       ) : !canPreview ? (
-        <div className="slice-workspace-card">
-          <div className="slice-workspace-empty">
-            <Empty description="当前播放地址格式不受支持，请使用 m3u8、mp4 等可播放链接" />
-          </div>
+        <div className="slice-page-empty-shell">
+          <SlicePageEmptyState variant="unsupported-format" entryFrom={entryFrom} />
         </div>
       ) : (
         <div className="slice-workspace-card">

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, Empty, Space } from 'antd';
+import { Button, Space } from 'antd';
 import { LuDownload } from 'react-icons/lu';
 import PageLoading from '~/components/PageLoading';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
+import SlicePageEmptyState from '~/components/SlicePageEmptyState';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
@@ -496,13 +497,11 @@ const ManualVideoSlicePage = () => {
 
   if (!video) {
     return (
-      <div className="slice-page">
-        <SlicePageHeader
-          breadcrumbItems={breadcrumbItems}
-          title="视频人工切片"
-          description="源视频不存在或无权访问。"
-        />
-        <Empty description="源视频不存在或无权访问" />
+      <div className="slice-page slice-page_manual">
+        <SlicePageHeader breadcrumbItems={breadcrumbItems} title="视频人工切片" />
+        <div className="slice-page-empty-shell">
+          <SlicePageEmptyState variant="video-unavailable" entryFrom={entryFrom} />
+        </div>
       </div>
     );
   }
@@ -528,7 +527,12 @@ const ManualVideoSlicePage = () => {
       />
 
       {!canPreview ? (
-        <Empty description="当前源视频暂无可用播放地址" />
+        <div className="slice-page-empty-shell">
+          <SlicePageEmptyState
+            variant={streamUrl ? 'unsupported-format' : 'no-playback-url'}
+            entryFrom={entryFrom}
+          />
+        </div>
       ) : (
         <div className="slice-editor-layout">
           <div className="slice-editor-main">
