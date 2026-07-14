@@ -49,13 +49,14 @@ export async function fetchSourceVideoDetail(
   });
 }
 
-export async function updateSourceVideoRemark(
+/** 修改源视频名称或备注：接口要求 name、remark 两个字段都传 */
+export async function updateSourceVideo(
   id: SourceVideoId,
-  remark: string
+  params: Partial<CreateSourceVideoParams>
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/live-materials/${id}/remark`, {
+  return await request(`/v1/live-materials/${id}`, {
     method: 'put',
-    data: { remark },
+    data: params,
   });
 }
 

@@ -5,7 +5,6 @@ import type { ColumnsType } from 'antd/es/table';
 import { LuCirclePlay, LuPlus, LuTextSelect, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
-import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListPageTable from '~/components/ListPageTable';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
@@ -18,7 +17,7 @@ import {
   deleteSourceVideo,
   fetchSourceVideoList,
   retrySourceVideoAsr,
-  updateSourceVideoRemark,
+  updateSourceVideo,
   type SourceVideo,
 } from '~/services/sourceVideo';
 import { formatToDateTime } from '~/utils/date';
@@ -160,24 +159,36 @@ const SourceVideosPage = () => {
     setPage(1);
   };
 
-  const handleRemarkSave = async (id: number, remark: string) => {
+  const handleNameOrRemarkSave = async (
+    record: SourceVideo,
+    next: { name?: string; remark?: string }
+  ) => {
+    const name = (next.name ?? record.name).trim();
+    const remark = (next.remark ?? record.remark).trim();
+
     try {
-      const response = await updateSourceVideoRemark(id, remark);
+      const response = await updateSourceVideo(record.id, { name, remark });
       if (response.code !== 0) {
-        toast.notify.error(response.message || '备注保存失败');
-        return;
+        toast.notify.error(response.message || '保存失败');
+        throw new Error(response.message || '保存失败');
       }
 
       setList((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, remark: response.data.remark } : item))
+        prev.map((item) =>
+          item.id === record.id
+            ? { ...item, name: response.data.name, remark: response.data.remark }
+            : item
+        )
       );
-      toast.notify.success('备注已保存');
+      toast.notify.success(next.name !== undefined ? '名称已修改' : '备注已修改');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
-      } else {
-        toast.notify.error('备注保存失败');
+      } else if (!(error instanceof Error)) {
+        toast.notify.error('保存失败');
       }
+      // 重新抛出，让 RemarkEditor 还原为修改前内容
+      throw error instanceof Error ? error : new Error('保存失败');
     }
   };
 
@@ -236,34 +247,25 @@ const SourceVideosPage = () => {
         dataIndex: 'name',
         key: 'name',
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name} className="list-page__cell-ellipsis" />,
+        render: (name: string, record) => (
+          <RemarkEditor
+            value={name}
+            placeholder="添加名称"
+            required
+            maxLength={64}
+            onSave={(value) => handleNameOrRemarkSave(record, { name: value })}
+          />
+        ),
       },
-      // {
-      //   title: '直播地址',
-      //   dataIndex: 'liveUrl',
-      //   key: 'liveUrl',
-      //   width: 220,
-      //   ellipsis: true,
-      //   render: (liveUrl: string) =>
-      //     liveUrl ? (
-      //       <a
-      //         href={liveUrl}
-      //         target="_blank"
-      //         rel="noopener noreferrer"
-      //         className="source-videos-live-url"
-      //       >
-      //         <EllipsisTooltip text={liveUrl} className="source-videos-cell-ellipsis" />
-      //       </a>
-      //     ) : (
-      //       '-'
-      //     ),
-      // },
       {
         title: '备注名称',
         dataIndex: 'remark',
         key: 'remark',
         render: (remark: string, record) => (
-          <RemarkEditor value={remark} onSave={(value) => handleRemarkSave(record.id, value)} />
+          <RemarkEditor
+            value={remark}
+            onSave={(value) => handleNameOrRemarkSave(record, { remark: value })}
+          />
         ),
       },
       {
@@ -412,19 +414,19 @@ const SourceVideosPage = () => {
         empty={
           hasActiveFilters
             ? {
-                title: '未找到匹配的源视频',
-                description: '试试更换关键词，或调整日期范围与全局搜索条件',
-              }
+              title: '未找到匹配的源视频',
+              description: '试试更换关键词，或调整日期范围与全局搜索条件',
+            }
             : {
-                title: '暂无源视频',
-                description: '添加源视频后即可进行切片、人工剪辑与 AI 选片',
-                tone: 'primary',
-                action: (
-                  <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
-                    添加源视频
-                  </Button>
-                ),
-              }
+              title: '暂无源视频',
+              description: '添加源视频后即可进行切片、人工剪辑与 AI 选片',
+              tone: 'primary',
+              action: (
+                <Button type="primary" icon={<LuPlus size={16} />} onClick={() => setAddOpen(true)}>
+                  添加源视频
+                </Button>
+              ),
+            }
         }
         pagination={{
           current: page,

@@ -297,15 +297,28 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/live-materials/:id/remark`,
+    url: `${API_PREFIX}/v1/live-materials/:id`,
     method: 'put',
-    response: ({ body, query }: { body: { remark?: string }; query: { id: string } }) => {
+    response: ({
+      body,
+      query,
+    }: {
+      body: { name?: string; remark?: string };
+      query: { id: string };
+    }) => {
       const item = sourceVideos.find(
         (video) => String(video.id) === query.id && video.ownerId === CURRENT_USER_ID
       );
       if (!item) {
         return { code: 404, message: '源视频不存在', data: null };
       }
+
+      const name = body?.name?.trim();
+      if (!name) {
+        return { code: 400, message: '请填写源视频名称', data: null };
+      }
+
+      item.name = name;
       item.remark = body?.remark?.trim() || '';
       item.updated_at = nowIso();
       return { code: 0, message: '', data: toPublicItem(item) };
