@@ -118,22 +118,6 @@ export async function updateAiPrompt(
   return response;
 }
 
-export async function updateAiPromptRemark(
-  id: AiPromptId,
-  remark: string
-): Promise<BaseResponse<AiPrompt>> {
-  const response = await request<BaseResponse<AiPrompt>>(`/v1/llm-system-prompts/${id}/remark`, {
-    method: 'put',
-    data: { remark },
-  });
-
-  if (response.code === 0 && response.data) {
-    return { ...response, data: normalizeAiPromptResponse(response.data) };
-  }
-
-  return response;
-}
-
 export async function deleteAiPrompt(id: AiPromptId): Promise<BaseResponse<null>> {
   return await request(`/v1/llm-system-prompts/${id}`, {
     method: 'delete',

@@ -15,7 +15,7 @@ import { AppError } from '~/services/http';
 import {
   deleteAiPrompt,
   fetchAiPromptList,
-  updateAiPromptRemark,
+  updateAiPrompt,
   type AiPrompt,
 } from '~/services/aiPrompt';
 import { formatToDateTime } from '~/utils/date';
@@ -92,26 +92,33 @@ const AiPromptsPage = () => {
     setPage(1);
   };
 
-  const handleRemarkSave = async (id: number, remark: string) => {
+  const handleRemarkSave = async (record: AiPrompt, remark: string) => {
     try {
-      const response = await updateAiPromptRemark(id, remark);
+      const response = await updateAiPrompt(record.id, {
+        name: record.name,
+        content: record.content,
+        remark,
+      });
       if (response.code !== 0) {
         toast.notify.error(response.message || '备注保存失败');
-        return;
+        throw new Error(response.message || '备注保存失败');
       }
 
       setList((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, remark: response.data.remark, updated_at: response.data.updated_at } : item
+          item.id === record.id
+            ? { ...item, remark: response.data.remark, updated_at: response.data.updated_at }
+            : item
         )
       );
       toast.notify.success('备注已保存');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
-      } else {
+      } else if (!(error instanceof Error)) {
         toast.notify.error('备注保存失败');
       }
+      throw error instanceof Error ? error : new Error('备注保存失败');
     }
   };
 
@@ -211,7 +218,7 @@ const AiPromptsPage = () => {
             <RemarkEditor
               value={remark}
               maxLength={128}
-              onSave={(value) => handleRemarkSave(record.id, value)}
+              onSave={(value) => handleRemarkSave(record, value)}
             />
           ) : (
             <EllipsisTooltip text={remark || '—'} className="list-page__cell-ellipsis" />

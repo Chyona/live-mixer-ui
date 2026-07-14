@@ -219,25 +219,6 @@ export default [
     },
   },
   {
-    url: `${API_PREFIX}/v1/llm-system-prompts/:id/remark`,
-    method: 'put',
-    response: ({ body, query }: { body: { remark?: string }; query: { id: string } }) => {
-      const item = findOwnedPrompt(query.id);
-      if (!item) {
-        return { code: 404, message: '提示词不存在', data: null };
-      }
-
-      if (item.is_editable !== 1) {
-        return { code: 403, message: '该提示词不可编辑', data: null };
-      }
-
-      item.remark = body?.remark?.trim() || '';
-      item.updated_at = formatNow();
-
-      return { code: 0, message: '', data: toPublicItem(item) };
-    },
-  },
-  {
     url: `${API_PREFIX}/v1/llm-system-prompts/:id`,
     method: 'delete',
     response: ({ query }: { query: { id: string } }) => {

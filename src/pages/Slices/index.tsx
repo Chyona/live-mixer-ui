@@ -111,7 +111,7 @@ const SlicesPage = () => {
       const response = await updateSliceProjectName(id, projectName);
       if (response.code !== 0) {
         toast.notify.error(response.message || '项目名称保存失败');
-        return;
+        throw new Error(response.message || '项目名称保存失败');
       }
 
       setList((prev) =>
@@ -121,9 +121,10 @@ const SlicesPage = () => {
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
-      } else {
+      } else if (!(error instanceof Error)) {
         toast.notify.error('项目名称保存失败');
       }
+      throw error instanceof Error ? error : new Error('项目名称保存失败');
     }
   };
 

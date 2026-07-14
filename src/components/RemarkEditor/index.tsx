@@ -55,6 +55,9 @@ const RemarkEditor = ({
     setSaving(true);
     try {
       await onSave(trimmed);
+    } catch {
+      // 保存失败：还原为修改前内容
+      setDraft(value);
     } finally {
       setSaving(false);
       exitEditing();
