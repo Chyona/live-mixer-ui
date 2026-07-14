@@ -30,7 +30,7 @@ export interface ToastNotifyOptions {
   title: string;
   description?: string;
   duration?: number;
-  /** 显示自动关闭倒计时进度条，默认 true（antd ≥5.18） */
+  /** 显示自动关闭倒计时进度条（按类型配色），默认 true */
   showProgress?: boolean;
   pauseOnHover?: boolean;
   key?: string;
@@ -54,14 +54,29 @@ function openNotify(
     key,
   } = options;
 
+  // antd 原生 progress 固定主色，难以按类型改色；改用自绘底部进度条
+  const withProgress = showProgress && duration > 0;
+
   notify()[type]({
     key,
     message: title,
     description,
     placement: NOTIFY_PLACEMENT,
     duration,
-    showProgress,
+    showProgress: false,
     pauseOnHover,
+    className: [
+      'toast-notify',
+      `toast-notify-${type}`,
+      withProgress ? 'toast-notify--progress' : '',
+    ]
+      .filter(Boolean)
+      .join(' '),
+    style: withProgress
+      ? ({
+          ['--toast-duration' as string]: `${duration}s`,
+        } as Record<string, string>)
+      : undefined,
   });
 }
 
@@ -71,7 +86,7 @@ function notifyMethod(type: 'success' | 'error' | 'info' | 'warning') {
   };
 }
 
-/** 全局轻提示（message 为短提示，notify 为右上角通知并默认带 showProgress 倒计时条） */
+/** 全局轻提示（message 为短提示，notify 为右上角通知并默认带按类型配色的倒计时条） */
 export const toast = {
   success(content: string, duration = DEFAULT_DURATION) {
     msg().success(content, duration);

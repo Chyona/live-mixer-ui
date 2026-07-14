@@ -205,7 +205,7 @@ const AiPromptsPage = () => {
         title: '备注',
         dataIndex: 'remark',
         key: 'remark',
-        width: 220,
+        width: 260,
         render: (remark: string, record) =>
           record.is_editable === 1 ? (
             <RemarkEditor
@@ -304,19 +304,19 @@ const AiPromptsPage = () => {
         empty={
           appliedKeyword
             ? {
-                title: '未找到匹配的提示词',
-                description: '试试更换关键词，或使用 关键词A+关键词B 组合搜索',
-              }
+              title: '未找到匹配的提示词',
+              description: '试试更换关键词，或使用 关键词A+关键词B 组合搜索',
+            }
             : {
-                title: '暂无提示词',
-                description: '添加提示词后，可在 AI 切片时快速选用',
-                tone: 'primary',
-                action: (
-                  <Button type="primary" icon={<LuPlus size={16} />} onClick={openCreate}>
-                    添加提示词
-                  </Button>
-                ),
-              }
+              title: '暂无提示词',
+              description: '添加提示词后，可在 AI 切片时快速选用',
+              tone: 'primary',
+              action: (
+                <Button type="primary" icon={<LuPlus size={16} />} onClick={openCreate}>
+                  添加提示词
+                </Button>
+              ),
+            }
         }
         pagination={{
           current: page,

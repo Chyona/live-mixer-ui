@@ -2,9 +2,10 @@ import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { useAuth } from '~/context/AuthContext';
+import { isBusinessSuccess } from '~/services/businessCodes';
 import { pwdlogin } from '~/services/login';
 import { AppError } from '~/services/http';
-import { showAppError, toast } from '~/utils/toast';
+import { toast } from '~/utils/toast';
 import { trackEvent } from '~/utils/gtm';
 
 type PasswordFormValues = {
@@ -19,18 +20,30 @@ const PasswordLogin = () => {
   const handleSubmit = async (values: PasswordFormValues) => {
     setLoading(true);
     try {
-      const { code, data, message } = await pwdlogin(values);
-      if (code === 0 && data) {
-        trackEvent('passwordLogin', {
-          userId: data.id || '*',
-        });
-        updateAuthInfo(data);
+      const { code, data, message } = await pwdlogin({
+        username: values.username.trim(),
+        password: values.password,
+      });
+
+      // code === 0 成功；其他 code 一律按异常处理
+      if (!isBusinessSuccess(code)) {
+        toast.notify.error(message?.trim() || '登录失败');
         return;
       }
-      toast.notify.error(message || '登录失败');
+
+      if (!data) {
+        toast.notify.error('登录失败，未返回用户信息');
+        return;
+      }
+
+      trackEvent('passwordLogin', {
+        userId: data.id || '*',
+      });
+      updateAuthInfo(data);
     } catch (error) {
+      // 登录场景不走 showAppError：HTTP 401 会被当成会话过期而静默吞掉
       if (error instanceof AppError) {
-        showAppError(error);
+        toast.notify.error(error.errorMessage?.trim() || '登录失败');
       } else {
         toast.notify.error('登录失败，请稍后重试');
       }

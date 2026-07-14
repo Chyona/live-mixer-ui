@@ -44,9 +44,11 @@ describe('toast', () => {
       expect.objectContaining({
         message: '完成',
         description: '操作成功',
-        showProgress: true,
+        showProgress: false,
         duration: 3,
         pauseOnHover: true,
+        className: 'toast-notify toast-notify-success toast-notify--progress',
+        style: { '--toast-duration': '3s' },
       })
     );
   });
@@ -66,7 +68,12 @@ describe('toast', () => {
     });
 
     toast.notify.error('失败', undefined, { showProgress: false });
-    expect(error).toHaveBeenCalledWith(expect.objectContaining({ showProgress: false }));
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        showProgress: false,
+        className: 'toast-notify toast-notify-error',
+      })
+    );
   });
 
   it('dedupes scoped errors within a short window', () => {

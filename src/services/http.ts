@@ -30,6 +30,52 @@ export function isUnauthorizedError(error: unknown): boolean {
   return error instanceof AppError && error.errorCode === HTTP_STATUS_UNAUTHORIZED;
 }
 
+const AUTH_LOGIN_PATH = '/v1/auth/login';
+
+function isAuthLoginRequest(error: AxiosError): boolean {
+  const requestUrl = String(error.config?.url ?? '');
+  return requestUrl.includes(AUTH_LOGIN_PATH);
+}
+
+function getErrorPayload(error: AxiosError): Record<string, unknown> | null {
+  const data = error.response?.data;
+  if (!data || typeof data !== 'object') return null;
+  return data as Record<string, unknown>;
+}
+
+/** 从接口错误体中提取可读文案，兼容 code/message 与 errorCode/errorMessage */
+function resolveHttpErrorMessage(error: AxiosError, fallback: string): { message: string; code: number } {
+  const payload = getErrorPayload(error);
+  if (!payload) {
+    return { message: fallback, code: error.response?.status ?? 500 };
+  }
+
+  const messageCandidate =
+    (typeof payload.message === 'string' && payload.message.trim()) ||
+    (typeof payload.errorMessage === 'string' && payload.errorMessage.trim()) ||
+    '';
+
+  const codeCandidate =
+    typeof payload.code === 'number'
+      ? payload.code
+      : typeof payload.errorCode === 'number'
+        ? payload.errorCode
+        : error.response?.status ?? 500;
+
+  if (messageCandidate) {
+    return { message: messageCandidate, code: codeCandidate };
+  }
+
+  if (typeof payload.errorCode === 'number' && typeof payload.errorMessage === 'string') {
+    return {
+      message: `${payload.errorMessage}(${payload.errorCode})`,
+      code: payload.errorCode,
+    };
+  }
+
+  return { message: fallback, code: codeCandidate };
+}
+
 let handlingUnauthorized = false;
 
 function handleUnauthorized(navigate: NavigateFunction) {
@@ -79,21 +125,22 @@ export function setupHttpInterceptors(navigate: NavigateFunction) {
       let code: number;
 
       if (error.response) {
+        // 登录接口的 401 表示账号密码错误等认证失败，不应走「会话过期」清 session / 弹登录
         if (error.response.status === HTTP_STATUS_UNAUTHORIZED) {
+          if (isAuthLoginRequest(error)) {
+            const resolved = resolveHttpErrorMessage(error, '用户名或密码错误');
+            return Promise.reject(new AppError(resolved.message, resolved.code, error));
+          }
+
           handleUnauthorized(navigate);
           return Promise.reject(
             new AppError('未登录或登录已过期', HTTP_STATUS_UNAUTHORIZED, error)
           );
         }
 
-        try {
-          const resp = error.response.data;
-          message = resp.errorCode ? `${resp.errorMessage}(${resp.errorCode})` : '请求响应错误！';
-          code = resp.errorCode ?? 500;
-        } catch {
-          message = '请求响应未知错误！';
-          code = 500;
-        }
+        const resolved = resolveHttpErrorMessage(error, '请求响应错误！');
+        message = resolved.message;
+        code = resolved.code;
       } else if (error.request) {
         message = '请求未收到响应！';
         code = 500;
