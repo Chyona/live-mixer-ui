@@ -1,6 +1,6 @@
 import { Modal } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { LuPause, LuPlay } from 'react-icons/lu';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { LuPause, LuPlay, LuRotateCcw, LuSkipBack, LuSkipForward, LuX } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import type { SelectedCopySegment } from '../types';
 import { formatSliceTime } from '../utils';
@@ -18,12 +18,10 @@ function getSegmentDuration(segment: SelectedCopySegment) {
   return Math.max(0, segment.end - segment.start);
 }
 
-/** 片段列表拼接后的总时长 */
 function getComposedTotal(segments: SelectedCopySegment[]) {
   return segments.reduce((sum, segment) => sum + getSegmentDuration(segment), 0);
 }
 
-/** 正片时间 → 组合时间轴进度 */
 function sourceToComposed(
   segments: SelectedCopySegment[],
   index: number,
@@ -42,7 +40,6 @@ function sourceToComposed(
   return composed + Math.max(0, offset);
 }
 
-/** 组合时间轴进度 → 正片时间 + 片段下标 */
 function composedToSource(segments: SelectedCopySegment[], composedTime: number) {
   let remaining = Math.max(0, composedTime);
 
@@ -108,18 +105,45 @@ function seekVideo(video: HTMLVideoElement, time: number): Promise<void> {
 
 const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewModalProps) => {
   const playerRef = useRef<StreamVideoPlayerHandle>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const playlistRef = useRef<HTMLDivElement>(null);
   const segmentsRef = useRef(segments);
   const indexRef = useRef(0);
   const switchingRef = useRef(false);
   const watchTimerRef = useRef(0);
+  const playSegmentAtRef = useRef<(index: number, sourceTime?: number) => Promise<void>>(
+    async () => undefined
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playerReady, setPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [composedCurrent, setComposedCurrent] = useState(0);
+  const [stageHeight, setStageHeight] = useState<number>();
 
   segmentsRef.current = segments;
 
   const composedTotal = useMemo(() => getComposedTotal(segments), [segments]);
+
+  const chapterMarks = useMemo(() => {
+    let cursor = 0;
+    return segments.map((segment, index) => {
+      const duration = getSegmentDuration(segment);
+      const start = cursor;
+      cursor += duration;
+      return {
+        index,
+        start,
+        end: cursor,
+        duration,
+        text: segment.text,
+        sourceStart: segment.start,
+        sourceEnd: segment.end,
+      };
+    });
+  }, [segments]);
+
+  const isEnded =
+    !isPlaying && composedTotal > 0 && composedCurrent >= composedTotal - 0.05;
 
   const stopWatch = () => {
     window.clearInterval(watchTimerRef.current);
@@ -140,7 +164,7 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     if (watchTimerRef.current) return;
     watchTimerRef.current = window.setInterval(() => {
       tickWatchRef.current();
-    }, 80);
+    }, 50);
   };
 
   const playSegmentAt = async (index: number, sourceTime?: number) => {
@@ -153,12 +177,16 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     indexRef.current = index;
     setCurrentIndex(index);
 
-    const target = sourceTime ?? segment.start;
-    video.pause();
-    await seekVideo(video, target);
+    const clamped =
+      sourceTime == null
+        ? segment.start
+        : Math.min(Math.max(sourceTime, segment.start), Math.max(segment.end - 0.05, segment.start));
 
-    if (Math.abs(video.currentTime - target) > 0.35) {
-      await seekVideo(video, target);
+    video.pause();
+    await seekVideo(video, clamped);
+
+    if (Math.abs(video.currentTime - clamped) > 0.35) {
+      await seekVideo(video, clamped);
     }
 
     switchingRef.current = false;
@@ -172,20 +200,21 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     }
   };
 
+  playSegmentAtRef.current = playSegmentAt;
+
   const advanceOrStop = () => {
     const list = segmentsRef.current;
     const nextIndex = indexRef.current + 1;
     const video = playerRef.current?.video;
 
     if (nextIndex >= list.length) {
-      // 播完只暂停，保留监视器，方便再次播放继续按片段裁切
       video?.pause();
       setIsPlaying(false);
       setComposedCurrent(getComposedTotal(list));
       return;
     }
 
-    void playSegmentAt(nextIndex);
+    void playSegmentAtRef.current(nextIndex);
   };
 
   tickWatchRef.current = () => {
@@ -201,7 +230,7 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     const time = video.currentTime;
 
     if (time < segment.start - 0.2) {
-      void playSegmentAt(indexRef.current);
+      void playSegmentAtRef.current(indexRef.current);
       return;
     }
 
@@ -225,12 +254,39 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     if (!playerReady) return;
 
     ensureWatch();
-    void playSegmentAt(0);
+    void playSegmentAtRef.current(0);
 
     return () => {
       stopWatch();
     };
   }, [open, playerReady]);
+
+  useEffect(() => {
+    const container = playlistRef.current;
+    if (!container) return;
+    const active = container.querySelector<HTMLElement>(`[data-preview-index="${currentIndex}"]`);
+    active?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [currentIndex]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setStageHeight(undefined);
+      return;
+    }
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const syncHeight = () => {
+      const next = Math.round(stage.getBoundingClientRect().height);
+      setStageHeight((prev) => (prev === next ? prev : next));
+    };
+
+    syncHeight();
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [open, playerReady, segments.length]);
 
   const handleReady = () => {
     setPlayerReady(true);
@@ -242,11 +298,23 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
 
     if (video.paused) {
       ensureWatch();
-      // 播完停在末尾时，再点播放从头开始
-      if (composedCurrent >= composedTotal - 0.05) {
+      const segment = segmentsRef.current[indexRef.current];
+      const atEnd =
+        composedCurrent >= composedTotal - 0.05 ||
+        (segment != null &&
+          video.currentTime >= segment.end - END_EPS &&
+          indexRef.current >= segmentsRef.current.length - 1);
+
+      if (atEnd) {
         void playSegmentAt(0);
         return;
       }
+
+      if (segment && video.currentTime >= segment.end - END_EPS) {
+        advanceOrStop();
+        return;
+      }
+
       void video
         .play()
         .then(() => setIsPlaying(true))
@@ -264,66 +332,222 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     void playSegmentAt(mapped.index, mapped.sourceTime);
   };
 
-  const currentSegment = segments[currentIndex];
+  const handleTrackPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (composedTotal <= 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+    handleSeekComposed(ratio * composedTotal);
+  };
+
+  const handlePrevSegment = () => {
+    if (currentIndex <= 0) {
+      void playSegmentAt(0);
+      return;
+    }
+    void playSegmentAt(currentIndex - 1);
+  };
+
+  const handleNextSegment = () => {
+    if (currentIndex >= segments.length - 1) return;
+    void playSegmentAt(currentIndex + 1);
+  };
+
+  const progressRatio = composedTotal > 0 ? Math.min(composedCurrent / composedTotal, 1) : 0;
 
   return (
     <Modal
       open={open}
-      title="连续预览"
-      width={860}
+      title={null}
+      closable={false}
+      centered
+      width="min(1280px, 88vw)"
       footer={null}
       destroyOnClose
       onCancel={onClose}
+      className="slice-editor-preview-modal-wrap noanimation-modal"
+      styles={{
+        body: { maxHeight: 'min(860px, calc(100vh - 72px))', overflow: 'visible' },
+      }}
     >
       <div className="slice-editor-preview-modal">
-        <div className="slice-editor-preview-stage">
-          <StreamVideoPlayer
-            ref={playerRef}
-            url={url}
-            className="slice-editor-preview-video"
-            controls={false}
-            showFirstFrame={false}
-            onReady={handleReady}
-          />
+        <button
+          type="button"
+          className="slice-editor-preview-close"
+          onClick={onClose}
+          aria-label="关闭"
+        >
+          <LuX size={16} />
+        </button>
+
+        <div className="slice-editor-preview-stage" ref={stageRef}>
+          <div className="slice-editor-preview-video-shell">
+            <StreamVideoPlayer
+              ref={playerRef}
+              url={url}
+              className="slice-editor-preview-video"
+              controls={false}
+              showFirstFrame={false}
+              onReady={handleReady}
+            />
+          </div>
+
           <div className="slice-editor-preview-controls">
-            <button
-              type="button"
-              className="slice-editor-preview-play"
-              onClick={handleTogglePlay}
-              aria-label={isPlaying ? '暂停' : '播放'}
-            >
-              {isPlaying ? <LuPause size={18} /> : <LuPlay size={18} />}
-            </button>
-            <div className="slice-editor-preview-timeline">
-              <input
-                type="range"
-                min={0}
-                max={composedTotal || 0}
-                step={0.05}
-                value={Math.min(composedCurrent, composedTotal)}
-                disabled={composedTotal <= 0}
-                onChange={(event) => handleSeekComposed(Number(event.target.value))}
-                aria-label="组合时间轴"
-              />
+            <div className="slice-editor-preview-controls-row">
+              <button
+                type="button"
+                className="slice-editor-preview-icon-btn"
+                onClick={handlePrevSegment}
+                disabled={currentIndex <= 0 && composedCurrent <= 0.05}
+                aria-label="上一段"
+              >
+                <LuSkipBack size={16} />
+              </button>
+              <button
+                type="button"
+                className={[
+                  'slice-editor-preview-play',
+                  isPlaying ? 'is-playing' : '',
+                  isEnded ? 'is-ended' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={handleTogglePlay}
+                aria-label={isEnded ? '重新播放' : isPlaying ? '暂停' : '播放'}
+              >
+                {isEnded ? (
+                  <LuRotateCcw size={18} />
+                ) : isPlaying ? (
+                  <LuPause size={18} />
+                ) : (
+                  <LuPlay size={18} />
+                )}
+              </button>
+              <button
+                type="button"
+                className="slice-editor-preview-icon-btn"
+                onClick={handleNextSegment}
+                disabled={currentIndex >= segments.length - 1}
+                aria-label="下一段"
+              >
+                <LuSkipForward size={16} />
+              </button>
+
               <div className="slice-editor-preview-time">
-                <span>{formatComposedClock(composedCurrent)}</span>
+                <strong>{formatComposedClock(composedCurrent)}</strong>
                 <span>/</span>
                 <span>{formatComposedClock(composedTotal)}</span>
+              </div>
+
+              <div
+                className={[
+                  'slice-editor-preview-badge',
+                  isPlaying ? 'is-live' : '',
+                  isEnded ? 'is-ended' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {isEnded
+                  ? '已播完'
+                  : isPlaying
+                    ? `播放中 ${currentIndex + 1}/${segments.length}`
+                    : `片段 ${Math.min(currentIndex + 1, segments.length)}/${segments.length}`}
+              </div>
+            </div>
+
+            <div
+              className="slice-editor-preview-track"
+              onPointerDown={handleTrackPointer}
+              role="slider"
+              aria-valuemin={0}
+              aria-valuemax={composedTotal}
+              aria-valuenow={composedCurrent}
+              aria-label="组合时间轴"
+            >
+              <div className="slice-editor-preview-track-rail">
+                <div className="slice-editor-preview-chapters" aria-hidden>
+                  {chapterMarks.map((mark) => {
+                    const widthPercent =
+                      composedTotal > 0 ? (mark.duration / composedTotal) * 100 : 0;
+                    return (
+                      <span
+                        key={mark.index}
+                        className={[
+                          'slice-editor-preview-chapter',
+                          mark.index === currentIndex ? 'is-active' : '',
+                          mark.index < currentIndex ? 'is-passed' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        style={{ width: `${widthPercent}%` }}
+                      />
+                    );
+                  })}
+                </div>
+                <div
+                  className="slice-editor-preview-track-fill"
+                  style={{ width: `${progressRatio * 100}%` }}
+                />
+                <div
+                  className="slice-editor-preview-track-thumb"
+                  style={{ left: `${progressRatio * 100}%` }}
+                />
               </div>
             </div>
           </div>
         </div>
-        {currentSegment ? (
-          <div className="slice-editor-preview-meta">
-            <span>
-              正在播放片段 {currentIndex + 1}/{segments.length}
-            </span>
-            <span>
-              源片 {formatSliceTime(currentSegment.start)} - {formatSliceTime(currentSegment.end)}
-            </span>
-            <p>{currentSegment.text}</p>
+
+        <aside
+          className="slice-editor-preview-side"
+          style={stageHeight ? { height: stageHeight } : undefined}
+        >
+          <div className="slice-editor-preview-panel">
+            <div className="slice-editor-preview-playlist" ref={playlistRef}>
+              <div className="slice-editor-preview-playlist-title">
+                播放列表
+                <span>
+                  {segments.length} 段 · {formatComposedClock(composedTotal)}
+                </span>
+              </div>
+              {chapterMarks.map((mark) => (
+                <button
+                  key={mark.index}
+                  type="button"
+                  data-preview-index={mark.index}
+                  className={[
+                    'slice-editor-preview-playlist-item',
+                    mark.index === currentIndex ? 'is-active' : '',
+                    mark.index < currentIndex ? 'is-passed' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => void playSegmentAt(mark.index)}
+                >
+                  <span className="slice-editor-preview-playlist-index">
+                    {mark.index === currentIndex && isPlaying ? (
+                      <span className="slice-editor-preview-eq" aria-hidden>
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                    ) : (
+                      mark.index + 1
+                    )}
+                  </span>
+                  <span className="slice-editor-preview-playlist-body">
+                    <span className="slice-editor-preview-playlist-text">
+                      {mark.text || '（无文案）'}
+                    </span>
+                    <span className="slice-editor-preview-playlist-meta">
+                      {formatComposedClock(mark.duration)} · 源片{' '}
+                      {formatSliceTime(mark.sourceStart)}-{formatSliceTime(mark.sourceEnd)}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        ) : null}
+        </aside>
       </div>
     </Modal>
   );
