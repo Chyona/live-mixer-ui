@@ -120,19 +120,9 @@ const ManualVideoSlicePage = () => {
     [paragraphs, currentTime]
   );
 
-  const activeCopySegment = useMemo(
-    () => selectedSegments.find((segment) => segment.id === activeSegmentId) ?? null,
-    [selectedSegments, activeSegmentId]
-  );
-
   const transcriptHighlight = useMemo(
-    () =>
-      buildTranscriptHighlight(paragraphs, {
-        activeCopySegment,
-        playbackSync: activeSync,
-        isVideoPlaying,
-      }),
-    [paragraphs, activeCopySegment, activeSync, isVideoPlaying]
+    () => buildTranscriptHighlight({ playbackSync: activeSync }),
+    [activeSync]
   );
 
   const playbackActiveCopySegmentId = useMemo(() => {

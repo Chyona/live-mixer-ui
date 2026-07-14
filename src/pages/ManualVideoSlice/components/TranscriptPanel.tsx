@@ -9,7 +9,6 @@ import {
   highlightKeyword,
   paragraphSelectionToCopySegment,
   paragraphToCopySegment,
-  scrollElementIntoViewPreferUpper,
   scrollFollowElement,
   type TranscriptHighlight,
 } from '../utils';
@@ -134,18 +133,6 @@ const TranscriptPanel = ({
   ]);
 
   useEffect(() => {
-    if (!activeParagraphId || transcriptHighlight?.mode !== 'copy') return;
-
-    const container = transcriptBodyRef.current;
-    const node = container?.querySelector<HTMLElement>(
-      `[data-paragraph-id="${activeParagraphId}"]`
-    );
-    if (!container || !node) return;
-
-    scrollElementIntoViewPreferUpper(container, node);
-  }, [activeParagraphId, transcriptHighlight]);
-
-  useEffect(() => {
     lastAutoScrolledTargetRef.current = null;
   }, [paragraphs]);
 
@@ -250,21 +237,13 @@ const TranscriptPanel = ({
       >
         {paragraphs.map((paragraph) => {
           const color = getSpeakerColor(paragraph.speakerId, speakerIds);
-          const isHighlightParagraph = transcriptHighlight?.paragraphId === paragraph.id;
-          const isPlaybackParagraph =
-            isHighlightParagraph && transcriptHighlight?.mode === 'playback';
+          const isPlaybackParagraph = transcriptHighlight?.paragraphId === paragraph.id;
           const highlightSegmentIds = new Set(transcriptHighlight?.segmentIds ?? []);
           const isKeywordMatch = matchParagraphIds.includes(paragraph.id);
           const keywordMatchIndex = matchParagraphIds.indexOf(paragraph.id);
           const isCurrentKeywordMatch =
             keyword.trim() && isKeywordMatch && keywordMatchIndex === activeMatchIndex;
           const paragraphText = getParagraphText(paragraph);
-          const copyTextRange =
-            isHighlightParagraph &&
-            transcriptHighlight?.mode === 'copy' &&
-            transcriptHighlight.useTextRange
-              ? transcriptHighlight.textRange
-              : null;
 
           const renderParagraphText = () => {
             if (keyword.trim()) {
@@ -277,22 +256,8 @@ const TranscriptPanel = ({
               );
             }
 
-            if (copyTextRange) {
-              const { start, end } = copyTextRange;
-              return (
-                <>
-                  {paragraphText.slice(0, start)}
-                  <span className="segment-copy-active">{paragraphText.slice(start, end)}</span>
-                  {paragraphText.slice(end)}
-                </>
-              );
-            }
-
             return paragraph.segments.map((segment) => {
-              const isPlaybackActive =
-                transcriptHighlight?.mode === 'playback' && highlightSegmentIds.has(segment.id);
-              const isCopyActive =
-                transcriptHighlight?.mode === 'copy' && highlightSegmentIds.has(segment.id);
+              const isPlaybackActive = highlightSegmentIds.has(segment.id);
 
               return (
                 <span
@@ -303,7 +268,6 @@ const TranscriptPanel = ({
                   className={[
                     'slice-editor-segment-clause',
                     isPlaybackActive ? 'segment-active' : '',
-                    isCopyActive ? 'segment-copy-active' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
@@ -322,9 +286,6 @@ const TranscriptPanel = ({
               className={[
                 'slice-editor-paragraph',
                 isPlaybackParagraph ? 'active' : '',
-                isHighlightParagraph && transcriptHighlight?.mode === 'copy'
-                  ? 'slice-editor-paragraph_copy-linked'
-                  : '',
                 isKeywordMatch ? 'matched' : '',
                 isCurrentKeywordMatch ? 'matched-current' : '',
               ]
