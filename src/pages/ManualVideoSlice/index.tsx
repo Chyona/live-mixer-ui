@@ -725,7 +725,17 @@ const ManualVideoSlicePage = () => {
               setSelectedSegments([]);
               setActiveSegmentId(null);
             }}
-            onPreview={() => setPreviewOpen(true)}
+            onPreview={() => {
+              if (!streamUrl) {
+                toast.notify.warning('暂无可用视频，无法预览');
+                return;
+              }
+              if (selectedSegments.length === 0) {
+                toast.notify.warning('请先选择至少一个片段');
+                return;
+              }
+              setPreviewOpen(true);
+            }}
             onSave={handleSaveClick}
             savingProject={savingProject}
             onSaveAs={() => openSaveModal('saveAs')}
