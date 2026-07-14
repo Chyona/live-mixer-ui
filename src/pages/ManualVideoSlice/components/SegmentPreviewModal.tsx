@@ -1,6 +1,17 @@
 import { Modal } from 'antd';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { LuPause, LuPlay, LuRotateCcw, LuSkipBack, LuSkipForward, LuX } from 'react-icons/lu';
+import {
+  LuMaximize,
+  LuMinimize,
+  LuPause,
+  LuPlay,
+  LuRotateCcw,
+  LuSkipBack,
+  LuSkipForward,
+  // LuVolume2,
+  // LuVolumeX,
+  LuX,
+} from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import type { SelectedCopySegment } from '../types';
 import { formatSliceTime } from '../utils';
@@ -119,6 +130,10 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
   const [isPlaying, setIsPlaying] = useState(false);
   const [composedCurrent, setComposedCurrent] = useState(0);
   const [stageHeight, setStageHeight] = useState<number>();
+  // const [volume, setVolume] = useState(0.8);
+  // const [muted, setMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // const volumeBeforeMuteRef = useRef(0.8);
 
   segmentsRef.current = segments;
 
@@ -288,8 +303,76 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     return () => observer.disconnect();
   }, [open, playerReady, segments.length]);
 
+  // useEffect(() => {
+  //   const video = playerRef.current?.video;
+  //   if (!video) return;
+  //   video.volume = volume;
+  //   video.muted = muted;
+  // }, [volume, muted, playerReady]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      const stage = stageRef.current;
+      setIsFullscreen(Boolean(stage && document.fullscreenElement === stage));
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (open) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+    setIsFullscreen(false);
+  }, [open]);
+
   const handleReady = () => {
     setPlayerReady(true);
+    // const video = playerRef.current?.video;
+    // if (video) {
+    //   video.volume = volume;
+    //   video.muted = muted;
+    // }
+  };
+
+  // const handleToggleMute = () => {
+  //   if (muted || volume === 0) {
+  //     const restore = volumeBeforeMuteRef.current || 0.8;
+  //     setVolume(restore);
+  //     setMuted(false);
+  //     return;
+  //   }
+  //
+  //   volumeBeforeMuteRef.current = volume;
+  //   setMuted(true);
+  // };
+  //
+  // const handleVolumeChange = (next: number) => {
+  //   const clamped = Math.min(Math.max(next, 0), 1);
+  //   setVolume(clamped);
+  //   if (clamped === 0) {
+  //     setMuted(true);
+  //     return;
+  //   }
+  //   volumeBeforeMuteRef.current = clamped;
+  //   setMuted(false);
+  // };
+
+  const handleToggleFullscreen = async () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    try {
+      if (document.fullscreenElement === stage) {
+        await document.exitFullscreen();
+        return;
+      }
+      await stage.requestFullscreen();
+    } catch {
+      // 浏览器策略或设备不支持时忽略
+    }
   };
 
   const handleTogglePlay = () => {
@@ -452,6 +535,38 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
                   : isPlaying
                     ? `播放中 ${currentIndex + 1}/${segments.length}`
                     : `片段 ${Math.min(currentIndex + 1, segments.length)}/${segments.length}`}
+              </div>
+
+              <div className="slice-editor-preview-media-tools">
+                {/* 音量控制暂隐藏
+                <div className="slice-editor-preview-volume">
+                  <button
+                    type="button"
+                    className="slice-editor-preview-icon-btn"
+                    onClick={handleToggleMute}
+                    aria-label={muted || volume === 0 ? '取消静音' : '静音'}
+                  >
+                    {muted || volume === 0 ? <LuVolumeX size={16} /> : <LuVolume2 size={16} />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={muted ? 0 : volume}
+                    onChange={(event) => handleVolumeChange(Number(event.target.value))}
+                    aria-label="音量"
+                  />
+                </div>
+                */}
+                <button
+                  type="button"
+                  className="slice-editor-preview-icon-btn"
+                  onClick={() => void handleToggleFullscreen()}
+                  aria-label={isFullscreen ? '退出全屏' : '全屏'}
+                >
+                  {isFullscreen ? <LuMinimize size={16} /> : <LuMaximize size={16} />}
+                </button>
               </div>
             </div>
 

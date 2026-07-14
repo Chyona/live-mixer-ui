@@ -1086,6 +1086,50 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.slice-editor-preview-media-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.slice-editor-preview-volume {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slice-editor-preview-volume input[type='range'] {
+  width: 72px;
+  accent-color: #fff;
+  cursor: pointer;
+}
+
+.slice-editor-preview-stage:fullscreen,
+.slice-editor-preview-stage:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  background: #000;
+}
+
+.slice-editor-preview-stage:fullscreen .slice-editor-preview-video-shell,
+.slice-editor-preview-stage:-webkit-full-screen .slice-editor-preview-video-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slice-editor-preview-stage:fullscreen .slice-editor-preview-video,
+.slice-editor-preview-stage:-webkit-full-screen .slice-editor-preview-video {
+  max-height: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .slice-editor-preview-track {
   padding: 2px 0 0;
   cursor: pointer;
@@ -1339,6 +1383,14 @@
   .slice-editor-preview-side {
     height: auto !important;
     max-height: 280px;
+  }
+
+  .slice-editor-preview-volume input[type='range'] {
+    width: 56px;
+  }
+
+  .slice-editor-preview-badge {
+    display: none;
   }
 }
 
