@@ -1,23 +1,33 @@
 import { Form, Input, Modal } from 'antd';
 
+export interface SaveDraftModalValues {
+  name: string;
+  remark: string;
+}
+
 interface SaveDraftModalProps {
   open: boolean;
   title: string;
   defaultName: string;
+  defaultRemark?: string;
+  /** 是否展示备注字段（新建 / 另存为需要） */
+  showRemark?: boolean;
   loading: boolean;
   onCancel: () => void;
-  onSubmit: (name: string) => void;
+  onSubmit: (values: SaveDraftModalValues) => void;
 }
 
 const SaveDraftModal = ({
   open,
   title,
   defaultName,
+  defaultRemark = '',
+  showRemark = false,
   loading,
   onCancel,
   onSubmit,
 }: SaveDraftModalProps) => {
-  const [form] = Form.useForm<{ name: string }>();
+  const [form] = Form.useForm<SaveDraftModalValues>();
 
   return (
     <Modal
@@ -33,7 +43,10 @@ const SaveDraftModal = ({
       }}
       onOk={() => {
         void form.validateFields().then((values) => {
-          onSubmit(values.name.trim());
+          onSubmit({
+            name: values.name.trim(),
+            remark: (values.remark ?? '').trim(),
+          });
           form.resetFields();
         });
       }}
@@ -41,8 +54,8 @@ const SaveDraftModal = ({
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ name: defaultName }}
-        key={`${open}-${defaultName}`}
+        initialValues={{ name: defaultName, remark: defaultRemark }}
+        key={`${open}-${defaultName}-${defaultRemark}-${showRemark}`}
       >
         <Form.Item
           label="项目名称"
@@ -51,6 +64,11 @@ const SaveDraftModal = ({
         >
           <Input placeholder="请输入项目名称" maxLength={50} />
         </Form.Item>
+        {showRemark ? (
+          <Form.Item label="项目备注" name="remark">
+            <Input.TextArea placeholder="请输入项目备注（可选）" maxLength={200} rows={3} />
+          </Form.Item>
+        ) : null}
       </Form>
     </Modal>
   );

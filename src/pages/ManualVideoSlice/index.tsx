@@ -82,9 +82,10 @@ const ManualVideoSlicePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [saveModalMode, setSaveModalMode] = useState<'saveAs' | 'export'>('saveAs');
+  const [saveModalMode, setSaveModalMode] = useState<'create' | 'saveAs' | 'export'>('saveAs');
   const [savingProject, setSavingProject] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
+  const [projectRemark, setProjectRemark] = useState('');
 
   useEffect(() => {
     setProjectId(projectIdFromQuery);
@@ -191,6 +192,7 @@ const ManualVideoSlicePage = () => {
 
       if (!projectIdFromQuery) {
         setProjectId('');
+        setProjectRemark('');
         if (!hasAiSegments) {
           setSelectedSegments([]);
         }
@@ -200,6 +202,7 @@ const ManualVideoSlicePage = () => {
       const projectRes = projectSettled;
       if (projectRes?.code === 0 && projectRes.data) {
         setProjectId(projectRes.data.id || projectIdFromQuery);
+        setProjectRemark(projectRes.data.remarkName || '');
         if (!hasAiSegments && projectRes.data.segments.length > 0) {
           setSelectedSegments(projectRes.data.segments);
           setDraftName(projectRes.data.projectName);
@@ -371,60 +374,68 @@ const ManualVideoSlicePage = () => {
     toast.notify.success('已复制片段');
   }, []);
 
-  const handleSaveProject = useCallback(async (projectName?: string) => {
-    if (!sourceVideoId || !video) return;
-
-    if (selectedSegments.length === 0) {
-      toast.notify.warning('请先选择至少一个片段');
-      return;
-    }
-
-    const nextName = projectName?.trim() || draftName || `${video.name} 剪辑项目`;
-    const payload = {
-      live_id: video.id,
-      name: nextName,
-      remark: video.remark || '',
-      clips0: [] as ReturnType<typeof toSliceProjectClips>,
-      clips1: toSliceProjectClips(selectedSegments),
-    };
-
-    setSavingProject(true);
-    try {
-      // 有项目 id → 更新；无项目 id / 另存为 → 新建
-      const response = projectId
-        ? await updateSliceProject(projectId, payload)
-        : await saveSliceProject(payload);
-
-      if (response.code !== 0) {
-        toast.notify.error(response.message || '保存失败');
-        return;
-      }
-
-      if (response.data.id) {
-        syncProjectIdInUrl(response.data.id);
-      }
-      setDraftName(response.data.projectName);
-      localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
-      toast.notify.success('已保存为剪辑项目，可在项目管理中查看');
-    } catch (error) {
-      if (error instanceof AppError) {
-        showAppError(error);
-      } else {
-        toast.notify.error('保存失败');
-      }
-    } finally {
-      setSavingProject(false);
-    }
-  }, [draftName, projectId, selectedSegments, syncProjectIdInUrl, video]);
-
-  const handleSaveDraft = useCallback(
-    async (name: string) => {
+  const handleSaveProject = useCallback(
+    async (options?: { name?: string; remark?: string }) => {
       if (!sourceVideoId || !video) return;
 
       if (selectedSegments.length === 0) {
         toast.notify.warning('请先选择至少一个片段');
         return;
       }
+
+      const nextName = options?.name?.trim() || draftName || `${video.name} 剪辑项目`;
+      const nextRemark = options?.remark ?? projectRemark;
+      const payload = {
+        live_id: video.id,
+        name: nextName,
+        remark: nextRemark,
+        clips0: [] as ReturnType<typeof toSliceProjectClips>,
+        clips1: toSliceProjectClips(selectedSegments),
+      };
+
+      setSavingProject(true);
+      try {
+        // 有项目 id → 更新；无项目 id → 新建
+        const response = projectId
+          ? await updateSliceProject(projectId, payload)
+          : await saveSliceProject(payload);
+
+        if (response.code !== 0) {
+          toast.notify.error(response.message || '保存失败');
+          return;
+        }
+
+        if (response.data.id) {
+          syncProjectIdInUrl(response.data.id);
+        }
+        setDraftName(response.data.projectName);
+        setProjectRemark(response.data.remarkName || nextRemark);
+        localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
+        setSaveModalOpen(false);
+        toast.notify.success('已保存为剪辑项目，可在项目管理中查看');
+      } catch (error) {
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('保存失败');
+        }
+      } finally {
+        setSavingProject(false);
+      }
+    },
+    [draftName, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
+  );
+
+  const handleSaveDraft = useCallback(
+    async (values: { name: string; remark: string }) => {
+      if (!sourceVideoId || !video) return;
+
+      if (selectedSegments.length === 0) {
+        toast.notify.warning('请先选择至少一个片段');
+        return;
+      }
+
+      const { name, remark } = values;
 
       setSavingProject(true);
       try {
@@ -434,6 +445,7 @@ const ManualVideoSlicePage = () => {
               JSON.stringify(
                 {
                   projectName: name,
+                  remark,
                   sourceVideoId,
                   projectId: projectId || undefined,
                   segments: selectedSegments,
@@ -455,11 +467,16 @@ const ManualVideoSlicePage = () => {
           return;
         }
 
+        if (saveModalMode === 'create') {
+          await handleSaveProject({ name, remark });
+          return;
+        }
+
         // 另存为始终走新建接口
         const response = await saveSliceProject({
           live_id: video.id,
           name,
-          remark: video.remark || '',
+          remark,
           clips0: [],
           clips1: toSliceProjectClips(selectedSegments),
         });
@@ -474,6 +491,7 @@ const ManualVideoSlicePage = () => {
         }
         localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
         setDraftName(response.data.projectName);
+        setProjectRemark(response.data.remarkName || remark);
         setSaveModalOpen(false);
         toast.notify.success('已另存为新的剪辑项目');
       } catch (error) {
@@ -483,7 +501,15 @@ const ManualVideoSlicePage = () => {
         setSavingProject(false);
       }
     },
-    [saveModalMode, selectedSegments, sourceVideoId, syncProjectIdInUrl, video]
+    [
+      handleSaveProject,
+      projectId,
+      saveModalMode,
+      selectedSegments,
+      sourceVideoId,
+      syncProjectIdInUrl,
+      video,
+    ]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -519,9 +545,21 @@ const ManualVideoSlicePage = () => {
     }
   }, [navigate, selectedSegments, streamUrl, video]);
 
-  const openSaveModal = (nextMode: 'saveAs' | 'export') => {
+  const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);
     setSaveModalOpen(true);
+  };
+
+  const handleSaveClick = () => {
+    if (selectedSegments.length === 0) {
+      toast.notify.warning('请先选择至少一个片段');
+      return;
+    }
+    if (!projectId) {
+      openSaveModal('create');
+      return;
+    }
+    void handleSaveProject();
   };
 
   const handleDownloadSubtitle = useCallback(() => {
@@ -698,7 +736,7 @@ const ManualVideoSlicePage = () => {
               setActiveSegmentId(null);
             }}
             onPreview={() => setPreviewOpen(true)}
-            onSave={() => void handleSaveProject()}
+            onSave={handleSaveClick}
             savingProject={savingProject}
             onSaveAs={() => openSaveModal('saveAs')}
             onExportDraft={() => openSaveModal('export')}
@@ -716,13 +754,23 @@ const ManualVideoSlicePage = () => {
 
       <SaveDraftModal
         open={saveModalOpen}
-        title={saveModalMode === 'export' ? '导出草稿' : '另存为项目'}
-        defaultName={
-          saveModalMode === 'saveAs' ? `${draftName}-副本` : draftName || `${video.name} 剪辑项目`
+        title={
+          saveModalMode === 'export'
+            ? '导出草稿'
+            : saveModalMode === 'create'
+              ? '保存项目'
+              : '另存为项目'
         }
+        defaultName={
+          saveModalMode === 'saveAs'
+            ? `${draftName || video?.name || '剪辑项目'}-副本`
+            : draftName || `${video?.name || '未命名'} 剪辑项目`
+        }
+        defaultRemark={saveModalMode === 'saveAs' ? '' : projectRemark}
+        showRemark={saveModalMode !== 'export'}
         loading={savingProject}
         onCancel={() => setSaveModalOpen(false)}
-        onSubmit={(name) => void handleSaveDraft(name)}
+        onSubmit={(values) => void handleSaveDraft(values)}
       />
     </div>
   );
