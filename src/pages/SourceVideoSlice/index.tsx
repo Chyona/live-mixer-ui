@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Descriptions, Modal, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -26,7 +26,9 @@ import PromptPickerPanel from './PromptPickerPanel';
 const MAX_TOTAL_DURATION = 30 * 60;
 
 const SourceVideoSlicePage = () => {
-  const { id = '' } = useParams();
+  const { id: sourceVideoId = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId')?.trim() || '';
   const navigate = useNavigate();
   const entryFrom = useSliceEntryFrom();
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,9 @@ const SourceVideoSlicePage = () => {
 
   useAppSEO({
     title: video ? `${video.name} - 切片` : '视频切片',
-    path: id ? buildSourceVideoSliceLink(id) : '/source-videos',
+    path: sourceVideoId
+      ? buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })
+      : '/source-videos',
     robots: 'noindex, nofollow',
   });
 
@@ -58,11 +62,11 @@ const SourceVideoSlicePage = () => {
   const videoFormatLabel = useMemo(() => getVideoFormatLabel(streamUrl), [streamUrl]);
 
   const loadVideo = useCallback(async () => {
-    if (!id) return;
+    if (!sourceVideoId) return;
 
     setLoading(true);
     try {
-      const response = await fetchSourceVideoDetail(id);
+      const response = await fetchSourceVideoDetail(sourceVideoId);
       if (response.code !== 0) {
         toast.notify.error(response.message || '加载源视频失败');
         setVideo(null);
@@ -79,7 +83,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [sourceVideoId]);
 
   useEffect(() => {
     void loadVideo();
@@ -247,7 +251,7 @@ const SourceVideoSlicePage = () => {
   }, [navigate, selectedPrompt, selectedRanges, streamUrl, video]);
 
   const handleAiSelect = useCallback(async () => {
-    if (!video || !id) return;
+    if (!video || !sourceVideoId) return;
 
     if (selectedRanges.length === 0) {
       toast.notify.warning('请先选择至少一个时间段');
@@ -292,17 +296,17 @@ const SourceVideoSlicePage = () => {
     } finally {
       setAiSelecting(false);
     }
-  }, [id, navigate, selectedPrompt, selectedRanges, video]);
+  }, [navigate, selectedPrompt, selectedRanges, sourceVideoId, video]);
 
   const breadcrumbItems = useMemo(
     () =>
       buildSliceBreadcrumbItems({
         entryFrom,
-        sourceVideoId: id,
+        sourceVideoId,
         pageKind: 'timeline',
         videoName: video?.name,
       }),
-    [entryFrom, id, video?.name]
+    [entryFrom, sourceVideoId, video?.name]
   );
 
   if (loading) {
@@ -328,7 +332,7 @@ const SourceVideoSlicePage = () => {
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
           {entryFrom !== 'slices' ? (
-            <Link to={buildManualVideoSliceLink(id)}>
+            <Link to={buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })}>
               <Button>切换到人工切片</Button>
             </Link>
           ) : null}

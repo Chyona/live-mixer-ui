@@ -1,3 +1,4 @@
+import type { LiveAsr, LiveAsrSegment } from '~/services/sourceVideo.model';
 import type { SelectedCopySegment, TranscriptParagraph, TranscriptSegment } from './types';
 import { speakerColors } from '~/style/semanticColors';
 
@@ -97,6 +98,43 @@ export function normalizeParagraphSegments(paragraph: TranscriptParagraph): Tran
 
 export function normalizeTranscriptParagraphs(paragraphs: TranscriptParagraph[]) {
   return paragraphs.map(normalizeParagraphSegments);
+}
+
+function msToSeconds(ms: number) {
+  return ms / 1000;
+}
+
+function formatSpeakerName(speaker: string) {
+  const trimmed = speaker.trim();
+  if (!trimmed) return '说话人';
+  if (/^\d+$/.test(trimmed)) return `说话人${trimmed}`;
+  return trimmed;
+}
+
+function liveAsrItemToParagraph(item: LiveAsrSegment, index: number): TranscriptParagraph {
+  const speakerId = String(item.speaker ?? '').trim() || '0';
+  const text = item.text || (item.words ?? []).map((word) => word.text).join('');
+
+  return {
+    id: `asr-p-${index}`,
+    speakerId,
+    speakerName: formatSpeakerName(speakerId),
+    // 句级入参；随后由 normalizeTranscriptParagraphs 按标点拆成可选片段（秒）
+    segments: [
+      {
+        id: `asr-${index}`,
+        start: msToSeconds(item.start_time),
+        end: msToSeconds(item.end_time),
+        text,
+      },
+    ],
+  };
+}
+
+/** 将详情接口 `live_asr`（ms）转为剪辑页内部段落结构（秒） */
+export function liveAsrToTranscriptParagraphs(liveAsr: LiveAsr | null | undefined): TranscriptParagraph[] {
+  if (!liveAsr?.length) return [];
+  return liveAsr.map(liveAsrItemToParagraph);
 }
 
 export function findActiveSegment(

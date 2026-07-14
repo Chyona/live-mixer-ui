@@ -12,11 +12,6 @@ export interface TranscriptParagraph {
   segments: TranscriptSegment[];
 }
 
-export interface VideoTranscript {
-  sourceVideoId: string;
-  paragraphs: TranscriptParagraph[];
-}
-
 export interface SelectedCopySegment {
   id: string;
   speakerId: string;

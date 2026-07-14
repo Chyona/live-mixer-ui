@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Space } from 'antd';
 import { LuDownload } from 'react-icons/lu';
-import PageLoading from '~/components/PageLoading';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
 import SlicePageEmptyState from '~/components/SlicePageEmptyState';
+import ManualVideoSlicePageSkeleton from './ManualVideoSlicePageSkeleton';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
-import { fetchSliceProjectDetail, saveSliceProject } from '~/services/sliceProject';
-import { fetchVideoTranscript } from '~/services/transcript';
+import {
+  fetchSliceProjectDetail,
+  saveSliceProject,
+  toSliceProjectClips,
+  updateSliceProject,
+} from '~/services/sliceProject';
 import { submitClip } from '~/services/slice';
 import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
@@ -36,6 +40,7 @@ import {
   findActiveCopySegment,
   getParagraphText,
   getTextSelectionOffsets,
+  liveAsrToTranscriptParagraphs,
   normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
   scrollElementIntoViewPreferUpper,
@@ -50,13 +55,18 @@ const MAX_TOTAL_DURATION = 30 * 60;
 const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
 
 const ManualVideoSlicePage = () => {
-  const { id = '' } = useParams();
+  const { id: sourceVideoId = '' } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const playerRef = useRef<StreamVideoPlayerHandle>(null);
   const panelLeftRef = useRef<HTMLDivElement>(null);
   const videoBlockRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+
+  /** 项目管理进入时带 ?projectId=；源视频首次保存后也会回写 */
+  const projectIdFromQuery = searchParams.get('projectId')?.trim() || '';
+  const [projectId, setProjectId] = useState(projectIdFromQuery);
 
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<SourceVideo | null>(null);
@@ -76,9 +86,15 @@ const ManualVideoSlicePage = () => {
   const [savingProject, setSavingProject] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
 
+  useEffect(() => {
+    setProjectId(projectIdFromQuery);
+  }, [projectIdFromQuery]);
+
   useAppSEO({
     title: video ? `${video.name} - 人工切片` : '人工切片',
-    path: id ? buildManualVideoSliceLink(id) : '/source-videos',
+    path: sourceVideoId
+      ? buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })
+      : '/source-videos',
     robots: 'noindex, nofollow',
   });
 
@@ -125,40 +141,71 @@ const ManualVideoSlicePage = () => {
 
   const effectiveActiveCopySegmentId = playbackActiveCopySegmentId ?? activeSegmentId;
 
+  const syncProjectIdInUrl = useCallback(
+    (nextProjectId: string) => {
+      if (!nextProjectId || nextProjectId === projectIdFromQuery) {
+        setProjectId(nextProjectId);
+        return;
+      }
+      setProjectId(nextProjectId);
+      const nextSearch = new URLSearchParams(searchParams);
+      nextSearch.set('projectId', nextProjectId);
+      navigate(
+        { pathname: location.pathname, search: `?${nextSearch.toString()}` },
+        { replace: true, state: location.state }
+      );
+    },
+    [location.pathname, location.state, navigate, projectIdFromQuery, searchParams]
+  );
+
   const loadPageData = useCallback(async () => {
-    if (!id) return;
+    if (!sourceVideoId) return;
 
     const locationState = location.state as ManualSliceLocationState | null;
     const hasAiSegments = Boolean(locationState?.aiSelectedSegments?.length);
 
     setLoading(true);
     try {
-      const [videoRes, transcriptRes, projectRes] = await Promise.all([
-        fetchSourceVideoDetail(id),
-        fetchVideoTranscript(id),
-        fetchSliceProjectDetail(id),
+      // 无 projectId：源视频入口，只拉源视频详情（干净页）
+      // 有 projectId：项目管理入口，再拉项目详情并回填片段
+      const [videoRes, projectSettled] = await Promise.all([
+        fetchSourceVideoDetail(sourceVideoId),
+        projectIdFromQuery
+          ? fetchSliceProjectDetail(projectIdFromQuery).catch(() => null)
+          : Promise.resolve(null),
       ]);
 
       if (videoRes.code !== 0) {
         toast.notify.error(videoRes.message || '加载源视频失败');
         setVideo(null);
+        setParagraphs([]);
         return;
       }
 
-      if (transcriptRes.code !== 0) {
-        toast.notify.error(transcriptRes.message || '加载文案失败');
-        setParagraphs([]);
-      } else {
-        setParagraphs(normalizeTranscriptParagraphs(transcriptRes.data.paragraphs));
-      }
-
       setVideo(videoRes.data);
+      setParagraphs(
+        normalizeTranscriptParagraphs(liveAsrToTranscriptParagraphs(videoRes.data.live_asr))
+      );
       const defaultProjectName = `${videoRes.data.name} 剪辑项目`;
       setDraftName((current) => current || defaultProjectName);
 
-      if (!hasAiSegments && projectRes?.code === 0 && projectRes.data.segments.length > 0) {
-        setSelectedSegments(projectRes.data.segments);
-        setDraftName(projectRes.data.projectName);
+      if (!projectIdFromQuery) {
+        setProjectId('');
+        if (!hasAiSegments) {
+          setSelectedSegments([]);
+        }
+        return;
+      }
+
+      const projectRes = projectSettled;
+      if (projectRes?.code === 0 && projectRes.data) {
+        setProjectId(projectRes.data.id || projectIdFromQuery);
+        if (!hasAiSegments && projectRes.data.segments.length > 0) {
+          setSelectedSegments(projectRes.data.segments);
+          setDraftName(projectRes.data.projectName);
+        }
+      } else {
+        toast.notify.warning(projectRes?.message || '剪辑项目加载失败');
       }
     } catch (error) {
       setVideo(null);
@@ -170,7 +217,7 @@ const ManualVideoSlicePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, location.state]);
+  }, [location.state, projectIdFromQuery, sourceVideoId]);
 
   useEffect(() => {
     void loadPageData();
@@ -256,9 +303,9 @@ const ManualVideoSlicePage = () => {
 
     setSelectedSegments((prev) => [...prev, segment]);
     setActiveSegmentId(segment.id);
-    handleSeek(segment.start);
+    // 选片只加入预览，不打断当前播放进度
     toast.notify.success('已添加到文案预览');
-  }, [handleSeek]);
+  }, []);
 
   const handleDeleteSegment = useCallback((segmentId: string) => {
     setSelectedSegments((prev) => prev.filter((item) => item.id !== segmentId));
@@ -325,28 +372,37 @@ const ManualVideoSlicePage = () => {
   }, []);
 
   const handleSaveProject = useCallback(async (projectName?: string) => {
-    if (!id || !video) return;
+    if (!sourceVideoId || !video) return;
 
     if (selectedSegments.length === 0) {
       toast.notify.warning('请先选择至少一个片段');
       return;
     }
 
+    const nextName = projectName?.trim() || draftName || `${video.name} 剪辑项目`;
+    const payload = {
+      live_id: video.id,
+      name: nextName,
+      remark: video.remark || '',
+      clips0: [] as ReturnType<typeof toSliceProjectClips>,
+      clips1: toSliceProjectClips(selectedSegments),
+    };
+
     setSavingProject(true);
     try {
-      const response = await saveSliceProject(id, {
-        projectName: projectName?.trim() || draftName || `${video.name} 剪辑项目`,
-        sourceVideoName: video.name,
-        remarkName: video.remark,
-        projectSource: 'manual',
-        segments: selectedSegments,
-      });
+      // 有项目 id → 更新；无项目 id / 另存为 → 新建
+      const response = projectId
+        ? await updateSliceProject(projectId, payload)
+        : await saveSliceProject(payload);
 
       if (response.code !== 0) {
         toast.notify.error(response.message || '保存失败');
         return;
       }
 
+      if (response.data.id) {
+        syncProjectIdInUrl(response.data.id);
+      }
       setDraftName(response.data.projectName);
       localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
       toast.notify.success('已保存为剪辑项目，可在项目管理中查看');
@@ -359,11 +415,11 @@ const ManualVideoSlicePage = () => {
     } finally {
       setSavingProject(false);
     }
-  }, [draftName, id, selectedSegments, video]);
+  }, [draftName, projectId, selectedSegments, syncProjectIdInUrl, video]);
 
   const handleSaveDraft = useCallback(
     async (name: string) => {
-      if (!id || !video) return;
+      if (!sourceVideoId || !video) return;
 
       if (selectedSegments.length === 0) {
         toast.notify.warning('请先选择至少一个片段');
@@ -378,7 +434,8 @@ const ManualVideoSlicePage = () => {
               JSON.stringify(
                 {
                   projectName: name,
-                  sourceVideoId: id,
+                  sourceVideoId,
+                  projectId: projectId || undefined,
                   segments: selectedSegments,
                 },
                 null,
@@ -398,12 +455,13 @@ const ManualVideoSlicePage = () => {
           return;
         }
 
-        const response = await saveSliceProject(id, {
-          projectName: name,
-          sourceVideoName: video.name,
-          remarkName: video.remark,
-          projectSource: 'manual',
-          segments: selectedSegments,
+        // 另存为始终走新建接口
+        const response = await saveSliceProject({
+          live_id: video.id,
+          name,
+          remark: video.remark || '',
+          clips0: [],
+          clips1: toSliceProjectClips(selectedSegments),
         });
 
         if (response.code !== 0) {
@@ -411,6 +469,9 @@ const ManualVideoSlicePage = () => {
           return;
         }
 
+        if (response.data.id) {
+          syncProjectIdInUrl(response.data.id);
+        }
         localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
         setDraftName(response.data.projectName);
         setSaveModalOpen(false);
@@ -422,7 +483,7 @@ const ManualVideoSlicePage = () => {
         setSavingProject(false);
       }
     },
-    [id, saveModalMode, selectedSegments, video]
+    [saveModalMode, selectedSegments, sourceVideoId, syncProjectIdInUrl, video]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -504,19 +565,15 @@ const ManualVideoSlicePage = () => {
     () =>
       buildSliceBreadcrumbItems({
         entryFrom,
-        sourceVideoId: id,
+        sourceVideoId,
         pageKind: 'manual',
         videoName: video?.name,
       }),
-    [entryFrom, id, video?.name]
+    [entryFrom, sourceVideoId, video?.name]
   );
 
   if (loading) {
-    return (
-      <div className="slice-page">
-        <PageLoading />
-      </div>
-    );
+    return <ManualVideoSlicePageSkeleton breadcrumbItems={breadcrumbItems} />;
   }
 
   if (!video) {
@@ -542,7 +599,7 @@ const ManualVideoSlicePage = () => {
               字幕下载
             </Button>
             {entryFrom !== 'slices' ? (
-              <Link to={buildSourceVideoSliceLink(id)}>
+              <Link to={buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })}>
                 <Button>切换到时间轴切片</Button>
               </Link>
             ) : null}

@@ -5,6 +5,7 @@ import {
 } from '../src/services/sourceVideo.model';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
+import { getTranscript } from './transcript';
 
 type MockSourceVideo = SourceVideo & {
   ownerId: string;
@@ -159,7 +160,18 @@ function matchKeywords(text: string, keywords: string[]) {
 
 function toPublicItem(item: MockSourceVideo): SourceVideo {
   const { ownerId: _ownerId, ...rest } = item;
-  return rest;
+  return { ...rest, live_asr: null };
+}
+
+function toPublicDetail(item: MockSourceVideo): SourceVideo {
+  const base = toPublicItem(item);
+  if (item.asr_status !== 'completed') {
+    return { ...base, live_asr: null };
+  }
+  return {
+    ...base,
+    live_asr: getTranscript(String(item.id)),
+  };
 }
 
 function advanceAsrProgress(item: MockSourceVideo) {
@@ -293,7 +305,7 @@ export default [
       if (!item) {
         return { code: 404, message: '源视频不存在', data: null };
       }
-      return { code: 0, message: '', data: toPublicItem(item) };
+      return { code: 0, message: '', data: toPublicDetail(item) };
     },
   },
   {

@@ -1,5 +1,24 @@
 export type AsrStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+/** ASR 词级结果，时间单位为毫秒 */
+export interface LiveAsrWord {
+  start_time: number;
+  end_time: number;
+  text: string;
+}
+
+/** ASR 句段，时间单位为毫秒 */
+export interface LiveAsrSegment {
+  speaker: string;
+  start_time: number;
+  end_time: number;
+  text: string;
+  words?: LiveAsrWord[];
+}
+
+/** 详情接口 `live_asr` 字段 */
+export type LiveAsr = LiveAsrSegment[];
+
 export interface SourceVideo {
   id: number;
   name: string;
@@ -15,6 +34,8 @@ export interface SourceVideo {
   created_at: string;
   updated_at: string;
   created_by: number;
+  /** 详情接口返回的 ASR 文案；列表接口通常不带此字段。时间单位为 ms */
+  live_asr?: LiveAsr | null;
 }
 
 export type SourceVideoAsrFields = Pick<

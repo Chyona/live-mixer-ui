@@ -1,14 +1,6 @@
 import type { BaseResponse } from './types';
 import { request } from './http';
-import type { ManualSliceDraft, VideoTranscript } from '~/pages/ManualVideoSlice/types';
-
-export async function fetchVideoTranscript(
-  sourceVideoId: string
-): Promise<BaseResponse<VideoTranscript>> {
-  return await request(`/v1/source-videos/${sourceVideoId}/transcript`, {
-    method: 'get',
-  });
-}
+import type { ManualSliceDraft } from '~/pages/ManualVideoSlice/types';
 
 export interface SaveManualSliceDraftParams {
   name: string;

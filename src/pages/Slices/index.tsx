@@ -185,9 +185,16 @@ const SlicesPage = () => {
               className="list-page__action-btn"
               icon={<LuTextSelect size={14} />}
               onClick={() =>
-                navigate(buildSliceProjectEditLink(record.sourceVideoId, record.projectSource), {
-                  state: { from: 'slices' },
-                })
+                navigate(
+                  buildSliceProjectEditLink(
+                    record.sourceVideoId,
+                    record.projectSource,
+                    record.id
+                  ),
+                  {
+                    state: { from: 'slices' },
+                  }
+                )
               }
             >
               编辑项目

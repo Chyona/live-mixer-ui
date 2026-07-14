@@ -50,6 +50,8 @@ const TranscriptPanel = ({
   const transcriptBodyRef = useRef<HTMLDivElement>(null);
   const lastAutoScrolledTargetRef = useRef<string | null>(null);
   const autoScrollPauseTimerRef = useRef<number>(0);
+  const pendingSeekTimerRef = useRef<number>(0);
+  const suppressNextClickSeekRef = useRef(false);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
     return localStorage.getItem(TRANSCRIPT_AUTO_SCROLL_KEY) !== 'false';
@@ -81,7 +83,23 @@ const TranscriptPanel = ({
   useEffect(() => {
     return () => {
       window.clearTimeout(autoScrollPauseTimerRef.current);
+      window.clearTimeout(pendingSeekTimerRef.current);
     };
+  }, []);
+
+  const scheduleSeek = useCallback(
+    (time: number) => {
+      window.clearTimeout(pendingSeekTimerRef.current);
+      pendingSeekTimerRef.current = window.setTimeout(() => {
+        onSeek(time);
+      }, 220);
+    },
+    [onSeek]
+  );
+
+  const cancelPendingSeek = useCallback(() => {
+    window.clearTimeout(pendingSeekTimerRef.current);
+    pendingSeekTimerRef.current = 0;
   }, []);
 
   useEffect(() => {
@@ -131,9 +149,19 @@ const TranscriptPanel = ({
     lastAutoScrolledTargetRef.current = null;
   }, [paragraphs]);
 
-  const handleParagraphClick = (paragraph: TranscriptParagraph) => {
+  const handleParagraphClick = (
+    event: React.MouseEvent<HTMLDivElement>,
+    paragraph: TranscriptParagraph
+  ) => {
+    // 双击第二次 click / 拖选后的 click 不跳转，避免打断播放
+    if (event.detail > 1) return;
+    if (suppressNextClickSeekRef.current) {
+      suppressNextClickSeekRef.current = false;
+      return;
+    }
+
     const range = getParagraphRange(paragraph);
-    onSeek(range.start);
+    scheduleSeek(range.start);
   };
 
   const handleParagraphDoubleClick = (
@@ -142,6 +170,8 @@ const TranscriptPanel = ({
   ) => {
     event.preventDefault();
     event.stopPropagation();
+    cancelPendingSeek();
+    suppressNextClickSeekRef.current = false;
     window.getSelection()?.removeAllRanges();
 
     const copySegment = paragraphToCopySegment(paragraph);
@@ -161,9 +191,21 @@ const TranscriptPanel = ({
 
     const copySegment = paragraphSelectionToCopySegment(event.currentTarget, paragraph);
     if (copySegment) {
+      suppressNextClickSeekRef.current = true;
+      cancelPendingSeek();
       onSelectSegment(copySegment);
       selection.removeAllRanges();
     }
+  };
+
+  const handleSegmentClick = (event: React.MouseEvent<HTMLSpanElement>, start: number) => {
+    event.stopPropagation();
+    if (event.detail > 1) return;
+    if (suppressNextClickSeekRef.current) {
+      suppressNextClickSeekRef.current = false;
+      return;
+    }
+    scheduleSeek(start);
   };
 
   return (
@@ -265,10 +307,7 @@ const TranscriptPanel = ({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onSeek(segment.start);
-                  }}
+                  onClick={(event) => handleSegmentClick(event, segment.start)}
                 >
                   {segment.text}
                 </span>
@@ -291,7 +330,7 @@ const TranscriptPanel = ({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => handleParagraphClick(paragraph)}
+              onClick={(event) => handleParagraphClick(event, paragraph)}
               onDoubleClick={(event) => handleParagraphDoubleClick(event, paragraph)}
             >
               <div className="slice-editor-paragraph-head">

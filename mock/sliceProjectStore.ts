@@ -13,14 +13,19 @@ export type SliceProjectRecord = {
   segments: SelectedCopySegment[];
 };
 
+/** key: sourceVideoId */
 const sliceProjectMap = new Map<string, SliceProjectRecord>();
+
+function buildProjectId(sourceVideoId: string) {
+  return `vp-${sourceVideoId}`;
+}
 
 function seedSliceProjects() {
   if (sliceProjectMap.size > 0) return;
 
   const seeds: Omit<SliceProjectRecord, 'id' | 'segments'>[] = [
     {
-      sourceVideoId: 'sv-001',
+      sourceVideoId: '1',
       sourceVideoName: '周末游戏直播回放',
       remarkName: '游戏专场素材',
       projectName: '周末游戏直播回放 剪辑项目',
@@ -29,7 +34,7 @@ function seedSliceProjects() {
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
     },
     {
-      sourceVideoId: 'sv-002',
+      sourceVideoId: '2',
       sourceVideoName: '新品发布会直播',
       remarkName: '发布会实录',
       projectName: '新品发布会直播 剪辑项目',
@@ -38,7 +43,7 @@ function seedSliceProjects() {
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
     },
     {
-      sourceVideoId: 'sv-005',
+      sourceVideoId: '5',
       sourceVideoName: '数码产品测评',
       remarkName: '测评专场',
       projectName: '数码产品测评 剪辑项目',
@@ -50,30 +55,31 @@ function seedSliceProjects() {
 
   for (const item of seeds) {
     sliceProjectMap.set(item.sourceVideoId, {
-      id: item.sourceVideoId,
-      segments: item.projectSource === 'manual' && item.sourceVideoId === 'sv-002'
-        ? [
-            {
-              id: 'seed-segment-1',
-              speakerId: 'speaker-1',
-              speakerName: '主播',
-              text: 'seed segment',
-              start: 0,
-              end: 30,
-            },
-          ]
-        : item.projectSource === 'timeline' && item.sourceVideoId === 'sv-001'
+      id: buildProjectId(item.sourceVideoId),
+      segments:
+        item.projectSource === 'manual' && item.sourceVideoId === '2'
           ? [
               {
-                id: 'seed-timeline-1',
+                id: 'seed-segment-1',
                 speakerId: 'speaker-1',
                 speakerName: '主播',
-                text: 'timeline segment',
-                start: 10,
-                end: 40,
+                text: 'seed segment',
+                start: 0,
+                end: 30,
               },
             ]
-          : [],
+          : item.projectSource === 'timeline' && item.sourceVideoId === '1'
+            ? [
+                {
+                  id: 'seed-timeline-1',
+                  speakerId: 'speaker-1',
+                  speakerName: '主播',
+                  text: 'timeline segment',
+                  start: 10,
+                  end: 40,
+                },
+              ]
+            : [],
       ...item,
     });
   }
@@ -89,10 +95,11 @@ export function upsertSliceProject(input: {
   projectSource?: SliceProjectSource;
   segmentCount: number;
   segments?: SelectedCopySegment[];
+  projectId?: string;
 }) {
   const existing = sliceProjectMap.get(input.sourceVideoId);
   const next: SliceProjectRecord = {
-    id: input.sourceVideoId,
+    id: input.projectId || existing?.id || buildProjectId(input.sourceVideoId),
     sourceVideoId: input.sourceVideoId,
     sourceVideoName: input.sourceVideoName ?? existing?.sourceVideoName ?? '未命名源视频',
     remarkName: input.remarkName ?? existing?.remarkName ?? '',
@@ -108,21 +115,25 @@ export function upsertSliceProject(input: {
 }
 
 export function saveSliceProjectRecord(input: {
-  sourceVideoId: string;
+  /** 路径上的 id：优先按项目 id 匹配，否则按源视频 id */
+  id: string;
+  sourceVideoId?: string;
   sourceVideoName?: string;
   remarkName?: string;
   projectName?: string;
   projectSource?: SliceProjectSource;
   segments: SelectedCopySegment[];
 }) {
-  const existing = sliceProjectMap.get(input.sourceVideoId);
+  const existing = getSliceProject(input.id);
+  const sourceVideoId = input.sourceVideoId || existing?.sourceVideoId || input.id;
   const projectName =
     input.projectName?.trim() ||
     existing?.projectName ||
     `${input.sourceVideoName ?? existing?.sourceVideoName ?? '未命名源视频'} 剪辑项目`;
 
   return upsertSliceProject({
-    sourceVideoId: input.sourceVideoId,
+    sourceVideoId,
+    projectId: existing?.id,
     sourceVideoName: input.sourceVideoName ?? existing?.sourceVideoName,
     remarkName: input.remarkName ?? existing?.remarkName,
     projectName,
@@ -132,8 +143,14 @@ export function saveSliceProjectRecord(input: {
   });
 }
 
-export function getSliceProject(sourceVideoId: string) {
-  return sliceProjectMap.get(sourceVideoId) ?? null;
+/** 支持按项目 id 或源视频 id 查找 */
+export function getSliceProject(projectIdOrSourceVideoId: string) {
+  const bySource = sliceProjectMap.get(projectIdOrSourceVideoId);
+  if (bySource) return bySource;
+  return (
+    Array.from(sliceProjectMap.values()).find((item) => item.id === projectIdOrSourceVideoId) ??
+    null
+  );
 }
 
 export function listSliceProjects() {
@@ -142,8 +159,8 @@ export function listSliceProjects() {
   );
 }
 
-export function updateSliceProjectName(sourceVideoId: string, projectName: string) {
-  const project = sliceProjectMap.get(sourceVideoId);
+export function updateSliceProjectName(projectIdOrSourceVideoId: string, projectName: string) {
+  const project = getSliceProject(projectIdOrSourceVideoId);
   if (!project) return null;
 
   project.projectName = projectName;
@@ -151,7 +168,10 @@ export function updateSliceProjectName(sourceVideoId: string, projectName: strin
   return project;
 }
 
-export function toPublicSliceProject(project: SliceProjectRecord, options?: { withSegments?: boolean }) {
+export function toPublicSliceProject(
+  project: SliceProjectRecord,
+  options?: { withSegments?: boolean }
+) {
   const { segments, ...rest } = project;
   return {
     ...rest,
