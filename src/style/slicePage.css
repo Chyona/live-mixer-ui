@@ -1553,7 +1553,7 @@
 
 .slice-selected-zoom-label {
   font-size: 12px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1577,7 +1577,7 @@
 }
 
 .slice-selected-zoom .timeline-zoom-level {
-  color: var(--primary-dark);
+  color: var(--text-secondary);
 }
 
 .slice-selected-title-row {
@@ -1599,13 +1599,13 @@
   margin-left: 4px;
   font-size: 13px;
   font-weight: 400;
-  color: var(--text-gray);
+  color: var(--text-secondary);
 }
 
 .slice-selected-stats {
   margin: 0;
   font-size: 13px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
 }
 
 .slice-selected-header-right {
@@ -1627,7 +1627,7 @@
 
 .slice-selected-hint {
   font-size: 12px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1657,7 +1657,7 @@
 
 .slice-selected-empty {
   font-size: 13px;
-  color: var(--text-gray);
+  color: var(--text-secondary);
   line-height: 32px;
 }
 

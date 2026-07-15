@@ -7,9 +7,11 @@
   --timeline-text: var(--text-gray);
   --timeline-text-strong: var(--text-secondary);
   --timeline-divider: var(--surface-divider);
-  --timeline-tick-minor: rgba(var(--primary-color-rgb), 0.16);
-  --timeline-tick-sub: rgba(var(--primary-color-rgb), 0.22);
-  --timeline-tick-major: rgba(var(--primary-color-rgb), 0.38);
+  --timeline-tick-minor: rgba(0, 0, 0, 0.1);
+  --timeline-tick-sub: rgba(0, 0, 0, 0.14);
+  --timeline-tick-major: rgba(0, 0, 0, 0.22);
+  --timeline-tick-label: var(--text-gray);
+  --timeline-tick-label-major: var(--text-gray);
   --timeline-range-fill: rgba(var(--primary-color-rgb), 0.14);
   --timeline-range-fill-hover: rgba(var(--primary-color-rgb), 0.2);
   --timeline-range-fill-active: rgba(var(--primary-color-rgb), 0.32);
@@ -19,8 +21,11 @@
   --timeline-range-border-hover: rgba(var(--primary-color-rgb), 0.36);
   --timeline-range-border-added: rgba(var(--primary-light-rgb), 0.42);
   --timeline-range-border-removed: rgba(var(--primary-color-rgb), 0.2);
-  --timeline-playhead: var(--primary-color);
-  --timeline-playhead-glow: rgba(var(--primary-color-rgb), 0.18);
+  --timeline-playhead: var(--primary-dark);
+  --timeline-playhead-glow: rgba(var(--primary-dark-rgb), 0.2);
+  /* 半透明保留；略高于选区浅蓝底，叠段时仍可读 */
+  --timeline-playhead-alpha: 0.85;
+  --timeline-playhead-fill-alpha: 0.34;
 
   background: transparent;
   border: none;
@@ -192,7 +197,7 @@
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    color: var(--timeline-text);
+    color: var(--timeline-tick-label);
     font-size: 10px;
   }
 
@@ -210,7 +215,7 @@
     }
 
     .timeline-tick-label {
-      color: var(--primary-dark);
+      color: var(--timeline-tick-label-major);
       font-size: 11px;
       font-weight: 600;
       transform: translateX(-50%);
@@ -492,12 +497,14 @@
   .timeline-playhead-triangle {
     position: absolute;
     top: 0;
-    left: -6px;
-    width: 10px;
+    left: 0;
+    width: 12px;
     height: 12px;
-    border: 2px solid var(--timeline-playhead);
-    background: #fff;
-    box-shadow: 0 1px 4px var(--timeline-playhead-glow);
+    border: 2px solid rgba(var(--primary-dark-rgb), var(--timeline-playhead-alpha));
+    background: rgba(var(--primary-dark-rgb), var(--timeline-playhead-fill-alpha));
+    box-sizing: border-box;
+    transform: translateX(-50%);
+    box-shadow: none;
 
     &::before {
       content: '';
@@ -507,38 +514,36 @@
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 5px solid var(--timeline-playhead);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 7px solid rgba(var(--primary-dark-rgb), var(--timeline-playhead-alpha));
     }
 
     &::after {
       content: '';
       position: absolute;
-      top: calc(100% + 0px);
+      top: calc(100% - 1px);
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 2px solid transparent;
-      border-right: 2px solid transparent;
-      border-top: 2px solid #fff;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid rgba(var(--primary-dark-rgb), var(--timeline-playhead-fill-alpha));
       z-index: 1;
     }
   }
 
   .timeline-playhead-line {
     position: absolute;
-    left: -1px;
-    top: 14px;
+    left: 0;
+    top: 16px;
     bottom: 5px;
-    width: 2px;
-    background: linear-gradient(
-      180deg,
-      var(--timeline-playhead) 0%,
-      rgba(var(--primary-color-rgb), 0.55) 100%
-    );
-    box-shadow: 0 0 0 1px var(--timeline-playhead-glow);
+    width: 2.5px;
+    transform: translateX(-50%);
+    background: rgba(var(--primary-dark-rgb), var(--timeline-playhead-alpha));
+    /* 叠在浅蓝选区上时微弱浅边，避免与片段底色糊在一起 */
+    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.45);
   }
 
   .timeline-playhead-time {

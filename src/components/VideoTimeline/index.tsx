@@ -151,23 +151,37 @@ function getTickConfig(duration: number, scale: number, wrapperWidth: number) {
     tickInterval = intervals[idx - 1]!;
   }
 
+  // 主刻度内的小刻度；优先密，像素不够时逐步变疏
   const subDivisions: Record<number, number> = {
     0.2: 0.05,
     0.5: 0.1,
     1: 0.2,
     5: 1,
-    10: 1,
+    10: 2,
+    15: 5,
     30: 5,
     60: 10,
+    120: 30,
     300: 60,
-    600: 60,
+    600: 120,
+    900: 180,
     1800: 300,
     3600: 600,
   };
 
+  const minSubTickSpacingPx = 8;
+  const preferredSub = subDivisions[tickInterval] ?? 0;
   let subInterval = 0;
-  if (tickInterval >= 0.2 && scale >= 10) {
-    subInterval = subDivisions[tickInterval] || 0;
+  if (preferredSub > 0) {
+    const candidates = [preferredSub, preferredSub * 2, preferredSub * 3, tickInterval / 2].filter(
+      (v, i, arr) => v > 0 && v < tickInterval && arr.indexOf(v) === i
+    );
+    for (const candidate of candidates) {
+      if (candidate * scale >= minSubTickSpacingPx) {
+        subInterval = candidate;
+        break;
+      }
+    }
   }
 
   return { tickInterval, subInterval };
@@ -209,8 +223,9 @@ function generateVisibleTicks(
     const showLabel = tickIndex % labelStep === 0;
     ticks.push({ time, isMajor, label: showLabel ? formatTime(time) : '' });
 
-    // 插入次级刻度
+    // 插入次级刻度（一半主间隔用中高次刻度；更密的用短小刻度）
     if (subInterval > 0) {
+      const useShortSub = subInterval < tickInterval / 2 - 0.001;
       let subTime = time + subInterval;
       const nextMajor = time + tickInterval;
       while (subTime < nextMajor - 0.001 && subTime <= duration) {
@@ -218,7 +233,7 @@ function generateVisibleTicks(
           time: Math.round(subTime * 10) / 10,
           isMajor: false,
           label: '',
-          isSub: true,
+          isSub: useShortSub,
         });
         subTime += subInterval;
       }
