@@ -26,14 +26,13 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
       width={640}
       footer={null}
       onCancel={onClose}
-      className="tasks-detail-modal"
+      className="tasks-detail-modal noanimation-modal"
     >
       <Descriptions column={1} size="small" className="tasks-detail-descriptions">
         <Descriptions.Item label="任务类型">
           {getGenerationTaskTypeLabel(task.type)}
         </Descriptions.Item>
         <Descriptions.Item label="项目名称">{getClipTaskDisplayName(task)}</Descriptions.Item>
-        <Descriptions.Item label="源视频名称">{task.live_name || '-'}</Descriptions.Item>
         {ext.target_duration_ms != null ? (
           <Descriptions.Item label="目标时长">
             {Math.round(ext.target_duration_ms / 1000)} 秒

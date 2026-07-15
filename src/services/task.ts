@@ -12,6 +12,8 @@ export interface ClipTaskExt {
   video_project_id?: number;
   sys_prompt_id?: number;
   target_duration_ms?: number;
+  draft_url?: string;
+  draft_urls?: string[];
 }
 
 /**
@@ -24,9 +26,9 @@ export interface ClipTaskItem {
   progress: number;
   sys_prompt: string;
   /** 项目名称 */
-  project_name: string;
-  /** 源视频名称 */
-  live_name: string;
+  video_project_name: string;
+  /** 草稿地址（一键成片 / 生成草稿） */
+  draft_url: string;
   created_by: number;
   error_message: string;
   /** 原始 JSON 字符串 */
@@ -72,6 +74,29 @@ export function parseClipTaskExt(ext: string | ClipTaskExt | null | undefined): 
   }
 }
 
+function resolveDraftUrl(
+  raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined
+): string {
+  const topLevel = String(raw?.draft_url ?? '').trim();
+  if (topLevel) return topLevel;
+
+  const draftUrls = raw?.draft_urls;
+  if (Array.isArray(draftUrls) && draftUrls.length > 0) {
+    const first = String(draftUrls[0] ?? '').trim();
+    if (first) return first;
+  }
+
+  const ext = parseClipTaskExt(
+    typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : ''
+  );
+  if (ext.draft_url?.trim()) return ext.draft_url.trim();
+  if (Array.isArray(ext.draft_urls) && ext.draft_urls[0]?.trim()) {
+    return ext.draft_urls[0].trim();
+  }
+
+  return '';
+}
+
 export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefined): ClipTaskItem {
   const type = String(raw?.type ?? '');
   const normalizedType: GenerationTaskType =
@@ -88,17 +113,24 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
     error: 'failed',
   };
 
+  const ext =
+    typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : '';
+
   return {
     id: Number(raw?.id ?? 0),
     type: normalizedType,
     status: statusMap[rawStatus] ?? 'pending',
     progress: Number(raw?.progress ?? 0),
     sys_prompt: String(raw?.sys_prompt ?? ''),
-    project_name: String(raw?.project_name ?? ''),
-    live_name: String(raw?.live_name ?? ''),
+    video_project_name: String(
+      (raw as { video_project_name?: string; project_name?: string })?.video_project_name ??
+        (raw as { project_name?: string })?.project_name ??
+        ''
+    ),
+    draft_url: resolveDraftUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>),
     created_by: Number(raw?.created_by ?? 0),
     error_message: String(raw?.error_message ?? ''),
-    ext: typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : '',
+    ext,
     created_at: String(raw?.created_at ?? ''),
     started_at: String(raw?.started_at ?? ''),
     completed_at: String(raw?.completed_at ?? ''),

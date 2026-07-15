@@ -108,7 +108,7 @@ const TasksPage = () => {
         <ListSearchToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
-          keywordPlaceholder="搜索项目名称 / 源视频名称（支持 关键词A+关键词B）"
+          keywordPlaceholder="搜索项目名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
           onRefresh={() => void reload()}
           refreshing={refreshing}

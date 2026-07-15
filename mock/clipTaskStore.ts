@@ -325,6 +325,7 @@ export function toPublicClipTask(task: StoredClipTask) {
     video_project_id: numericId,
     sys_prompt_id: 0,
     target_duration_ms: 60000,
+    draft_url: task.draftUrls[0] || '',
   };
 
   return {
@@ -333,8 +334,8 @@ export function toPublicClipTask(task: StoredClipTask) {
     status,
     progress: task.progress,
     sys_prompt: task.promptName || task.clipName,
-    project_name: task.clipName,
-    live_name: task.sourceVideoName,
+    video_project_name: task.clipName,
+    draft_url: task.draftUrls[0] || '',
     created_by: 1,
     error_message: task.message ?? '',
     ext: JSON.stringify(ext),

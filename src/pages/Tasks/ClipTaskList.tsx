@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Popconfirm, Progress, Space, Table, Tooltip } from 'antd';
+import { Button, Popconfirm, Progress, Space, Table } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListTableEmpty, { type ListTableEmptyProps } from '~/components/ListTableEmpty';
@@ -17,6 +17,7 @@ import { showAppError, toast } from '~/utils/toast';
 
 import ClipTaskDetailModal from './ClipTaskDetailModal';
 import {
+  copyTextToClipboard,
   getClipTaskDisplayName,
   getClipTaskStatusLabel,
   getGenerationTaskTypeLabel,
@@ -33,6 +34,10 @@ interface ClipTaskListProps {
   empty?: ListTableEmptyProps;
 }
 
+function canCopyDraft(taskType: GenerationTaskType) {
+  return taskType === 'draft' || taskType === 'ai_slice_draft';
+}
+
 function renderTaskTypeLabel(taskType: GenerationTaskType) {
   const type = taskType || 'draft';
 
@@ -43,19 +48,28 @@ function renderTaskTypeLabel(taskType: GenerationTaskType) {
   );
 }
 
-function renderStatusLabel(status: ClipTaskItemStatus, message?: string | null) {
-  const label = (
+function renderStatusLabel(status: ClipTaskItemStatus) {
+  return (
     <span className={`tasks-status tasks-status_${status}`}>
       <span className="tasks-status-dot" aria-hidden />
       {getClipTaskStatusLabel(status)}
     </span>
   );
+}
 
-  if (status === 'failed' && message) {
-    return <Tooltip title={message}>{label}</Tooltip>;
-  }
+function renderProgress(progress: number, status: ClipTaskItemStatus) {
+  const percent = Math.max(0, Math.min(100, Math.round(progress)));
+  const isCompleted = status === 'completed';
 
-  return label;
+  return (
+    <Progress
+      className="tasks-progress-bar"
+      percent={isCompleted ? 100 : percent}
+      size="small"
+      status={isCompleted ? 'success' : 'normal'}
+      format={(value) => (isCompleted ? undefined : `${value}%`)}
+    />
+  );
 }
 
 function ClipTaskList({
@@ -108,112 +122,134 @@ function ClipTaskList({
     [onRefreshTask]
   );
 
+  const handleCopyDraft = useCallback(async (url: string) => {
+    const draftUrl = url.trim();
+    if (!draftUrl) {
+      toast.notify.warning('暂无草稿地址');
+      return;
+    }
+    const copied = await copyTextToClipboard(draftUrl);
+    if (copied) {
+      toast.notify.success('草稿地址已复制', '请打开「剪映小助手」粘贴导入');
+      return;
+    }
+    toast.notify.error('复制失败，请手动复制链接');
+  }, []);
+
   const columns = useMemo<ColumnsType<ClipTaskItem>>(
     () => [
       {
         title: '任务类型',
         dataIndex: 'type',
         key: 'type',
-        width: 110,
+        width: 120,
         render: (taskType: GenerationTaskType) => renderTaskTypeLabel(taskType),
       },
       {
         title: '项目名称',
-        dataIndex: 'project_name',
-        key: 'project_name',
+        dataIndex: 'video_project_name',
+        key: 'video_project_name',
+        ellipsis: true,
         render: (_, record) => (
           <EllipsisTooltip text={getClipTaskDisplayName(record)} className="tasks-cell-ellipsis" />
         ),
       },
       {
-        title: '源视频名称',
-        dataIndex: 'live_name',
-        key: 'live_name',
-        render: (name: string) => (
-          <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />
-        ),
+        title: '进度',
+        dataIndex: 'progress',
+        key: 'progress',
+        width: 180,
+        render: (progress: number, record) => renderProgress(progress, record.status),
       },
       {
         title: '状态',
         dataIndex: 'status',
         key: 'status',
-        width: 110,
-        render: (status: ClipTaskItemStatus, record) =>
-          renderStatusLabel(status, record.error_message),
+        width: 100,
+        render: (status: ClipTaskItemStatus) => renderStatusLabel(status),
       },
       {
-        title: '进度',
-        dataIndex: 'progress',
-        key: 'progress',
-        width: 160,
-        render: (progress: number, record) => (
-          <Progress
-            percent={progress}
-            size="small"
-            status={
-              record.status === 'failed'
-                ? 'exception'
-                : record.status === 'completed'
-                  ? 'success'
-                  : 'active'
-            }
-          />
-        ),
+        title: '错误信息',
+        dataIndex: 'error_message',
+        key: 'error_message',
+        ellipsis: true,
+        render: (message: string) => {
+          const text = message?.trim();
+          if (!text) return <span className="tasks-error-empty">-</span>;
+          return <EllipsisTooltip text={text} className="tasks-error-message" />;
+        },
       },
       {
         title: '创建时间',
         dataIndex: 'created_at',
         key: 'created_at',
-        width: 170,
+        width: 160,
         render: (value: string) => formatToDateTime(value),
       },
       {
         title: '操作',
         key: 'actions',
-        fixed: 'right',
         width: 280,
-        render: (_, record) => (
-          <div className="tasks-actions">
-            <Space size={4} className="tasks-actions-row">
-              <Button
-                type="link"
-                size="small"
-                icon={<LuInfo size={14} />}
-                onClick={() => setDetailTask(record)}
-              >
-                任务详情
-              </Button>
-              <Button
-                type="link"
-                size="small"
-                icon={<LuRefreshCw size={14} />}
-                loading={refreshingId === record.id}
-                onClick={() => void handleRefresh(record.id)}
-              >
-                同步状态
-              </Button>
-              <Popconfirm
-                title="确定删除该任务吗？"
-                okText="删除"
-                cancelText="取消"
-                onConfirm={() => void handleDelete(record.id)}
-              >
+        render: (_, record) => {
+          const showCopyDraft = canCopyDraft(record.type);
+          const draftUrl = record.draft_url?.trim() || '';
+
+          return (
+            <div className="tasks-actions">
+              <Space size={0} className="tasks-actions-row" wrap>
                 <Button
                   type="link"
                   size="small"
-                  danger
-                  icon={<LuTrash2 size={14} />}
-                  loading={deletingId === record.id}
+                  icon={<LuInfo size={14} />}
+                  onClick={() => setDetailTask(record)}
                 >
-                  删除
+                  任务详情
                 </Button>
-              </Popconfirm>
-            </Space>
-          </div>
-        ),
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuRefreshCw size={14} />}
+                  loading={refreshingId === record.id}
+                  onClick={() => void handleRefresh(record.id)}
+                >
+                  同步状态
+                </Button>
+                <Popconfirm
+                  title="确定删除该任务吗？"
+                  okText="删除"
+                  cancelText="取消"
+                  onConfirm={() => void handleDelete(record.id)}
+                >
+                  <Button
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<LuTrash2 size={14} />}
+                    loading={deletingId === record.id}
+                  >
+                    删除
+                  </Button>
+                </Popconfirm>
+              </Space>
+              {showCopyDraft ? (
+                <div className="tasks-actions-row">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<LuCopy size={14} />}
+                    disabled={!draftUrl}
+                    onClick={() => void handleCopyDraft(draftUrl)}
+                  >
+                    复制草稿地址
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          );
+        },
       },
     ],
-    [deletingId, handleDelete, handleRefresh, refreshingId]
+    [deletingId, handleCopyDraft, handleDelete, handleRefresh, refreshingId]
   );
 
   return (
@@ -226,7 +262,7 @@ function ClipTaskList({
         pagination={pagination}
         locale={{ emptyText: <ListTableEmpty {...empty} /> }}
         onChange={(nextPagination) => onTableChange(nextPagination)}
-        scroll={{ x: 1100, ...(scrollY !== undefined ? { y: scrollY } : {}) }}
+        scroll={scrollY !== undefined ? { y: scrollY } : undefined}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />

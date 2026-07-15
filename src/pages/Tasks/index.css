@@ -49,13 +49,19 @@
   flex-shrink: 0;
 }
 
-.tasks-status_pending,
-.tasks-status_processing,
-.tasks-status_running {
-  color: var(--color-info);
+.tasks-status_pending {
+  color: var(--text-secondary);
 }
 
-.tasks-status_pending .tasks-status-dot,
+.tasks-status_pending .tasks-status-dot {
+  background: var(--text-secondary);
+}
+
+.tasks-status_processing,
+.tasks-status_running {
+  color: var(--color-info-dark);
+}
+
 .tasks-status_processing .tasks-status-dot,
 .tasks-status_running .tasks-status-dot {
   background: var(--color-info);
@@ -72,11 +78,38 @@
 }
 
 .tasks-status_failed {
-  color: var(--color-danger-dark);
+  color: var(--color-danger);
 }
 
 .tasks-status_failed .tasks-status-dot {
   background: var(--color-danger);
+}
+
+.tasks-progress {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tasks-progress-bar {
+  margin-inline-end: 0;
+  line-height: 1;
+}
+
+.tasks-progress-bar .ant-progress-text {
+  font-size: 12px;
+  color: var(--text-secondary) !important;
+}
+
+.tasks-progress-bar.ant-progress-status-success .ant-progress-text {
+  color: var(--color-success) !important;
+}
+
+.tasks-error-message {
+  color: var(--color-danger);
+}
+
+.tasks-error-empty {
+  color: var(--text-gray);
 }
 
 .tasks-actions {
@@ -89,7 +122,8 @@
   flex-wrap: wrap;
 }
 
-.tasks-actions .ant-btn-link {
+.tasks-actions .ant-btn-link,
+.tasks-actions-row .ant-btn-link {
   padding-inline: 4px;
 }
 
@@ -98,8 +132,29 @@
   color: var(--primary-color);
 }
 
+.tasks-detail-modal .ant-modal-header {
+  margin: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-card);
+}
+
+.tasks-detail-modal .ant-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tasks-detail-modal .ant-modal-close {
+  top: 12px;
+}
+
+.tasks-detail-modal .ant-modal-body {
+  padding: 16px 20px 8px;
+}
+
 .tasks-detail-descriptions {
-  padding-bottom: 16px;
+  padding-bottom: 12px;
 }
 
 .tasks-detail-descriptions .ant-descriptions-item-label {
