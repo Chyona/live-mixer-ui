@@ -56,11 +56,12 @@ export interface ClipRange {
 }
 
 export interface SubmitClipParams {
-  project_id: string | number;
+  video_project_id: string | number;
 }
 
 export interface ClipSubmitResult {
-  task_id: string;
+  task_id?: string;
+  taskId?: string;
 }
 
 export type ClipTaskStatus =
@@ -81,10 +82,11 @@ export interface ClipTaskResult {
   error: string | null;
 }
 
+/** 提交一键成片任务（依赖已保存的剪辑项目） */
 export async function submitClip(
   params: SubmitClipParams
 ): Promise<BaseResponse<ClipSubmitResult>> {
-  return await request('/clipflow-ai/v2/video/process', {
+  return await request('/v1/tasks/ai-slice-draft', {
     method: 'post',
     data: params,
   });

@@ -141,11 +141,12 @@ export function createClipTask(input: {
   sourceVideoId: string;
   sourceVideoName: string;
   m3u8Url: string;
+  clipName?: string;
 }) {
   clipTaskStore.unshift({
     taskId: input.taskId,
     taskType: 'clip_generate',
-    clipName: `${input.sourceVideoName} 成片`,
+    clipName: input.clipName?.trim() || `${input.sourceVideoName} 成片`,
     sourceVideoId: input.sourceVideoId,
     sourceVideoName: input.sourceVideoName,
     m3u8Url: input.m3u8Url,

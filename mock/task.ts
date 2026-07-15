@@ -3,6 +3,7 @@ import { API_PREFIX } from './_config';
 import {
   clipTaskStore,
   createAiSliceTask,
+  createClipTask,
   deleteClipTask,
   toPublicClipTask,
 } from './clipTaskStore';
@@ -147,6 +148,36 @@ export default [
         promptName: project.projectName,
         clips,
         segments: project.segments,
+      });
+
+      return {
+        code: 0,
+        message: '',
+        data: { task_id: taskId },
+      };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/tasks/ai-slice-draft`,
+    method: 'post',
+    response: ({ body }: { body: { video_project_id?: string | number } }) => {
+      const videoProjectId = body?.video_project_id;
+      if (videoProjectId == null || videoProjectId === '') {
+        return { code: 400, message: '缺少 video_project_id', data: null };
+      }
+
+      const project = getSliceProject(String(videoProjectId));
+      if (!project) {
+        return { code: 404, message: '剪辑项目不存在', data: null };
+      }
+
+      const taskId = `clip-task-${Date.now()}`;
+      createClipTask({
+        taskId,
+        sourceVideoId: project.sourceVideoId,
+        sourceVideoName: project.sourceVideoName,
+        m3u8Url: '',
+        clipName: project.projectName,
       });
 
       return {

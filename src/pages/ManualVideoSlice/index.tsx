@@ -515,7 +515,7 @@ const ManualVideoSlicePage = () => {
     setSubmitting(true);
     try {
       const response = await submitClip({
-        project_id: projectId,
+        video_project_id: projectId,
       });
 
       if (response.code !== 0) {

@@ -302,7 +302,7 @@ const SourceVideoSlicePage = () => {
       }
 
       const response = await submitClip({
-        project_id: savedProjectId,
+        video_project_id: savedProjectId,
       });
 
       if (response.code !== 0) {

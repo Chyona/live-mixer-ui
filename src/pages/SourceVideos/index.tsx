@@ -303,7 +303,7 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 280,
+        width: 270,
         fixed: 'right',
         render: (_, record) => {
           const asrDisabledReason = getAsrActionDisabledReason(

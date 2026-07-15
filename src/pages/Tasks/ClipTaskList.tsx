@@ -172,11 +172,14 @@ function ClipTaskList({
         title: '错误信息',
         dataIndex: 'error_message',
         key: 'error_message',
+        width: 220,
         ellipsis: true,
         render: (message: string) => {
           const text = message?.trim();
           if (!text) return <span className="tasks-error-empty">-</span>;
-          return <EllipsisTooltip text={text} className="tasks-error-message" />;
+          return (
+            <EllipsisTooltip text={text} className="tasks-error-message tasks-cell-ellipsis" />
+          );
         },
       },
       {
@@ -189,7 +192,7 @@ function ClipTaskList({
       {
         title: '操作',
         key: 'actions',
-        width: 280,
+        width: 245,
         render: (_, record) => {
           const showCopyDraft = canCopyDraft(record.type);
           const draftUrl = record.draft_url?.trim() || '';
@@ -200,19 +203,19 @@ function ClipTaskList({
                 <Button
                   type="link"
                   size="small"
-                  icon={<LuInfo size={14} />}
-                  onClick={() => setDetailTask(record)}
-                >
-                  任务详情
-                </Button>
-                <Button
-                  type="link"
-                  size="small"
                   icon={<LuRefreshCw size={14} />}
                   loading={refreshingId === record.id}
                   onClick={() => void handleRefresh(record.id)}
                 >
                   同步状态
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<LuInfo size={14} />}
+                  onClick={() => setDetailTask(record)}
+                >
+                  详情
                 </Button>
                 <Popconfirm
                   title="确定删除该任务吗？"

@@ -105,7 +105,26 @@
 }
 
 .tasks-error-message {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-danger);
+}
+
+.tasks-cell-ellipsis {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tasks-table .ant-table-cell {
+  overflow: hidden;
 }
 
 .tasks-error-empty {
