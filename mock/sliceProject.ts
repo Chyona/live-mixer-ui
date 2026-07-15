@@ -7,6 +7,7 @@ import {
   saveSliceProjectRecord,
   toPublicSliceProject,
   updateSliceProjectName,
+  deleteSliceProjectRecord,
 } from './sliceProjectStore';
 
 function parseKeywords(input?: string) {
@@ -53,6 +54,8 @@ export default [
         live_id?: number;
         name?: string;
         remark?: string;
+        prompt_id?: number;
+        project_source?: 'timeline' | 'manual';
         clips0?: Array<{ start_time: number; end_time: number }>;
         clips1?: Array<{ start_time: number; end_time: number }>;
       };
@@ -80,14 +83,19 @@ export default [
         sourceVideoName: `源视频 ${sourceVideoId}`,
         remarkName: body?.remark ?? '',
         projectName: name,
-        projectSource: manualSegments.length ? 'manual' : 'timeline',
+        projectSource:
+          body?.project_source === 'timeline' || body?.project_source === 'manual'
+            ? body.project_source
+            : manualSegments.length
+              ? 'manual'
+              : 'timeline',
         segments,
       });
 
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project, { withSegments: true }),
+        data: toPublicSliceProject(project),
       };
     },
   },
@@ -95,19 +103,38 @@ export default [
     url: `${API_PREFIX}/v1/video-projects`,
     method: 'get',
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
-      const date = typeof query.date === 'string' ? query.date : undefined;
-      const dateEnd = typeof query.dateEnd === 'string' ? query.dateEnd : undefined;
-      const keyword = typeof query.keyword === 'string' ? query.keyword : undefined;
+      const startDate =
+        typeof query.start_date === 'string'
+          ? query.start_date
+          : typeof query.date === 'string'
+            ? query.date
+            : undefined;
+      const endDate =
+        typeof query.end_date === 'string'
+          ? query.end_date
+          : typeof query.date_end === 'string'
+            ? query.date_end
+            : typeof query.dateEnd === 'string'
+              ? query.dateEnd
+              : undefined;
+      const keywordsRaw =
+        typeof query.keywords === 'string'
+          ? query.keywords
+          : typeof query.keyword === 'string'
+            ? query.keyword
+            : undefined;
       const page = Number(query.page || 1);
-      const pageSize = Number(query.pageSize || 10);
-      const titleKeywords = parseKeywords(keyword);
+      const pageSize = Number(query.page_size || query.pageSize || 10);
+      const titleKeywords = parseKeywords(
+        keywordsRaw?.includes(',') ? keywordsRaw.replace(/,/g, '+') : keywordsRaw
+      );
 
       const filtered = listSliceProjects()
         .filter((item) => item.segments.length > 0)
         .filter((item) => {
         const updatedDate = item.updatedAt.slice(0, 10);
-        if (date && updatedDate < date) return false;
-        if (dateEnd && updatedDate > dateEnd) return false;
+        if (startDate && updatedDate < startDate) return false;
+        if (endDate && updatedDate > endDate) return false;
 
         const titleText = `${item.projectName} ${item.sourceVideoName} ${item.remarkName}`;
         return matchKeywords(titleText, titleKeywords);
@@ -117,9 +144,11 @@ export default [
 
       return {
         code: 0,
-        message: '',
+        message: 'success',
         data: {
           list: filtered.slice(start, start + pageSize).map((item) => toPublicSliceProject(item)),
+          page,
+          page_size: pageSize,
           total: filtered.length,
         },
       };
@@ -137,7 +166,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project, { withSegments: true }),
+        data: toPublicSliceProject(project),
       };
     },
   },
@@ -152,6 +181,8 @@ export default [
         live_id?: number;
         name?: string;
         remark?: string;
+        prompt_id?: number;
+        project_source?: 'timeline' | 'manual';
         clips0?: Array<{ start_time: number; end_time: number }>;
         clips1?: Array<{ start_time: number; end_time: number }>;
       };
@@ -181,6 +212,10 @@ export default [
         projectSource = manualSegments.length ? 'manual' : 'timeline';
       }
 
+      if (body?.project_source === 'timeline' || body?.project_source === 'manual') {
+        projectSource = body.project_source;
+      }
+
       const name = body?.name !== undefined ? body.name.trim() : existing.projectName;
       if (!name) {
         return { code: 400, message: '项目名称不能为空', data: null };
@@ -199,15 +234,15 @@ export default [
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project, { withSegments: true }),
+        data: toPublicSliceProject(project),
       };
     },
   },
   {
     url: `${API_PREFIX}/v1/video-projects/:id/name`,
     method: 'put',
-    response: ({ body, query }: { body: { projectName?: string }; query: { id: string } }) => {
-      const projectName = body?.projectName?.trim();
+    response: ({ body, query }: { body: { name?: string; projectName?: string }; query: { id: string } }) => {
+      const projectName = (body?.name ?? body?.projectName)?.trim();
       if (!projectName) {
         return { code: 400, message: '项目名称不能为空', data: null };
       }
@@ -218,6 +253,18 @@ export default [
       }
 
       return { code: 0, message: '', data: toPublicSliceProject(project) };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/video-projects/:id`,
+    method: 'delete',
+    response: ({ query }: { query: { id: string } }) => {
+      const deleted = deleteSliceProjectRecord(query.id);
+      if (!deleted) {
+        return { code: 404, message: '剪辑项目不存在', data: null };
+      }
+
+      return { code: 0, message: '', data: null };
     },
   },
 ] as MockMethod[];

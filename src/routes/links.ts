@@ -31,15 +31,18 @@ export function buildManualVideoSliceLink(
   return appendProjectId(`${VIDEOS_MANUAL_SLICE_PATH}/${sourceVideoId}`, options);
 }
 
-export function buildSliceProjectEditLink(
-  sourceVideoId: string,
-  projectSource: SliceProjectSource = 'manual',
-  projectId?: string | number | null
-) {
-  const options = { projectId };
+export function buildSliceProjectEditLink(params: {
+  /** 源视频 id（路径参数） */
+  liveId: string | number;
+  /** 剪辑项目 id（查询参数 projectId） */
+  id: string | number;
+  projectSource?: SliceProjectSource;
+}) {
+  const { liveId, id, projectSource = 'manual' } = params;
+  const options = { projectId: id };
   return projectSource === 'timeline'
-    ? buildSourceVideoSliceLink(sourceVideoId, options)
-    : buildManualVideoSliceLink(sourceVideoId, options);
+    ? buildSourceVideoSliceLink(String(liveId), options)
+    : buildManualVideoSliceLink(String(liveId), options);
 }
 
 export function getSliceEditorEntryFrom(state: unknown): SliceEditorEntryFrom | undefined {

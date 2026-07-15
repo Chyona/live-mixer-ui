@@ -191,11 +191,11 @@ const ManualVideoSlicePage = () => {
 
       const projectRes = projectSettled;
       if (projectRes?.code === 0 && projectRes.data) {
-        setProjectId(projectRes.data.id || projectIdFromQuery);
-        setProjectRemark(projectRes.data.remarkName || '');
+        setProjectId(String(projectRes.data.id || projectIdFromQuery));
+        setProjectRemark(projectRes.data.remark || '');
         if (!hasAiSegments && projectRes.data.segments.length > 0) {
           setSelectedSegments(projectRes.data.segments);
-          setDraftName(projectRes.data.projectName);
+          setDraftName(projectRes.data.name);
         }
       } else {
         toast.notify.warning(projectRes?.message || '剪辑项目加载失败');
@@ -379,6 +379,7 @@ const ManualVideoSlicePage = () => {
         live_id: video.id,
         name: nextName,
         remark: nextRemark,
+        project_source: 'manual' as const,
         clips0: [] as ReturnType<typeof toSliceProjectClips>,
         clips1: toSliceProjectClips(selectedSegments),
       };
@@ -396,11 +397,11 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(response.data.id);
+          syncProjectIdInUrl(String(response.data.id));
         }
-        setDraftName(response.data.projectName);
-        setProjectRemark(response.data.remarkName || nextRemark);
-        localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
+        setDraftName(response.data.name);
+        setProjectRemark(response.data.remark || nextRemark);
+        localStorage.setItem(DRAFT_STORAGE_KEY, response.data.name);
         setSaveModalOpen(false);
         toast.notify.success('已保存为剪辑项目，可在项目管理中查看');
       } catch (error) {
@@ -467,6 +468,7 @@ const ManualVideoSlicePage = () => {
           live_id: video.id,
           name,
           remark,
+          project_source: 'manual',
           clips0: [],
           clips1: toSliceProjectClips(selectedSegments),
         });
@@ -477,11 +479,11 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(response.data.id);
+          syncProjectIdInUrl(String(response.data.id));
         }
-        localStorage.setItem(DRAFT_STORAGE_KEY, response.data.projectName);
-        setDraftName(response.data.projectName);
-        setProjectRemark(response.data.remarkName || remark);
+        localStorage.setItem(DRAFT_STORAGE_KEY, response.data.name);
+        setDraftName(response.data.name);
+        setProjectRemark(response.data.remark || remark);
         setSaveModalOpen(false);
         toast.notify.success('已另存为新的剪辑项目');
       } catch (error) {
@@ -503,20 +505,17 @@ const ManualVideoSlicePage = () => {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!video || !streamUrl || selectedSegments.length === 0) return;
+    if (!video || selectedSegments.length === 0) return;
+
+    if (!projectId) {
+      toast.notify.warning('请先保存剪辑项目后再提交');
+      return;
+    }
 
     setSubmitting(true);
     try {
       const response = await submitClip({
-        m3u8_url: streamUrl,
-        clips: selectedSegments.map((segment) => ({
-          start: Math.round(segment.start),
-          end: Math.round(segment.end),
-        })),
-        water_text: 'www',
-        count: 1,
-        source_video_id: String(video.id),
-        source_video_name: video.name,
+        project_id: projectId,
       });
 
       if (response.code !== 0) {
@@ -532,7 +531,7 @@ const ManualVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, selectedSegments, streamUrl, video]);
+  }, [navigate, projectId, selectedSegments.length, video]);
 
   const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);

@@ -9,6 +9,7 @@ export type SliceProjectRecord = {
   projectName: string;
   projectSource: SliceProjectSource;
   segmentCount: number;
+  createdBy: string;
   updatedAt: string;
   segments: SelectedCopySegment[];
 };
@@ -31,6 +32,7 @@ function seedSliceProjects() {
       projectName: '周末游戏直播回放 剪辑项目',
       projectSource: 'timeline',
       segmentCount: 12,
+      createdBy: 'admin',
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
     },
     {
@@ -40,6 +42,7 @@ function seedSliceProjects() {
       projectName: '新品发布会直播 剪辑项目',
       projectSource: 'manual',
       segmentCount: 1,
+      createdBy: 'admin',
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
     },
     {
@@ -49,6 +52,7 @@ function seedSliceProjects() {
       projectName: '数码产品测评 剪辑项目',
       projectSource: 'manual',
       segmentCount: 5,
+      createdBy: 'editor',
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     },
   ];
@@ -94,6 +98,7 @@ export function upsertSliceProject(input: {
   projectName: string;
   projectSource?: SliceProjectSource;
   segmentCount: number;
+  createdBy?: string;
   segments?: SelectedCopySegment[];
   projectId?: string;
 }) {
@@ -106,6 +111,7 @@ export function upsertSliceProject(input: {
     projectName: input.projectName,
     projectSource: input.projectSource ?? existing?.projectSource ?? 'manual',
     segmentCount: input.segmentCount,
+    createdBy: input.createdBy ?? existing?.createdBy ?? 'admin',
     updatedAt: new Date().toISOString(),
     segments: input.segments ?? existing?.segments ?? [],
   };
@@ -168,13 +174,41 @@ export function updateSliceProjectName(projectIdOrSourceVideoId: string, project
   return project;
 }
 
-export function toPublicSliceProject(
-  project: SliceProjectRecord,
-  options?: { withSegments?: boolean }
-) {
-  const { segments, ...rest } = project;
+export function deleteSliceProjectRecord(projectIdOrSourceVideoId: string) {
+  const project = getSliceProject(projectIdOrSourceVideoId);
+  if (!project) return false;
+  return sliceProjectMap.delete(project.sourceVideoId);
+}
+
+export function toPublicSliceProject(project: SliceProjectRecord) {
+  const timelineClips = project.segments
+    .filter((item) => item.id.startsWith('timeline-'))
+    .map((item) => ({
+      start_time: Math.round(item.start * 1000),
+      end_time: Math.round(item.end * 1000),
+    }));
+  const manualClips = project.segments
+    .filter((item) => !item.id.startsWith('timeline-'))
+    .map((item) => ({
+      start_time: Math.round(item.start * 1000),
+      end_time: Math.round(item.end * 1000),
+    }));
+
   return {
-    ...rest,
-    ...(options?.withSegments ? { segments } : {}),
+    id: Number(project.id.replace(/\D/g, '')) || Date.now(),
+    name: project.projectName,
+    live_id: Number(project.sourceVideoId) || 0,
+    live_name: project.sourceVideoName,
+    prompt_id: 0,
+    created_by: String(project.createdBy || 'admin'),
+    created_at: project.updatedAt,
+    updated_at: project.updatedAt,
+    remark: project.remarkName,
+    draft_url: '',
+    video_url: '',
+    ext: '',
+    project_source: project.projectSource,
+    clips0: timelineClips,
+    clips1: manualClips,
   };
 }

@@ -258,7 +258,7 @@ const SourceVideosPage = () => {
         ),
       },
       {
-        title: '备注名称',
+        title: '备注',
         dataIndex: 'remark',
         key: 'remark',
         render: (remark: string, record) => (
@@ -369,7 +369,7 @@ const SourceVideosPage = () => {
         <ListSearchToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
-          keywordPlaceholder="搜索源视频名称 / 备注名称（支持 关键词A+关键词B）"
+          keywordPlaceholder="搜索源视频名称 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
           onRefresh={() => void loadList({ refresh: true })}
           refreshing={refreshing}

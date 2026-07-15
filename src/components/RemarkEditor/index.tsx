@@ -5,7 +5,7 @@ import { LuPencil } from 'react-icons/lu';
 import './index.css';
 
 export interface RemarkEditorProps {
-  value: string;
+  value?: string | null;
   onSave: (value: string) => Promise<void>;
   placeholder?: string;
   maxLength?: number;
@@ -22,14 +22,15 @@ const RemarkEditor = ({
   required = false,
   className,
 }: RemarkEditorProps) => {
-  const [draft, setDraft] = useState(value);
+  const safeValue = value ?? '';
+  const [draft, setDraft] = useState(safeValue);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<InputRef>(null);
 
   useEffect(() => {
-    setDraft(value);
-  }, [value]);
+    setDraft(safeValue);
+  }, [safeValue]);
 
   useEffect(() => {
     if (!editing) return;
@@ -43,11 +44,11 @@ const RemarkEditor = ({
   const handleBlur = async () => {
     const trimmed = draft.trim();
     if (required && !trimmed) {
-      setDraft(value);
+      setDraft(safeValue);
       exitEditing();
       return;
     }
-    if (trimmed === value) {
+    if (trimmed === safeValue) {
       exitEditing();
       return;
     }
@@ -57,7 +58,7 @@ const RemarkEditor = ({
       await onSave(trimmed);
     } catch {
       // 保存失败：还原为修改前内容
-      setDraft(value);
+      setDraft(safeValue);
     } finally {
       setSaving(false);
       exitEditing();
@@ -67,13 +68,13 @@ const RemarkEditor = ({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
-      setDraft(value);
+      setDraft(safeValue);
       exitEditing();
     }
   };
 
   if (!editing) {
-    const isEmpty = !value.trim();
+    const isEmpty = !safeValue.trim();
 
     return (
       <button
@@ -85,10 +86,10 @@ const RemarkEditor = ({
         ]
           .filter(Boolean)
           .join(' ')}
-        title={isEmpty ? placeholder : value}
+        title={isEmpty ? placeholder : safeValue}
         onClick={() => setEditing(true)}
       >
-        <span className="remark-editor__display-text">{isEmpty ? placeholder : value}</span>
+        <span className="remark-editor__display-text">{isEmpty ? placeholder : safeValue}</span>
         <LuPencil className="remark-editor__display-icon" size={14} aria-hidden />
       </button>
     );

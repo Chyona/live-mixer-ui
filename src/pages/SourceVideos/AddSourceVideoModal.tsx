@@ -95,7 +95,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
           <Input placeholder="请输入直播流地址，如 rtmp:// 或 https://" maxLength={512} allowClear />
         </Form.Item>
 
-        <Form.Item name="remark" label="备注名称">
+        <Form.Item name="remark" label="备注">
           <Input placeholder="选填，便于后续搜索识别" maxLength={64} allowClear />
         </Form.Item>
       </Form>

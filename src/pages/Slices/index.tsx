@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button, DatePicker, Space } from 'antd';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Button, DatePicker, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuSearch, LuTextSelect, LuVideo } from 'react-icons/lu';
+import { LuTextSelect, LuTrash2, LuVideo } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
@@ -14,7 +14,10 @@ import { useListFilters } from '~/hooks/useListFilters';
 import { buildSliceProjectEditLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
+  deleteSliceProject,
   fetchSliceProjectList,
+  getSliceProjectSegmentCount,
+  updateSliceProject,
   updateSliceProjectName,
   type SliceProject,
 } from '~/services/sliceProject';
@@ -26,6 +29,8 @@ const SLICES_LIST_ERROR_SCOPE = 'slices-list';
 
 const SlicesPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialKeyword = searchParams.get('keyword')?.trim() ?? '';
 
   useAppSEO({
     title: '项目管理',
@@ -41,7 +46,7 @@ const SlicesPage = () => {
     dateRange,
     handleDateChange,
     dateFilters,
-  } = useListFilters();
+  } = useListFilters({ initialKeyword });
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -49,6 +54,7 @@ const SlicesPage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
     const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
@@ -62,11 +68,11 @@ const SlicesPage = () => {
 
     try {
       const response = await fetchSliceProjectList({
-        date: dateFilters.date,
-        dateEnd: dateFilters.dateEnd,
-        keyword: appliedKeyword || undefined,
+        keywords: appliedKeyword ? appliedKeyword.replace(/[+＋]/g, ',') : undefined,
+        start_date: dateFilters.date,
+        end_date: dateFilters.dateEnd,
         page,
-        pageSize,
+        page_size: pageSize,
       });
 
       if (response.code !== 0) {
@@ -106,16 +112,16 @@ const SlicesPage = () => {
     setPage(1);
   };
 
-  const handleProjectNameSave = async (id: string, projectName: string) => {
+  const handleProjectNameSave = async (id: number, name: string) => {
     try {
-      const response = await updateSliceProjectName(id, projectName);
+      const response = await updateSliceProjectName(id, name);
       if (response.code !== 0) {
         toast.notify.error(response.message || '项目名称保存失败');
         throw new Error(response.message || '项目名称保存失败');
       }
 
       setList((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, projectName: response.data.projectName } : item))
+        prev.map((item) => (item.id === id ? { ...item, name: response.data.name } : item))
       );
       toast.notify.success('项目名称已保存');
     } catch (error) {
@@ -128,54 +134,120 @@ const SlicesPage = () => {
     }
   };
 
+  const handleRemarkSave = async (id: number, remark: string) => {
+    try {
+      const response = await updateSliceProject(id, { remark });
+      if (response.code !== 0) {
+        toast.notify.error(response.message || '备注保存失败');
+        throw new Error(response.message || '备注保存失败');
+      }
+
+      setList((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, remark: response.data.remark } : item))
+      );
+      toast.notify.success('备注已保存');
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else if (!(error instanceof Error)) {
+        toast.notify.error('备注保存失败');
+      }
+      throw error instanceof Error ? error : new Error('备注保存失败');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const response = await deleteSliceProject(id);
+      if (response.code !== 0) {
+        toast.notify.error(response.message || '删除失败');
+        return;
+      }
+
+      toast.notify.success('已删除剪辑项目');
+      if (list.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        await loadList();
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('删除失败');
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const hasActiveFilters = Boolean(appliedKeyword || dateRange?.[0]);
 
   const columns = useMemo<ColumnsType<SliceProject>>(
     () => [
       {
         title: '项目名称',
-        dataIndex: 'projectName',
-        key: 'projectName',
-        render: (projectName: string, record) => (
+        dataIndex: 'name',
+        key: 'name',
+        render: (name: string, record) => (
           <RemarkEditor
-            value={projectName}
+            value={name}
             placeholder="输入项目名称"
+            required
             onSave={(value) => handleProjectNameSave(record.id, value)}
           />
         ),
       },
       {
         title: '源视频名称',
-        dataIndex: 'sourceVideoName',
-        key: 'sourceVideoName',
+        dataIndex: 'live_name',
+        key: 'live_name',
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="list-page__cell-ellipsis" />,
+        render: (name: string) => (
+          <EllipsisTooltip text={name || '-'} className="list-page__cell-ellipsis" />
+        ),
       },
       {
-        title: '备注名称',
-        dataIndex: 'remarkName',
-        key: 'remarkName',
+        title: '备注',
+        dataIndex: 'remark',
+        key: 'remark',
+        render: (remark: string, record) => (
+          <RemarkEditor
+            value={remark}
+            placeholder="添加备注"
+            onSave={(value) => handleRemarkSave(record.id, value)}
+          />
+        ),
+      },
+      {
+        title: '创建者',
+        dataIndex: 'created_by',
+        key: 'created_by',
+        width: 120,
         ellipsis: true,
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="list-page__cell-ellipsis" />,
+        render: (createdBy: string) => (
+          <EllipsisTooltip text={createdBy || '-'} className="list-page__cell-ellipsis" />
+        ),
       },
       {
         title: '片段数',
-        dataIndex: 'segmentCount',
-        key: 'segmentCount',
+        key: 'segment_count',
         width: 100,
         align: 'center',
+        render: (_, record) => getSliceProjectSegmentCount(record),
       },
       {
         title: '更新时间',
-        dataIndex: 'updatedAt',
-        key: 'updatedAt',
+        dataIndex: 'updated_at',
+        key: 'updated_at',
         width: 160,
         render: (value: string) => formatToDateTime(value),
       },
       {
         title: '操作',
         key: 'actions',
-        width: 120,
+        width: 180,
         fixed: 'right',
         render: (_, record) => (
           <Space size={8}>
@@ -186,11 +258,11 @@ const SlicesPage = () => {
               icon={<LuTextSelect size={14} />}
               onClick={() =>
                 navigate(
-                  buildSliceProjectEditLink(
-                    record.sourceVideoId,
-                    record.projectSource,
-                    record.id
-                  ),
+                  buildSliceProjectEditLink({
+                    liveId: record.live_id,
+                    id: record.id,
+                    projectSource: record.project_source,
+                  }),
                   {
                     state: { from: 'slices' },
                   }
@@ -199,11 +271,30 @@ const SlicesPage = () => {
             >
               编辑项目
             </Button>
+            <Popconfirm
+              title="确认删除该剪辑项目？"
+              description="删除后不可恢复"
+              okText="删除"
+              cancelText="取消"
+              okButtonProps={{ danger: true, loading: deletingId === record.id }}
+              onConfirm={() => void handleDelete(record.id)}
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                className="list-page__action-btn"
+                icon={<LuTrash2 size={14} />}
+                loading={deletingId === record.id}
+              >
+                删除
+              </Button>
+            </Popconfirm>
           </Space>
         ),
       },
     ],
-    [navigate]
+    [deletingId, navigate]
   );
 
   return (
@@ -215,7 +306,7 @@ const SlicesPage = () => {
         <ListSearchToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
-          keywordPlaceholder="搜索项目名称 / 源视频名称 / 备注名称（支持 关键词A+关键词B）"
+          keywordPlaceholder="搜索项目名称 / 源视频名称 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
           onRefresh={() => void loadList({ refresh: true })}
           refreshing={refreshing}
@@ -239,25 +330,25 @@ const SlicesPage = () => {
         loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
-        scrollX={1100}
+        scrollX={1200}
         empty={
           hasActiveFilters
             ? {
-                title: '未找到匹配的剪辑项目',
-                description: '试试更换关键词或调整日期范围后重新搜索',
-              }
+              title: '未找到匹配的剪辑项目',
+              description: '试试更换关键词或调整日期范围后重新搜索',
+            }
             : {
-                title: '暂无剪辑项目',
-                description: '在源视频中完成切片后，对应项目会自动汇总到这里',
-                tone: 'primary',
-                action: (
-                  <Link to="/source-videos">
-                    <Button type="primary" icon={<LuVideo size={16} />}>
-                      前往源视频管理
-                    </Button>
-                  </Link>
-                ),
-              }
+              title: '暂无剪辑项目',
+              description: '在源视频中完成切片后，对应项目会自动汇总到这里',
+              tone: 'primary',
+              action: (
+                <Link to="/source-videos">
+                  <Button type="primary" icon={<LuVideo size={16} />}>
+                    前往源视频管理
+                  </Button>
+                </Link>
+              ),
+            }
         }
         pagination={{
           current: page,

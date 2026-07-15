@@ -1,7 +1,7 @@
-import { Button, Empty, Input, Radio, Spin } from 'antd';
+import { Button, Input, Radio, Spin } from 'antd';
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { LuPencil, LuPlus, LuSearch } from 'react-icons/lu';
+import { LuMessageSquarePlus, LuPencil, LuPlus, LuSearch } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
@@ -15,10 +15,12 @@ const PAGE_SIZE = 8;
 
 interface PromptPickerPanelProps {
   selectedId: number | null;
+  /** 编辑回显：优先选中该 id（若不在首屏则继续分页查找） */
+  preferredId?: number | null;
   onSelect: (prompt: AiPrompt) => void;
 }
 
-const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => {
+const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptPickerPanelProps) => {
   const [keyword, setKeyword] = useState('');
   const [appliedKeyword, setAppliedKeyword] = useState('');
   const [list, setList] = useState<AiPrompt[]>([]);
@@ -84,14 +86,44 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
 
   useEffect(() => {
     if (selectedId || list.length === 0) return;
+
+    if (preferredId) {
+      const matched = list.find((item) => item.id === preferredId);
+      if (matched) {
+        onSelect(matched);
+        return;
+      }
+      if (hasMore && !loading && !loadingMore) {
+        void loadPage(page + 1, appliedKeyword, true);
+        return;
+      }
+      if (hasMore || loading || loadingMore) return;
+    }
+
     const firstItem = list[0];
     if (firstItem) {
       onSelect(firstItem);
     }
-  }, [list, onSelect, selectedId]);
+  }, [
+    appliedKeyword,
+    hasMore,
+    list,
+    loadPage,
+    loading,
+    loadingMore,
+    onSelect,
+    page,
+    preferredId,
+    selectedId,
+  ]);
 
   const handleSearch = () => {
     setAppliedKeyword(keyword.trim());
+  };
+
+  const handleClearSearch = () => {
+    setKeyword('');
+    setAppliedKeyword('');
   };
 
   const handleLoadMore = useCallback(() => {
@@ -138,6 +170,47 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
     setFormOpen(true);
   };
 
+  const renderEmpty = () => {
+    if (appliedKeyword) {
+      return (
+        <div className="slice-prompt-panel__empty">
+          <div className="slice-prompt-panel__empty-icon slice-prompt-panel__empty-icon_neutral" aria-hidden>
+            <LuSearch size={22} strokeWidth={1.6} />
+          </div>
+          <p className="slice-prompt-panel__empty-title">未找到匹配的提示词</p>
+          <p className="slice-prompt-panel__empty-desc">
+            试试更换关键词，或使用 关键词A+关键词B 组合搜索
+          </p>
+          <div className="slice-prompt-panel__empty-actions">
+            <Button size="small" onClick={handleClearSearch}>
+              清除搜索
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="slice-prompt-panel__empty">
+        <div className="slice-prompt-panel__empty-icon" aria-hidden>
+          <LuMessageSquarePlus size={22} strokeWidth={1.6} />
+        </div>
+        <p className="slice-prompt-panel__empty-title">暂无可用提示词</p>
+        <p className="slice-prompt-panel__empty-desc">
+          成片前需先选择提示词，新建后即可在此快速选用
+        </p>
+        <div className="slice-prompt-panel__empty-actions">
+          <Button type="primary" size="small" icon={<LuPlus size={14} />} onClick={openCreate}>
+            新增提示词
+          </Button>
+          <Link to="/prompts" className="slice-prompt-panel__empty-link">
+            去提示词管理
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <aside className="slice-prompt-panel">
       <div className="slice-prompt-panel__header">
@@ -168,7 +241,7 @@ const PromptPickerPanel = ({ selectedId, onSelect }: PromptPickerPanelProps) => 
             <Spin size="small" />
           </div>
         ) : list.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无提示词" />
+          renderEmpty()
         ) : (
           <Radio.Group
             className="slice-prompt-panel__radio-group"
