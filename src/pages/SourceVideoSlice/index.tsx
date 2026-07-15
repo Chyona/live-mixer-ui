@@ -10,7 +10,7 @@ import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
 import { submitClip } from '~/services/slice';
 import { submitAiSliceSelection } from '~/services/aiSlice';
-import { getAiPromptContent, type AiPrompt } from '~/services/aiPrompt';
+import { type AiPrompt } from '~/services/aiPrompt';
 import {
   fetchSliceProjectDetail,
   toSliceProjectClips,
@@ -322,33 +322,47 @@ const SourceVideoSlicePage = () => {
   }, [navigate, projectId, selectedPrompt, selectedRanges, video]);
 
   const handleAiSelect = useCallback(async () => {
-    if (!video || !sourceVideoId) return;
+    if (!video) return;
 
     if (selectedRanges.length === 0) {
       toast.notify.warning('请先选择至少一个时间段');
       return;
     }
 
-    const promptText = getAiPromptContent(selectedPrompt);
-    if (!selectedPrompt || !promptText) {
-      toast.notify.warning(
-        !selectedPrompt ? '请先选择一个 AI 提示词' : '所选提示词内容为空，请编辑后重试'
-      );
+    if (!selectedPrompt) {
+      toast.notify.warning('请先选择一个 AI 提示词');
       return;
     }
 
-    const clips = selectedRanges.map((range) => ({
-      start: Math.round(range.start),
-      end: Math.round(range.end),
-    }));
+    const projectName = `AI选片_${formatToDateTime(Date.now(), 'YYYY-MM-DD_HH:mm:ss')}`;
+    const projectPayload = {
+      live_id: video.id,
+      name: projectName,
+      prompt_id: selectedPrompt.id,
+      project_source: 'timeline' as const,
+      clips0: toSliceProjectClips(selectedRanges),
+      clips1: [] as ReturnType<typeof toSliceProjectClips>,
+    };
 
     setAiSelecting(true);
     try {
-      const response = await submitAiSliceSelection(String(video.id), {
-        prompt: promptText,
-        promptId: selectedPrompt.id,
-        clips,
-        sourceVideoName: video.name,
+      const { code, message, data } = projectId
+        ? await updateSliceProject(projectId, projectPayload)
+        : await saveSliceProject(projectPayload);
+
+      if (code !== 0) {
+        toast.notify.error(message || '保存项目失败');
+        return;
+      }
+
+      const savedProjectId = data?.id || projectId;
+      if (!savedProjectId) {
+        toast.notify.error('保存成功但未返回项目 ID');
+        return;
+      }
+
+      const response = await submitAiSliceSelection({
+        video_project_id: savedProjectId,
       });
 
       if (response.code !== 0) {
@@ -356,7 +370,7 @@ const SourceVideoSlicePage = () => {
         return;
       }
 
-      toast.notify.success('AI 选片任务已提交，正在前往任务管理');
+      toast.notify.success('AI 选片任务已提交', '可前往任务管理查看进度');
       navigate('/tasks');
     } catch (error) {
       if (error instanceof AppError) {
@@ -367,7 +381,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setAiSelecting(false);
     }
-  }, [navigate, selectedPrompt, selectedRanges, sourceVideoId, video]);
+  }, [navigate, projectId, selectedPrompt, selectedRanges, video]);
 
   const breadcrumbItems = useMemo(
     () =>

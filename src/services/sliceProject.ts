@@ -8,6 +8,7 @@ export type SliceProjectSource = 'timeline' | 'manual';
 export interface SliceProjectClip {
   start_time: number;
   end_time: number;
+  text?: string;
 }
 
 

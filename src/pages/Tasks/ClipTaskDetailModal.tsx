@@ -1,7 +1,12 @@
 import { Descriptions, Modal } from 'antd';
 import type { ClipTaskItem } from '~/services/task';
+import { parseClipTaskExt } from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
-import { getClipTaskStatusLabel, getGenerationTaskTypeLabel } from './utils';
+import {
+  getClipTaskDisplayName,
+  getClipTaskStatusLabel,
+  getGenerationTaskTypeLabel,
+} from './utils';
 
 interface ClipTaskDetailModalProps {
   open: boolean;
@@ -12,7 +17,7 @@ interface ClipTaskDetailModalProps {
 const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) => {
   if (!task) return null;
 
-  const isAiTask = task.taskType === 'ai_slice_select';
+  const ext = parseClipTaskExt(task.ext);
 
   return (
     <Modal
@@ -24,43 +29,28 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
       className="tasks-detail-modal"
     >
       <Descriptions column={1} size="small" className="tasks-detail-descriptions">
-        <Descriptions.Item label="任务 ID">{task.taskId}</Descriptions.Item>
         <Descriptions.Item label="任务类型">
-          {getGenerationTaskTypeLabel(task.taskType ?? 'clip_generate')}
+          {getGenerationTaskTypeLabel(task.type)}
         </Descriptions.Item>
-        <Descriptions.Item label="任务名称">{task.clipName}</Descriptions.Item>
-        <Descriptions.Item label="源视频名称">{task.sourceVideoName || '-'}</Descriptions.Item>
-        {isAiTask ? (
-          <>
-            <Descriptions.Item label="提示词">{task.promptName || '-'}</Descriptions.Item>
-            <Descriptions.Item label="选片片段数">{task.segmentCount ?? 0}</Descriptions.Item>
-          </>
-        ) : (
-          <Descriptions.Item label="源视频地址">
-            {task.m3u8Url ? (
-              <a href={task.m3u8Url} target="_blank" rel="noreferrer" className="tasks-detail-link">
-                {task.m3u8Url}
-              </a>
-            ) : (
-              '-'
-            )}
+        <Descriptions.Item label="项目名称">{getClipTaskDisplayName(task)}</Descriptions.Item>
+        <Descriptions.Item label="源视频名称">{task.live_name || '-'}</Descriptions.Item>
+        {ext.target_duration_ms != null ? (
+          <Descriptions.Item label="目标时长">
+            {Math.round(ext.target_duration_ms / 1000)} 秒
           </Descriptions.Item>
-        )}
+        ) : null}
         <Descriptions.Item label="状态">{getClipTaskStatusLabel(task.status)}</Descriptions.Item>
         <Descriptions.Item label="进度">{task.progress}%</Descriptions.Item>
-        <Descriptions.Item label="创建时间">{formatToDateTime(task.createdAt)}</Descriptions.Item>
-        {task.message && <Descriptions.Item label="错误信息">{task.message}</Descriptions.Item>}
-        {task.draftUrls.length > 0 && (
-          <Descriptions.Item label="草稿地址">
-            {task.draftUrls.map((url) => (
-              <div key={url}>
-                <a href={url} target="_blank" rel="noreferrer" className="tasks-detail-link">
-                  {url}
-                </a>
-              </div>
-            ))}
-          </Descriptions.Item>
-        )}
+        <Descriptions.Item label="创建时间">{formatToDateTime(task.created_at)}</Descriptions.Item>
+        {task.started_at ? (
+          <Descriptions.Item label="开始时间">{formatToDateTime(task.started_at)}</Descriptions.Item>
+        ) : null}
+        {task.completed_at ? (
+          <Descriptions.Item label="完成时间">{formatToDateTime(task.completed_at)}</Descriptions.Item>
+        ) : null}
+        {task.error_message ? (
+          <Descriptions.Item label="错误信息">{task.error_message}</Descriptions.Item>
+        ) : null}
       </Descriptions>
     </Modal>
   );

@@ -1,14 +1,22 @@
-import type { ClipTaskItem, ClipTaskItemStatus } from '~/services/task';
+import type { ClipTaskItem, ClipTaskItemStatus, GenerationTaskType } from '~/services/task';
+import { parseClipTaskExt } from '~/services/task';
 import type { ClipTaskResult } from '~/services/slice';
 
-export function getGenerationTaskTypeLabel(taskType: ClipTaskItem['taskType']): string {
+export function getGenerationTaskTypeLabel(taskType: GenerationTaskType | undefined): string {
   switch (taskType) {
-    case 'ai_slice_select':
+    case 'ai_slice':
       return 'AI 选片';
-    case 'clip_generate':
-    default:
+    case 'draft':
+      return '生成草稿';
+    case 'ai_slice_draft':
       return '一键成片';
+    default:
+      return taskType || '任务';
   }
+}
+
+export function isAiSliceTask(taskType: GenerationTaskType | undefined): boolean {
+  return taskType === 'ai_slice';
 }
 
 export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
@@ -17,9 +25,7 @@ export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
       return '等待中';
     case 'processing':
       return '处理中';
-    case 'running':
-      return '生成中';
-    case 'success':
+    case 'completed':
       return '已完成';
     case 'failed':
       return '失败';
@@ -31,19 +37,26 @@ export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
 export const CLIP_TASK_STATUS_OPTIONS: { label: string; value: ClipTaskItemStatus }[] = [
   { label: '等待中', value: 'pending' },
   { label: '处理中', value: 'processing' },
-  { label: '生成中', value: 'running' },
-  { label: '已完成', value: 'success' },
+  { label: '已完成', value: 'completed' },
   { label: '失败', value: 'failed' },
 ];
 
+export const CLIP_TASK_TYPE_OPTIONS: { label: string; value: GenerationTaskType }[] = [
+  { label: 'AI 选片', value: 'ai_slice' },
+  { label: '生成草稿', value: 'draft' },
+  { label: '一键成片', value: 'ai_slice_draft' },
+];
+
 export function isClipTaskActive(status: ClipTaskItemStatus): boolean {
-  return status === 'pending' || status === 'processing' || status === 'running';
+  return status === 'pending' || status === 'processing';
 }
 
 export function normalizeClipTaskStatus(status: ClipTaskResult['status']): ClipTaskItemStatus {
-  if (status === 'completed') return 'success';
-  if (status === 'error') return 'failed';
-  return status;
+  if (status === 'completed' || status === 'success') return 'completed';
+  if (status === 'error' || status === 'failed') return 'failed';
+  if (status === 'running') return 'processing';
+  if (status === 'processing' || status === 'pending') return status;
+  return 'processing';
 }
 
 export function mergeClipTaskPollResult(task: ClipTaskItem, result: ClipTaskResult): ClipTaskItem {
@@ -51,10 +64,21 @@ export function mergeClipTaskPollResult(task: ClipTaskItem, result: ClipTaskResu
     ...task,
     status: normalizeClipTaskStatus(result.status),
     progress: result.progress,
-    videoUrls: result.video_urls,
-    draftUrls: result.draft_urls,
-    message: result.error,
+    error_message: result.error ?? task.error_message,
   };
+}
+
+export function getClipTaskDisplayName(task: ClipTaskItem): string {
+  if (task.project_name?.trim()) return task.project_name.trim();
+  if (task.sys_prompt?.trim()) return task.sys_prompt.trim();
+  const ext = parseClipTaskExt(task.ext);
+  if (ext.video_project_id) return `项目 #${ext.video_project_id}`;
+  return `任务 #${task.id}`;
+}
+
+export function getClipTaskLiveId(task: ClipTaskItem): number | undefined {
+  const liveId = parseClipTaskExt(task.ext).live_id;
+  return liveId && liveId > 0 ? liveId : undefined;
 }
 
 export async function copyTextToClipboard(text: string): Promise<boolean> {

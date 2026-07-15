@@ -149,14 +149,23 @@ export function saveSliceProjectRecord(input: {
   });
 }
 
-/** 支持按项目 id 或源视频 id 查找 */
+/** 支持按项目 id、公开数字 id 或源视频 id 查找 */
 export function getSliceProject(projectIdOrSourceVideoId: string) {
   const bySource = sliceProjectMap.get(projectIdOrSourceVideoId);
   if (bySource) return bySource;
-  return (
-    Array.from(sliceProjectMap.values()).find((item) => item.id === projectIdOrSourceVideoId) ??
-    null
-  );
+
+  const projects = Array.from(sliceProjectMap.values());
+  const byId = projects.find((item) => item.id === projectIdOrSourceVideoId);
+  if (byId) return byId;
+
+  const numericId = Number(projectIdOrSourceVideoId);
+  if (!Number.isNaN(numericId) && numericId > 0) {
+    return (
+      projects.find((item) => (Number(item.id.replace(/\D/g, '')) || 0) === numericId) ?? null
+    );
+  }
+
+  return null;
 }
 
 export function listSliceProjects() {

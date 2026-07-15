@@ -6,8 +6,7 @@ import {
   type ClipTaskItem,
   type ClipTaskListParams,
 } from '~/services/task';
-
-import { isClipTaskActive, mergeClipTaskPollResult } from './utils';
+import { isAiSliceTask, isClipTaskActive, mergeClipTaskPollResult } from './utils';
 
 const POLL_INTERVAL = 3000;
 
@@ -38,7 +37,10 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   }, []);
 
   const pollActiveTasks = useCallback(async (list: ClipTaskItem[]) => {
-    const activeTasks = list.filter((task) => isClipTaskActive(task.status));
+    // 一键成片走 clipflow 轮询；AI 选片以任务列表接口为准
+    const activeTasks = list.filter(
+      (task) => isClipTaskActive(task.status) && !isAiSliceTask(task.type)
+    );
     if (!activeTasks.length) {
       return list;
     }
@@ -49,9 +51,9 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
       const pollResults = await Promise.all(
         activeTasks.map(async (task) => {
           try {
-            const response = await getClip(task.taskId);
+            const response = await getClip(String(task.id));
             if (response.code !== 0 || !response.data) return null;
-            return { taskId: task.taskId, data: response.data };
+            return { taskId: task.id, data: response.data };
           } catch {
             return null;
           }
@@ -69,7 +71,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
       }
 
       return list.map((task) => {
-        const polled = polledMap.get(task.taskId);
+        const polled = polledMap.get(task.id);
         return polled ? mergeClipTaskPollResult(task, polled) : task;
       });
     } finally {
@@ -125,27 +127,30 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   }, [refreshTasks]);
 
   const refreshTask = useCallback(
-    async (taskId: string) => {
-      const task = tasksRef.current.find((item) => item.taskId === taskId);
+    async (taskId: string | number) => {
+      const numericId = Number(taskId);
+      const task = tasksRef.current.find((item) => item.id === numericId);
       if (!task) return;
 
       try {
-        const response = await getClip(taskId);
-        if (response.code === 0 && response.data) {
-          applyTaskList(
-            tasksRef.current.map((item) =>
-              item.taskId === taskId ? mergeClipTaskPollResult(item, response.data!) : item
-            ),
-            totalRef.current
-          );
+        if (!isAiSliceTask(task.type)) {
+          const response = await getClip(String(taskId));
+          if (response.code === 0 && response.data) {
+            applyTaskList(
+              tasksRef.current.map((item) =>
+                item.id === numericId ? mergeClipTaskPollResult(item, response.data!) : item
+              ),
+              totalRef.current
+            );
+          }
         }
 
         const refreshed = await fetchClipTaskList(filtersRef.current);
         if (refreshed.code === 0) {
-          const serverTask = refreshed.data.list.find((item) => item.taskId === taskId);
+          const serverTask = refreshed.data.list.find((item) => item.id === numericId);
           if (serverTask) {
             applyTaskList(
-              tasksRef.current.map((item) => (item.taskId === taskId ? serverTask : item)),
+              tasksRef.current.map((item) => (item.id === numericId ? serverTask : item)),
               refreshed.data.total
             );
           } else {
@@ -165,12 +170,13 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
       showLoading: tasksRef.current.length === 0,
     });
   }, [
-    filters.date,
-    filters.dateEnd,
-    filters.keyword,
+    filters.type,
     filters.status,
+    filters.start_date,
+    filters.end_date,
+    filters.keywords,
     filters.page,
-    filters.pageSize,
+    filters.page_size,
     refreshTasks,
   ]);
 

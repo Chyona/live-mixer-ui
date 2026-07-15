@@ -1,4 +1,4 @@
-import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
+import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
 import { upsertSliceProject } from './sliceProjectStore';
 
 export type GenerationTaskType = 'clip_generate' | 'ai_slice_select';
@@ -282,43 +282,65 @@ export function getClipTaskPollResult(taskId: string) {
   };
 }
 
+function findStoredClipTask(taskId: string) {
+  return (
+    clipTaskStore.find((item) => item.taskId === taskId) ??
+    clipTaskStore.find((item) => String(Number(item.taskId.replace(/\D/g, '')) || '') === taskId) ??
+    null
+  );
+}
+
 export function markClipTaskFailed(taskId: string, message: string) {
-  const task = clipTaskStore.find((item) => item.taskId === taskId);
+  const task = findStoredClipTask(taskId);
   if (!task) return;
   task.status = 'failed';
   task.message = message;
 }
 
-export function updateClipTaskName(taskId: string, clipName: string) {
-  const task = clipTaskStore.find((item) => item.taskId === taskId);
-  if (!task) return null;
-  task.clipName = clipName;
-  return task;
-}
-
 export function deleteClipTask(taskId: string) {
-  const index = clipTaskStore.findIndex((item) => item.taskId === taskId);
+  const task = findStoredClipTask(taskId);
+  if (!task) return false;
+  const index = clipTaskStore.indexOf(task);
   if (index < 0) return false;
   clipTaskStore.splice(index, 1);
   return true;
 }
 
 export function toPublicClipTask(task: StoredClipTask) {
+  const numericId = Number(String(task.taskId).replace(/\D/g, '')) || Date.now();
+  const type =
+    task.taskType === 'ai_slice_select'
+      ? 'ai_slice'
+      : task.taskType === 'clip_generate'
+        ? 'ai_slice_draft'
+        : task.taskType;
+  const status =
+    task.status === 'success'
+      ? 'completed'
+      : task.status === 'running'
+        ? 'processing'
+        : task.status;
+  const ext = {
+    live_id: Number(task.sourceVideoId.replace(/\D/g, '')) || 0,
+    video_project_id: numericId,
+    sys_prompt_id: 0,
+    target_duration_ms: 60000,
+  };
+
   return {
-    taskId: task.taskId,
-    taskType: task.taskType,
-    clipName: task.clipName,
-    sourceVideoId: task.sourceVideoId,
-    sourceVideoName: task.sourceVideoName,
-    m3u8Url: task.m3u8Url,
-    status: task.status,
+    id: numericId,
+    type,
+    status,
     progress: task.progress,
-    videoUrls: task.videoUrls,
-    draftUrls: task.draftUrls,
-    message: task.message,
-    createdAt: task.createdAt,
-    promptName: task.promptName ?? null,
-    segmentCount: task.segmentCount ?? task.aiSegments?.length ?? 0,
-    aiSegments: task.aiSegments ?? [],
+    sys_prompt: task.promptName || task.clipName,
+    project_name: task.clipName,
+    live_name: task.sourceVideoName,
+    created_by: 1,
+    error_message: task.message ?? '',
+    ext: JSON.stringify(ext),
+    created_at: task.createdAt,
+    started_at: task.createdAt,
+    completed_at: status === 'completed' || status === 'failed' ? task.createdAt : '',
+    updated_at: task.createdAt,
   };
 }

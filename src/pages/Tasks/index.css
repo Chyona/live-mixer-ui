@@ -15,14 +15,21 @@
   white-space: nowrap;
 }
 
-.tasks-type-label_clip_generate {
+.tasks-type-label_clip_generate,
+.tasks-type-label_draft {
   background: var(--color-info-bg);
   color: var(--color-info-dark);
 }
 
-.tasks-type-label_ai_slice_select {
+.tasks-type-label_ai_slice_select,
+.tasks-type-label_ai_slice {
   background: var(--color-purple-bg);
   color: var(--color-purple);
+}
+
+.tasks-type-label_ai_slice_draft {
+  background: var(--color-success-bg, var(--color-info-bg));
+  color: var(--color-success-dark, var(--primary-color));
 }
 
 .tasks-status {
@@ -54,10 +61,12 @@
   background: var(--color-info);
 }
 
+.tasks-status_completed,
 .tasks-status_success {
   color: var(--color-success-dark);
 }
 
+.tasks-status_completed .tasks-status-dot,
 .tasks-status_success .tasks-status-dot {
   background: var(--color-success);
 }

@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button, Popconfirm, Progress, Space, Table, Tooltip } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuCopy, LuDownload, LuEye, LuInfo, LuRefreshCw, LuTextSelect, LuTrash2 } from 'react-icons/lu';
+import { LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListTableEmpty, { type ListTableEmptyProps } from '~/components/ListTableEmpty';
@@ -15,11 +14,13 @@ import {
 } from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
-import { buildManualVideoSliceLink } from '~/routes/links';
 
 import ClipTaskDetailModal from './ClipTaskDetailModal';
-import ClipPreviewModal from './ClipPreviewModal';
-import { copyTextToClipboard, getClipTaskStatusLabel, getGenerationTaskTypeLabel } from './utils';
+import {
+  getClipTaskDisplayName,
+  getClipTaskStatusLabel,
+  getGenerationTaskTypeLabel,
+} from './utils';
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
@@ -28,12 +29,12 @@ interface ClipTaskListProps {
   pagination: TablePaginationConfig | false;
   onTableChange: (pagination: TablePaginationConfig) => void;
   onChanged: () => Promise<void>;
-  onRefreshTask: (taskId: string) => Promise<void>;
+  onRefreshTask: (taskId: string | number) => Promise<void>;
   empty?: ListTableEmptyProps;
 }
 
 function renderTaskTypeLabel(taskType: GenerationTaskType) {
-  const type = taskType ?? 'clip_generate';
+  const type = taskType || 'draft';
 
   return (
     <span className={`tasks-type-label tasks-type-label_${type}`}>
@@ -67,14 +68,12 @@ function ClipTaskList({
   onRefreshTask,
   empty,
 }: ClipTaskListProps) {
-  const navigate = useNavigate();
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [refreshingId, setRefreshingId] = useState<number | null>(null);
 
   const handleDelete = useCallback(
-    async (taskId: string) => {
+    async (taskId: number) => {
       setDeletingId(taskId);
       try {
         const response = await deleteClipTask(taskId);
@@ -97,17 +96,8 @@ function ClipTaskList({
     [onChanged]
   );
 
-  const handleCopyDraft = useCallback(async (url: string) => {
-    const copied = await copyTextToClipboard(url);
-    if (copied) {
-      toast.notify.success('草稿地址已复制', '请打开「剪映小助手」粘贴导入');
-      return;
-    }
-    toast.notify.error('复制失败，请手动复制链接');
-  }, []);
-
   const handleRefresh = useCallback(
-    async (taskId: string) => {
+    async (taskId: number) => {
       setRefreshingId(taskId);
       try {
         await onRefreshTask(taskId);
@@ -118,47 +108,38 @@ function ClipTaskList({
     [onRefreshTask]
   );
 
-  const handleViewAiResult = useCallback(
-    (record: ClipTaskItem) => {
-      if (!record.aiSegments?.length) {
-        toast.notify.warning('暂无可用的选片结果');
-        return;
-      }
-
-      navigate(buildManualVideoSliceLink(record.sourceVideoId), {
-        state: { from: 'tasks', aiSelectedSegments: record.aiSegments },
-      });
-    },
-    [navigate]
-  );
-
   const columns = useMemo<ColumnsType<ClipTaskItem>>(
     () => [
       {
         title: '任务类型',
-        dataIndex: 'taskType',
-        key: 'taskType',
+        dataIndex: 'type',
+        key: 'type',
         width: 110,
         render: (taskType: GenerationTaskType) => renderTaskTypeLabel(taskType),
       },
       {
-        title: '任务名称',
-        dataIndex: 'clipName',
-        key: 'clipName',
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />,
+        title: '项目名称',
+        dataIndex: 'project_name',
+        key: 'project_name',
+        render: (_, record) => (
+          <EllipsisTooltip text={getClipTaskDisplayName(record)} className="tasks-cell-ellipsis" />
+        ),
       },
       {
         title: '源视频名称',
-        dataIndex: 'sourceVideoName',
-        key: 'sourceVideoName',
-        render: (name: string) => <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />,
+        dataIndex: 'live_name',
+        key: 'live_name',
+        render: (name: string) => (
+          <EllipsisTooltip text={name || '-'} className="tasks-cell-ellipsis" />
+        ),
       },
       {
         title: '状态',
         dataIndex: 'status',
         key: 'status',
         width: 110,
-        render: (status: ClipTaskItemStatus, record) => renderStatusLabel(status, record.message),
+        render: (status: ClipTaskItemStatus, record) =>
+          renderStatusLabel(status, record.error_message),
       },
       {
         title: '进度',
@@ -169,15 +150,21 @@ function ClipTaskList({
           <Progress
             percent={progress}
             size="small"
-            status={record.status === 'failed' ? 'exception' : record.status === 'success' ? 'success' : 'active'}
+            status={
+              record.status === 'failed'
+                ? 'exception'
+                : record.status === 'completed'
+                  ? 'success'
+                  : 'active'
+            }
           />
         ),
       },
       {
         title: '创建时间',
-        dataIndex: 'createdAt',
-        key: 'createdAt',
-        width: 160,
+        dataIndex: 'created_at',
+        key: 'created_at',
+        width: 170,
         render: (value: string) => formatToDateTime(value),
       },
       {
@@ -185,83 +172,64 @@ function ClipTaskList({
         key: 'actions',
         fixed: 'right',
         width: 280,
-        render: (_, record) => {
-          const isAiTask = record.taskType === 'ai_slice_select';
-          const videoUrl = record.videoUrls[0];
-          const draftUrl = record.draftUrls[0];
-          const canViewAiResult = isAiTask && record.status === 'success' && Boolean(record.aiSegments?.length);
-
-          return (
-            <div className="tasks-actions">
-              <Space size={4} className="tasks-actions-row">
-                <Button type="link" size="small" icon={<LuInfo size={14} />} onClick={() => setDetailTask(record)}>
-                  任务详情
-                </Button>
+        render: (_, record) => (
+          <div className="tasks-actions">
+            <Space size={4} className="tasks-actions-row">
+              <Button
+                type="link"
+                size="small"
+                icon={<LuInfo size={14} />}
+                onClick={() => setDetailTask(record)}
+              >
+                任务详情
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                icon={<LuRefreshCw size={14} />}
+                loading={refreshingId === record.id}
+                onClick={() => void handleRefresh(record.id)}
+              >
+                同步状态
+              </Button>
+              <Popconfirm
+                title="确定删除该任务吗？"
+                okText="删除"
+                cancelText="取消"
+                onConfirm={() => void handleDelete(record.id)}
+              >
                 <Button
                   type="link"
                   size="small"
-                  icon={<LuRefreshCw size={14} />}
-                  loading={refreshingId === record.taskId}
-                  onClick={() => void handleRefresh(record.taskId)}
+                  danger
+                  icon={<LuTrash2 size={14} />}
+                  loading={deletingId === record.id}
                 >
-                  同步状态
+                  删除
                 </Button>
-                <Popconfirm
-                  title="确定删除该任务吗？"
-                  okText="删除"
-                  cancelText="取消"
-                  onConfirm={() => void handleDelete(record.taskId)}
-                >
-                  <Button
-                    type="link"
-                    size="small"
-                    danger
-                    icon={<LuTrash2 size={14} />}
-                    loading={deletingId === record.taskId}
-                  >
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
-              <Space size={4} className="tasks-actions-row">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<LuCopy size={14} />}
-                  disabled={!draftUrl}
-                  onClick={() => draftUrl && void handleCopyDraft(draftUrl)}
-                >
-                  复制草稿地址
-                </Button>
-              </Space>
-            </div>
-          );
-        },
+              </Popconfirm>
+            </Space>
+          </div>
+        ),
       },
     ],
-    [deletingId, handleCopyDraft, handleDelete, handleRefresh, handleViewAiResult, refreshingId]
+    [deletingId, handleDelete, handleRefresh, refreshingId]
   );
 
   return (
     <>
       <Table
         className="list-page__table tasks-table"
-        rowKey="taskId"
+        rowKey="id"
         columns={columns}
         dataSource={tasks}
         pagination={pagination}
         locale={{ emptyText: <ListTableEmpty {...empty} /> }}
         onChange={(nextPagination) => onTableChange(nextPagination)}
-        scroll={{ x: 1200, ...(scrollY !== undefined ? { y: scrollY } : {}) }}
+        scroll={{ x: 1100, ...(scrollY !== undefined ? { y: scrollY } : {}) }}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />
-
-      <ClipPreviewModal
-        open={Boolean(previewUrl)}
-        url={previewUrl}
-        onClose={() => setPreviewUrl(null)}
-      />
     </>
   );
 }

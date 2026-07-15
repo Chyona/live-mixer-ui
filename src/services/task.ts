@@ -1,69 +1,151 @@
-import type { SelectedCopySegment } from '~/pages/ManualVideoSlice/types';
 import type { BaseResponse } from './types';
 import { request } from './http';
 
-export type ClipTaskItemStatus = 'pending' | 'processing' | 'running' | 'success' | 'failed';
-export type GenerationTaskType = 'clip_generate' | 'ai_slice_select';
+export type ClipTaskItemStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+/** 任务类型 */
+export type GenerationTaskType = 'ai_slice' | 'draft' | 'ai_slice_draft' | (string & {});
+
+/** ext 字段解析结果 */
+export interface ClipTaskExt {
+  live_id?: number;
+  video_project_id?: number;
+  sys_prompt_id?: number;
+  target_duration_ms?: number;
+}
+
+/**
+ * 任务列表项（与接口返回结构一致）
+ */
 export interface ClipTaskItem {
-  taskId: string;
-  taskType: GenerationTaskType;
-  clipName: string;
-  sourceVideoId: string;
-  sourceVideoName: string;
-  m3u8Url: string;
+  id: number;
+  type: GenerationTaskType;
   status: ClipTaskItemStatus;
   progress: number;
-  videoUrls: string[];
-  draftUrls: string[];
-  message: string | null;
-  createdAt: string;
-  promptName?: string | null;
-  segmentCount?: number;
-  aiSegments?: SelectedCopySegment[];
+  sys_prompt: string;
+  /** 项目名称 */
+  project_name: string;
+  /** 源视频名称 */
+  live_name: string;
+  created_by: number;
+  error_message: string;
+  /** 原始 JSON 字符串 */
+  ext: string;
+  created_at: string;
+  started_at: string;
+  completed_at: string;
+  updated_at: string;
 }
 
 export interface ClipTaskListResult {
   list: ClipTaskItem[];
   total: number;
+  page?: number;
+  page_size?: number;
 }
 
+/** 任务列表查询参数 */
 export interface ClipTaskListParams {
-  date?: string;
-  dateEnd?: string;
-  keyword?: string;
+  /** 任务类型：ai_slice / draft / ai_slice_draft */
+  type?: GenerationTaskType;
+  /** 任务状态：pending / processing / completed / failed */
   status?: ClipTaskItemStatus;
+  /** 开始日期 YYYY-MM-DD，按 created_at 筛选 */
+  start_date?: string;
+  /** 结束日期 YYYY-MM-DD，按 created_at 筛选 */
+  end_date?: string;
+  /** 关键词搜索 */
+  keywords?: string;
   page?: number;
-  pageSize?: number;
+  /** 每页数量，默认 10 */
+  page_size?: number;
+}
+
+export function parseClipTaskExt(ext: string | ClipTaskExt | null | undefined): ClipTaskExt {
+  if (!ext) return {};
+  if (typeof ext === 'object') return ext;
+  try {
+    const parsed = JSON.parse(ext) as ClipTaskExt;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefined): ClipTaskItem {
+  const type = String(raw?.type ?? '');
+  const normalizedType: GenerationTaskType =
+    type === 'ai_slice_select' ? 'ai_slice' : type === 'clip_generate' ? 'ai_slice_draft' : type || 'draft';
+
+  const rawStatus = String(raw?.status ?? 'pending');
+  const statusMap: Record<string, ClipTaskItemStatus> = {
+    pending: 'pending',
+    processing: 'processing',
+    running: 'processing',
+    completed: 'completed',
+    success: 'completed',
+    failed: 'failed',
+    error: 'failed',
+  };
+
+  return {
+    id: Number(raw?.id ?? 0),
+    type: normalizedType,
+    status: statusMap[rawStatus] ?? 'pending',
+    progress: Number(raw?.progress ?? 0),
+    sys_prompt: String(raw?.sys_prompt ?? ''),
+    project_name: String(raw?.project_name ?? ''),
+    live_name: String(raw?.live_name ?? ''),
+    created_by: Number(raw?.created_by ?? 0),
+    error_message: String(raw?.error_message ?? ''),
+    ext: typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : '',
+    created_at: String(raw?.created_at ?? ''),
+    started_at: String(raw?.started_at ?? ''),
+    completed_at: String(raw?.completed_at ?? ''),
+    updated_at: String(raw?.updated_at ?? ''),
+  };
+}
+
+function pickDefinedParams<T extends object>(params: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
+  ) as Partial<T>;
 }
 
 export async function fetchClipTaskList(
   params?: ClipTaskListParams
 ): Promise<BaseResponse<ClipTaskListResult>> {
-  return await request('/v1/clip-tasks', {
+  const response = await request<BaseResponse<ClipTaskListResult>>('/v1/tasks', {
     method: 'get',
-    params,
+    params: params ? pickDefinedParams(params) : undefined,
   });
+
+  return {
+    ...response,
+    data: {
+      list: (response.data?.list ?? []).map(normalizeClipTaskItem),
+      total: Number(response.data?.total ?? 0),
+      page: response.data?.page,
+      page_size: response.data?.page_size,
+    },
+  };
 }
 
-export async function fetchClipTaskDetail(taskId: string): Promise<BaseResponse<ClipTaskItem>> {
-  return await request(`/v1/clip-tasks/${taskId}`, {
-    method: 'get',
-  });
-}
-
-export async function updateClipTaskName(
-  taskId: string,
-  clipName: string
+export async function fetchClipTaskDetail(
+  taskId: string | number
 ): Promise<BaseResponse<ClipTaskItem>> {
-  return await request(`/v1/clip-tasks/${taskId}/name`, {
-    method: 'put',
-    data: { clipName },
+  const response = await request<BaseResponse<ClipTaskItem>>(`/v1/tasks/${taskId}`, {
+    method: 'get',
   });
+
+  return {
+    ...response,
+    data: normalizeClipTaskItem(response.data),
+  };
 }
 
-export async function deleteClipTask(taskId: string): Promise<BaseResponse<null>> {
-  return await request(`/v1/clip-tasks/${taskId}`, {
+export async function deleteClipTask(taskId: string | number): Promise<BaseResponse<null>> {
+  return await request(`/v1/tasks/${taskId}`, {
     method: 'delete',
   });
 }

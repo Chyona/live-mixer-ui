@@ -1,23 +1,20 @@
 import type { BaseResponse } from './types';
-import type { ClipRange } from './slice';
 import { request } from './http';
 
-export interface AiSliceSelectParams {
-  prompt: string;
-  promptId?: number;
-  clips: ClipRange[];
-  sourceVideoName?: string;
+export interface SubmitAiSliceParams {
+  video_project_id: string | number;
 }
 
 export interface AiSliceSelectResult {
-  taskId: string;
+  task_id?: string;
+  taskId?: string;
 }
 
+/** 提交 AI 选片任务（依赖已保存的剪辑项目） */
 export async function submitAiSliceSelection(
-  sourceVideoId: string,
-  params: AiSliceSelectParams
+  params: SubmitAiSliceParams
 ): Promise<BaseResponse<AiSliceSelectResult>> {
-  return await request(`/v1/source-videos/${sourceVideoId}/ai-slice-select`, {
+  return await request('/v1/tasks/ai-slice', {
     method: 'post',
     data: params,
   });
