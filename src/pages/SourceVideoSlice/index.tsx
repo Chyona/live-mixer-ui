@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Descriptions, Modal, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -409,6 +409,21 @@ const SourceVideoSlicePage = () => {
     );
   }
 
+  const handleSwitchToManual = () => {
+    Modal.confirm({
+      title: '切换到人工切片',
+      content: '未保存的改动切换后将丢失，确定要继续吗？',
+      okText: '确定切换',
+      cancelText: '取消',
+      className: 'noanimation-modal',
+      onOk: () => {
+        navigate(buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
+          state: { from: entryFrom },
+        });
+      },
+    });
+  };
+
   const pageHeader = (
     <SlicePageHeader
       breadcrumbItems={breadcrumbItems}
@@ -416,11 +431,9 @@ const SourceVideoSlicePage = () => {
       actions={
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-          {entryFrom !== 'slices' ? (
-            <Link to={buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })}>
-              <Button>切换到人工切片</Button>
-            </Link>
-          ) : null}
+          <Button type="primary" ghost onClick={handleSwitchToManual}>
+            切换到人工切片
+          </Button>
         </>
       }
       tip={{
@@ -513,7 +526,7 @@ const SourceVideoSlicePage = () => {
         footer={null}
         closable
         title={null}
-        className="slice-source-modal"
+        className="slice-source-modal noanimation-modal"
         onCancel={() => setSourceModalVisible(false)}
       >
         <div className="slice-source-modal-body">
@@ -541,6 +554,7 @@ const SourceVideoSlicePage = () => {
       </Modal>
 
       <Modal
+        className="noanimation-modal"
         title="温馨提示"
         open={tipVisible}
         centered

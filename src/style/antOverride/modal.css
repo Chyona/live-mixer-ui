@@ -7,6 +7,54 @@
   overflow: hidden;
 }
 
+/* CRUD / 后台弹窗：安静白底 header（加 className="noanimation-modal"） */
+.ant-modal.noanimation-modal .ant-modal-header {
+  margin: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-card);
+}
+
+.ant-modal.noanimation-modal .ant-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ant-modal.noanimation-modal .ant-modal-close {
+  top: 12px;
+  color: var(--text-secondary, rgba(0, 0, 0, 0.45));
+}
+
+.ant-modal.noanimation-modal .ant-modal-content {
+  padding: 0;
+  background: var(--surface-card);
+}
+
+.ant-modal.noanimation-modal .ant-modal-body {
+  padding: 16px 20px;
+}
+
+.ant-modal.noanimation-modal .ant-modal-footer {
+  margin-top: 0;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-card);
+}
+
+.ant-modal.noanimation-modal .ant-modal-footer .ant-btn {
+  min-width: 96px;
+  height: 40px;
+  padding-inline: 22px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md, 8px);
+}
+
+.ant-modal.noanimation-modal .ant-modal-footer .ant-btn + .ant-btn {
+  margin-inline-start: 12px;
+}
+
 /* 渐变 header 弹窗：content 用 header 底色，避免圆角处露出白边 */
 .ant-modal:not(.noanimation-modal):not(.ant-modal-confirm) .ant-modal-content {
   padding: 0;

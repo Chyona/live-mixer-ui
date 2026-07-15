@@ -61,14 +61,14 @@
 .list-page__toolbar-main {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
 .list-page__toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -77,12 +77,27 @@
   flex-shrink: 0;
 }
 
+.list-page__toolbar-extra .ant-btn {
+  min-width: 128px;
+  height: 40px;
+  padding-inline: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md, 8px);
+}
+
+.list-page__toolbar-extra .ant-btn .ant-btn-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
 .list-page__refresh-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  height: 40px;
   color: var(--text-secondary);
-  padding-inline: 8px;
+  padding-inline: 12px;
 }
 
 .list-page__refresh-btn:hover {
@@ -91,13 +106,26 @@
 }
 
 .list-page__search-primary {
-  flex: 1 1 320px;
-  min-width: 220px;
-  max-width: 520px;
+  flex: 1 1 360px;
+  min-width: 280px;
+  max-width: 640px;
+}
+
+.list-page__search-primary.ant-input-affix-wrapper {
+  height: 40px;
+  padding-inline: 14px;
+  font-size: 14px;
+  border-radius: var(--radius-md, 8px);
+}
+
+.list-page__search-primary .ant-input {
+  font-size: 14px;
 }
 
 .list-page__search-primary .ant-input-prefix {
+  margin-inline-end: 8px;
   color: var(--text-gray);
+  font-size: 16px;
 }
 
 .list-page__filter-inline {
@@ -125,8 +153,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  height: 40px;
   color: var(--text-secondary);
-  padding-inline: 8px;
+  padding-inline: 12px;
 }
 
 .list-page__advanced-toggle:hover {

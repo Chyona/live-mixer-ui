@@ -57,6 +57,7 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
 
   return (
     <Modal
+      className="noanimation-modal"
       title="添加源视频"
       open={open}
       okText="添加"

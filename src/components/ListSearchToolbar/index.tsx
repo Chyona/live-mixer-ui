@@ -42,7 +42,7 @@ const ListSearchToolbar = ({
         <Input
           className="list-page__search-primary"
           allowClear
-          prefix={<LuSearch size={14} />}
+          prefix={<LuSearch size={16} />}
           placeholder={keywordPlaceholder}
           value={keyword}
           onChange={(event) => onKeywordChange(event.target.value)}

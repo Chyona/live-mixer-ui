@@ -31,6 +31,7 @@ const SaveDraftModal = ({
 
   return (
     <Modal
+      className="noanimation-modal"
       open={open}
       title={title}
       okText="确定"

@@ -78,6 +78,7 @@ const AiPromptFormModal = ({ open, prompt, onClose, onSuccess }: AiPromptFormMod
 
   return (
     <Modal
+      className="noanimation-modal"
       title={isEdit ? '编辑提示词' : '添加提示词'}
       width={720}
       open={open}

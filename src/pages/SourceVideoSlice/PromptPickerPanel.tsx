@@ -203,9 +203,6 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
           <Button type="primary" size="small" icon={<LuPlus size={14} />} onClick={openCreate}>
             新增提示词
           </Button>
-          <Link to="/prompts" className="slice-prompt-panel__empty-link">
-            去提示词管理
-          </Link>
         </div>
       </div>
     );

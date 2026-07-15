@@ -663,13 +663,14 @@
 }
 
 .slice-editor-copy-toolbar button.danger {
-  border-color: rgba(239, 68, 68, 0.2);
-  color: var(--color-danger-dark);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--surface-card);
 }
 
 .slice-editor-copy-toolbar button.danger:not(:disabled):hover {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.06);
+  border-color: var(--color-danger-dark);
+  background: var(--color-danger-bg-hover);
   color: var(--color-danger-dark);
 }
 
@@ -861,6 +862,13 @@
 }
 
 .slice-editor-copy-actions button.danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.slice-editor-copy-actions button.danger:not(:disabled):hover {
+  border-color: var(--color-danger-dark);
+  background: var(--color-danger-bg-hover);
   color: var(--color-danger-dark);
 }
 
@@ -1782,9 +1790,15 @@
   border-color: rgba(var(--primary-color-rgb), 0.45);
 }
 
-.slice-secondary-btn_danger:hover:not(:disabled) {
+.slice-secondary-btn_danger {
   color: var(--color-danger);
   border-color: var(--color-danger);
+}
+
+.slice-secondary-btn_danger:hover:not(:disabled) {
+  color: var(--color-danger-dark);
+  border-color: var(--color-danger-dark);
+  background: var(--color-danger-bg-hover);
 }
 
 .slice-secondary-btn:disabled {

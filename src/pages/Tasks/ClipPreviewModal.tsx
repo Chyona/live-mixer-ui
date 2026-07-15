@@ -17,7 +17,7 @@ const ClipPreviewModal = ({ open, url, title = '成片预览', onClose }: ClipPr
       footer={null}
       destroyOnClose
       onCancel={onClose}
-      className="tasks-preview-modal"
+      className="tasks-preview-modal noanimation-modal"
     >
       {url ? (
         <StreamVideoPlayer url={url} className="tasks-preview-video" controls />

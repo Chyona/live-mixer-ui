@@ -41,6 +41,7 @@ const SlicePreviewModal = ({ slice, open, onClose }: SlicePreviewModalProps) => 
 
   return (
     <Modal
+      className="noanimation-modal"
       title={`切片预览 - ${slice.name}`}
       open={open}
       footer={null}
