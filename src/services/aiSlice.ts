@@ -7,7 +7,6 @@ export interface SubmitAiSliceParams {
 
 export interface AiSliceSelectResult {
   task_id?: string;
-  taskId?: string;
 }
 
 /** 提交 AI 选片任务（依赖已保存的剪辑项目） */

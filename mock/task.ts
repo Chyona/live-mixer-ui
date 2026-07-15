@@ -58,9 +58,11 @@ function filterClipTasks(query: Record<string, string | string[] | undefined>) {
     const publicType =
       task.taskType === 'ai_slice_select'
         ? 'ai_slice'
-        : task.taskType === 'clip_generate'
-          ? 'ai_slice_draft'
-          : task.taskType;
+        : task.taskType === 'draft'
+          ? 'draft'
+          : task.taskType === 'clip_generate'
+            ? 'ai_slice_draft'
+            : task.taskType;
     if (type && publicType !== type) return false;
 
     const titleText = `${task.sourceVideoName} ${task.clipName} ${task.promptName ?? ''}`;
@@ -178,6 +180,37 @@ export default [
         sourceVideoName: project.sourceVideoName,
         m3u8Url: '',
         clipName: project.projectName,
+      });
+
+      return {
+        code: 0,
+        message: '',
+        data: { task_id: taskId },
+      };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/tasks/draft`,
+    method: 'post',
+    response: ({ body }: { body: { video_project_id?: string | number } }) => {
+      const videoProjectId = body?.video_project_id;
+      if (videoProjectId == null || videoProjectId === '') {
+        return { code: 400, message: '缺少 video_project_id', data: null };
+      }
+
+      const project = getSliceProject(String(videoProjectId));
+      if (!project) {
+        return { code: 404, message: '剪辑项目不存在', data: null };
+      }
+
+      const taskId = `draft-task-${Date.now()}`;
+      createClipTask({
+        taskId,
+        sourceVideoId: project.sourceVideoId,
+        sourceVideoName: project.sourceVideoName,
+        m3u8Url: '',
+        clipName: project.projectName,
+        taskType: 'draft',
       });
 
       return {

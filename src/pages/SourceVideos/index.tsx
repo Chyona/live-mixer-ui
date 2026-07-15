@@ -98,12 +98,16 @@ const SourceVideosPage = () => {
 
     try {
       const response = await fetchSourceVideoList({
-        date: dateFilters.date,
-        dateEnd: dateFilters.dateEnd,
-        keyword: appliedKeyword || undefined,
-        globalKeyword: appliedGlobalKeyword || undefined,
+        start_date: dateFilters.date,
+        end_date: dateFilters.dateEnd,
+        title_keyword: appliedKeyword
+          ? appliedKeyword.replace(/[+＋]/g, ',')
+          : undefined,
+        global_keyword: appliedGlobalKeyword
+          ? appliedGlobalKeyword.replace(/[+＋]/g, ',')
+          : undefined,
         page,
-        pageSize,
+        page_size: pageSize,
       });
 
       if (response.code !== 0) {

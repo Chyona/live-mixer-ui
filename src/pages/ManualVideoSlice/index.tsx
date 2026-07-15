@@ -15,7 +15,7 @@ import {
   toSliceProjectClips,
   updateSliceProject,
 } from '~/services/sliceProject';
-import { submitClip } from '~/services/slice';
+import { submitDraft } from '~/services/slice';
 import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
@@ -67,6 +67,8 @@ const ManualVideoSlicePage = () => {
   /** 项目管理进入时带 ?projectId=；源视频首次保存后也会回写 */
   const projectIdFromQuery = searchParams.get('projectId')?.trim() || '';
   const [projectId, setProjectId] = useState(projectIdFromQuery);
+  /** 保存/另存为后回写 URL，不触发整页数据重载 */
+  const skipProjectReloadRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<SourceVideo | null>(null);
@@ -133,12 +135,16 @@ const ManualVideoSlicePage = () => {
   const effectiveActiveCopySegmentId = playbackActiveCopySegmentId ?? activeSegmentId;
 
   const syncProjectIdInUrl = useCallback(
-    (nextProjectId: string) => {
-      if (!nextProjectId || nextProjectId === projectIdFromQuery) {
-        setProjectId(nextProjectId);
-        return;
-      }
+    (nextProjectId: string, options?: { reload?: boolean }) => {
+      if (!nextProjectId) return;
+
       setProjectId(nextProjectId);
+      if (nextProjectId === projectIdFromQuery) return;
+
+      if (options?.reload === false) {
+        skipProjectReloadRef.current = true;
+      }
+
       const nextSearch = new URLSearchParams(searchParams);
       nextSearch.set('projectId', nextProjectId);
       navigate(
@@ -213,6 +219,10 @@ const ManualVideoSlicePage = () => {
   }, [location.state, projectIdFromQuery, sourceVideoId]);
 
   useEffect(() => {
+    if (skipProjectReloadRef.current) {
+      skipProjectReloadRef.current = false;
+      return;
+    }
     void loadPageData();
   }, [loadPageData]);
 
@@ -397,7 +407,7 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(String(response.data.id));
+          syncProjectIdInUrl(String(response.data.id), { reload: false });
         }
         setDraftName(response.data.name);
         setProjectRemark(response.data.remark || nextRemark);
@@ -479,13 +489,13 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(String(response.data.id));
+          syncProjectIdInUrl(String(response.data.id), { reload: false });
         }
         localStorage.setItem(DRAFT_STORAGE_KEY, response.data.name);
         setDraftName(response.data.name);
         setProjectRemark(response.data.remark || remark);
         setSaveModalOpen(false);
-        toast.notify.success('已另存为新的剪辑项目');
+        toast.notify.success('已另存为新的剪辑项目，可在项目管理中查看');
       } catch (error) {
         const msg = error instanceof AppError ? error.errorMessage : '保存失败';
         toast.notify.error(msg);
@@ -514,7 +524,7 @@ const ManualVideoSlicePage = () => {
 
     setSubmitting(true);
     try {
-      const response = await submitClip({
+      const response = await submitDraft({
         video_project_id: projectId,
       });
 

@@ -11,12 +11,17 @@ export { createInitialAsrState } from './sourceVideo.model';
 import type { SourceVideo } from './sourceVideo.model';
 
 export interface SourceVideoListParams {
-  date?: string;
-  dateEnd?: string;
-  keyword?: string;
-  globalKeyword?: string;
+  /** 开始日期 YYYY-MM-DD */
+  start_date?: string;
+  /** 结束日期 YYYY-MM-DD */
+  end_date?: string;
+  /** 标题关键词，英文逗号分隔，匹配 name/remark */
+  title_keyword?: string;
+  /** 全局关键词，英文逗号分隔，匹配 live_url/asr_error_msg/name/remark */
+  global_keyword?: string;
   page?: number;
-  pageSize?: number;
+  /** 每页数量，默认 10 */
+  page_size?: number;
 }
 
 export interface SourceVideoListResult {

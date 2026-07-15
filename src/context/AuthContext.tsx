@@ -9,6 +9,11 @@ import { isLoginModalMode } from '~/utils/config';
 /** @deprecated 请优先使用 AuthContext；保留供 useLoginChange 监听 */
 export const LOGIN_CHANGE_EVENT = 'loginStateChange';
 
+/** 非 React 层（如 http 拦截器）清会话后通知 AuthProvider 重置 userInfo */
+export function emitAuthLogoutEvent() {
+  window.dispatchEvent(new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { state: 'logout' } }));
+}
+
 interface AuthContextType {
   loading: boolean;
   userInfo: Partial<UserLoginResult>;
@@ -104,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     setUserInfo({});
-    window.dispatchEvent(new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { state: 'logout' } }));
+    emitAuthLogoutEvent();
     openLogin();
   };
 

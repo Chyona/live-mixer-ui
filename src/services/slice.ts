@@ -92,6 +92,16 @@ export async function submitClip(
   });
 }
 
+/** 人工切片提交成片（生成草稿） */
+export async function submitDraft(
+  params: SubmitClipParams
+): Promise<BaseResponse<ClipSubmitResult>> {
+  return await request('/v1/tasks/draft', {
+    method: 'post',
+    data: params,
+  });
+}
+
 export async function getClip(taskId: string): Promise<BaseResponse<ClipTaskResult>> {
   return await request('/clipflow-ai/v1/task', {
     method: 'get',

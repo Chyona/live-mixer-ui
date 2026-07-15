@@ -1,7 +1,7 @@
 import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
 import { upsertSliceProject } from './sliceProjectStore';
 
-export type GenerationTaskType = 'clip_generate' | 'ai_slice_select';
+export type GenerationTaskType = 'clip_generate' | 'ai_slice_select' | 'draft';
 
 export type StoredClipTask = {
   taskId: string;
@@ -142,10 +142,11 @@ export function createClipTask(input: {
   sourceVideoName: string;
   m3u8Url: string;
   clipName?: string;
+  taskType?: GenerationTaskType;
 }) {
   clipTaskStore.unshift({
     taskId: input.taskId,
-    taskType: 'clip_generate',
+    taskType: input.taskType || 'clip_generate',
     clipName: input.clipName?.trim() || `${input.sourceVideoName} 成片`,
     sourceVideoId: input.sourceVideoId,
     sourceVideoName: input.sourceVideoName,
@@ -312,9 +313,11 @@ export function toPublicClipTask(task: StoredClipTask) {
   const type =
     task.taskType === 'ai_slice_select'
       ? 'ai_slice'
-      : task.taskType === 'clip_generate'
-        ? 'ai_slice_draft'
-        : task.taskType;
+      : task.taskType === 'draft'
+        ? 'draft'
+        : task.taskType === 'clip_generate'
+          ? 'ai_slice_draft'
+          : task.taskType;
   const status =
     task.status === 'success'
       ? 'completed'

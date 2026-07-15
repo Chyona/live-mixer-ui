@@ -210,24 +210,44 @@ function tickAllAsrJobs() {
 }
 
 function filterList(query: Record<string, string | string[] | undefined>) {
-  const date = typeof query.date === 'string' ? query.date : undefined;
-  const dateEnd = typeof query.dateEnd === 'string' ? query.dateEnd : undefined;
-  const keyword = typeof query.keyword === 'string' ? query.keyword : undefined;
-  const globalKeyword = typeof query.globalKeyword === 'string' ? query.globalKeyword : undefined;
-  const titleKeywords = parseKeywords(keyword);
+  const startDate =
+    typeof query.start_date === 'string'
+      ? query.start_date
+      : typeof query.date === 'string'
+        ? query.date
+        : undefined;
+  const endDate =
+    typeof query.end_date === 'string'
+      ? query.end_date
+      : typeof query.dateEnd === 'string'
+        ? query.dateEnd
+        : undefined;
+  const titleKeyword =
+    typeof query.title_keyword === 'string'
+      ? query.title_keyword
+      : typeof query.keyword === 'string'
+        ? query.keyword
+        : undefined;
+  const globalKeyword =
+    typeof query.global_keyword === 'string'
+      ? query.global_keyword
+      : typeof query.globalKeyword === 'string'
+        ? query.globalKeyword
+        : undefined;
+  const titleKeywords = parseKeywords(titleKeyword);
   const globalKeywords = parseKeywords(globalKeyword);
 
   return sourceVideos.filter((item) => {
     if (item.ownerId !== CURRENT_USER_ID) return false;
 
     const createdDate = item.created_at.slice(0, 10);
-    if (date && createdDate < date) return false;
-    if (dateEnd && createdDate > dateEnd) return false;
+    if (startDate && createdDate < startDate) return false;
+    if (endDate && createdDate > endDate) return false;
 
     const titleText = `${item.name} ${item.remark}`;
     if (!matchKeywords(titleText, titleKeywords)) return false;
 
-    const globalText = `${item.name} ${item.remark} ${item.live_url} ${createdDate}`;
+    const globalText = `${item.name} ${item.remark} ${item.live_url} ${item.asr_error_msg ?? ''} ${createdDate}`;
     if (!matchKeywords(globalText, globalKeywords)) return false;
 
     return true;
@@ -241,7 +261,7 @@ export default [
     response: ({ query }: { query: Record<string, string | string[] | undefined> }) => {
       tickAllAsrJobs();
       const page = Number(query.page || 1);
-      const pageSize = Number(query.pageSize || 10);
+      const pageSize = Number(query.page_size || query.pageSize || 10);
       const filtered = filterList(query);
       const start = (page - 1) * pageSize;
 
