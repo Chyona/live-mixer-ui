@@ -207,12 +207,6 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
-    const promptText = getAiPromptContent(selectedPrompt);
-    if (!promptText) {
-      toast.notify.warning('所选提示词内容为空，请编辑后重试');
-      return;
-    }
-
     const clips = selectedRanges.map((range) => ({
       start: Math.round(range.start),
       end: Math.round(range.end),
@@ -223,7 +217,7 @@ const SourceVideoSlicePage = () => {
       const response = await submitClip({
         m3u8_url: streamUrl,
         clips,
-        prompt: promptText,
+        prompt_id: selectedPrompt.id,
         water_text: 'www',
         count: 1,
         source_video_id: String(video.id),

@@ -58,7 +58,7 @@ export interface ClipRange {
 export interface SubmitClipParams {
   m3u8_url: string;
   clips: ClipRange[];
-  prompt: string;
+  prompt_id?: number;
   water_text: string;
   count: number;
   source_video_id?: string;

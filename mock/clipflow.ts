@@ -12,7 +12,7 @@ export default [
       body: {
         m3u8_url?: string;
         clips?: Array<{ start: number; end: number }>;
-        prompt?: string;
+        prompt_id?: number;
         water_text?: string;
         count?: number;
         source_video_id?: string;

@@ -513,7 +513,6 @@ const ManualVideoSlicePage = () => {
           start: Math.round(segment.start),
           end: Math.round(segment.end),
         })),
-        prompt: '根据人工选择的文案片段生成成片',
         water_text: 'www',
         count: 1,
         source_video_id: String(video.id),
