@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getClip } from '~/services/slice';
 import {
   fetchClipTaskList,
   type ClipTaskItem,
   type ClipTaskListParams,
 } from '~/services/task';
-import { isAiSliceTask, isClipTaskActive, mergeClipTaskPollResult } from './utils';
+import { isClipTaskActive } from './utils';
 
 /** 进行中任务自动刷新间隔（秒） */
 export const CLIP_TASK_POLL_INTERVAL_SEC = 5;
@@ -18,9 +17,8 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [polling, setPolling] = useState(false);
-  const pollingRef = useRef(false);
+  const loadingRef = useRef(false);
   const tasksRef = useRef<ClipTaskItem[]>([]);
-  const totalRef = useRef(0);
   const filtersRef = useRef(filters);
 
   useEffect(() => {
@@ -33,142 +31,49 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
 
   const applyTaskList = useCallback((list: ClipTaskItem[], nextTotal: number) => {
     tasksRef.current = list;
-    totalRef.current = nextTotal;
     setTasks(list);
     setTotal(nextTotal);
   }, []);
 
-  const pollActiveTasks = useCallback(async (list: ClipTaskItem[]) => {
-    // 一键成片走 clipflow 轮询；AI 选片以任务列表接口为准
-    const activeTasks = list.filter(
-      (task) => isClipTaskActive(task.status) && !isAiSliceTask(task.type)
-    );
-    if (!activeTasks.length) {
-      return list;
-    }
-
-    setPolling(true);
-
-    try {
-      const pollResults = await Promise.all(
-        activeTasks.map(async (task) => {
-          try {
-            const response = await getClip(String(task.id));
-            if (response.code !== 0 || !response.data) return null;
-            return { taskId: task.id, data: response.data };
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      const polledMap = new Map(
-        pollResults
-          .filter((item): item is NonNullable<typeof item> => Boolean(item))
-          .map((item) => [item.taskId, item.data])
-      );
-
-      if (!polledMap.size) {
-        return list;
-      }
-
-      return list.map((task) => {
-        const polled = polledMap.get(task.id);
-        return polled ? mergeClipTaskPollResult(task, polled) : task;
-      });
-    } finally {
-      setPolling(false);
-    }
-  }, []);
-
   const refreshTasks = useCallback(
-    async (options?: { withPoll?: boolean; showLoading?: boolean; refresh?: boolean }) => {
-      if (pollingRef.current) return;
+    async (options?: { showLoading?: boolean; refresh?: boolean; silent?: boolean }) => {
+      if (loadingRef.current) return;
 
-      const { withPoll = true, showLoading = false, refresh = false } = options ?? {};
-      pollingRef.current = true;
+      const { showLoading = false, refresh = false, silent = false } = options ?? {};
+      loadingRef.current = true;
 
       if (refresh) {
         setRefreshing(true);
       } else if (showLoading) {
         setLoading(true);
+      } else if (silent) {
+        setPolling(true);
       }
 
       try {
         const response = await fetchClipTaskList(filtersRef.current);
         if (response.code !== 0) return;
-
-        let nextTasks = response.data.list;
-        let nextTotal = response.data.total;
-
-        if (withPoll) {
-          nextTasks = await pollActiveTasks(nextTasks);
-
-          const refreshed = await fetchClipTaskList(filtersRef.current);
-          if (refreshed.code === 0) {
-            nextTasks = refreshed.data.list;
-            nextTotal = refreshed.data.total;
-          }
-        }
-
-        applyTaskList(nextTasks, nextTotal);
+        applyTaskList(response.data.list, response.data.total);
       } finally {
-        pollingRef.current = false;
+        loadingRef.current = false;
         if (refresh) {
           setRefreshing(false);
         } else if (showLoading) {
           setLoading(false);
+        } else if (silent) {
+          setPolling(false);
         }
-      }
-    },
-    [applyTaskList, pollActiveTasks]
-  );
-
-  const reload = useCallback(async () => {
-    await refreshTasks({ withPoll: true, refresh: true });
-  }, [refreshTasks]);
-
-  const refreshTask = useCallback(
-    async (taskId: string | number) => {
-      const numericId = Number(taskId);
-      const task = tasksRef.current.find((item) => item.id === numericId);
-      if (!task) return;
-
-      try {
-        if (!isAiSliceTask(task.type)) {
-          const response = await getClip(String(taskId));
-          if (response.code === 0 && response.data) {
-            applyTaskList(
-              tasksRef.current.map((item) =>
-                item.id === numericId ? mergeClipTaskPollResult(item, response.data!) : item
-              ),
-              totalRef.current
-            );
-          }
-        }
-
-        const refreshed = await fetchClipTaskList(filtersRef.current);
-        if (refreshed.code === 0) {
-          const serverTask = refreshed.data.list.find((item) => item.id === numericId);
-          if (serverTask) {
-            applyTaskList(
-              tasksRef.current.map((item) => (item.id === numericId ? serverTask : item)),
-              refreshed.data.total
-            );
-          } else {
-            applyTaskList(refreshed.data.list, refreshed.data.total);
-          }
-        }
-      } catch {
-        throw new Error('refresh failed');
       }
     },
     [applyTaskList]
   );
 
+  const reload = useCallback(async () => {
+    await refreshTasks({ refresh: true });
+  }, [refreshTasks]);
+
   useEffect(() => {
     void refreshTasks({
-      withPoll: true,
       showLoading: tasksRef.current.length === 0,
     });
   }, [
@@ -186,7 +91,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
     const timer = window.setInterval(() => {
       const hasActive = tasksRef.current.some((task) => isClipTaskActive(task.status));
       if (!hasActive) return;
-      void refreshTasks({ withPoll: true, showLoading: false });
+      void refreshTasks({ silent: true });
     }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
@@ -202,6 +107,5 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
     polling,
     hasActiveTasks,
     reload,
-    refreshTask,
   };
 }

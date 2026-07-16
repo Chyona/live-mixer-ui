@@ -1,6 +1,5 @@
 import type { ClipTaskItem, ClipTaskItemStatus, GenerationTaskType } from '~/services/task';
 import { parseClipTaskExt } from '~/services/task';
-import type { ClipTaskResult } from '~/services/slice';
 
 export function getGenerationTaskTypeLabel(taskType: GenerationTaskType | undefined): string {
   switch (taskType) {
@@ -13,10 +12,6 @@ export function getGenerationTaskTypeLabel(taskType: GenerationTaskType | undefi
     default:
       return taskType || '任务';
   }
-}
-
-export function isAiSliceTask(taskType: GenerationTaskType | undefined): boolean {
-  return taskType === 'ai_slice';
 }
 
 export function getClipTaskStatusLabel(status: ClipTaskItemStatus): string {
@@ -49,25 +44,6 @@ export const CLIP_TASK_TYPE_OPTIONS: { label: string; value: GenerationTaskType 
 
 export function isClipTaskActive(status: ClipTaskItemStatus): boolean {
   return status === 'pending' || status === 'processing';
-}
-
-export function normalizeClipTaskStatus(status: ClipTaskResult['status']): ClipTaskItemStatus {
-  if (status === 'completed' || status === 'success') return 'completed';
-  if (status === 'error' || status === 'failed') return 'failed';
-  if (status === 'running') return 'processing';
-  if (status === 'processing' || status === 'pending') return status;
-  return 'processing';
-}
-
-export function mergeClipTaskPollResult(task: ClipTaskItem, result: ClipTaskResult): ClipTaskItem {
-  const draftUrl = result.draft_urls?.[0]?.trim() || task.draft_url;
-  return {
-    ...task,
-    status: normalizeClipTaskStatus(result.status),
-    progress: result.progress,
-    draft_url: draftUrl,
-    error_message: result.error ?? task.error_message,
-  };
 }
 
 export function getClipTaskDisplayName(task: ClipTaskItem): string {

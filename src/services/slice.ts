@@ -64,24 +64,6 @@ export interface ClipSubmitResult {
   taskId?: string;
 }
 
-export type ClipTaskStatus =
-  | 'pending'
-  | 'processing'
-  | 'running'
-  | 'success'
-  | 'completed'
-  | 'failed'
-  | 'error';
-
-export interface ClipTaskResult {
-  task_id: string;
-  status: ClipTaskStatus;
-  progress: number;
-  video_urls: string[];
-  draft_urls: string[];
-  error: string | null;
-}
-
 /** 提交一键成片任务（依赖已保存的剪辑项目） */
 export async function submitClip(
   params: SubmitClipParams
@@ -99,12 +81,5 @@ export async function submitDraft(
   return await request('/v1/tasks/draft', {
     method: 'post',
     data: params,
-  });
-}
-
-export async function getClip(taskId: string): Promise<BaseResponse<ClipTaskResult>> {
-  return await request('/clipflow-ai/v1/task', {
-    method: 'get',
-    params: { task_id: taskId },
   });
 }
