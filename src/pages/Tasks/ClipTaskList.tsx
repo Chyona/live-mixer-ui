@@ -177,7 +177,7 @@ function ClipTaskList({
       {
         title: '操作',
         key: 'actions',
-        width: 240,
+        width: 180,
         fixed: 'right',
         render: (_, record) => {
           const showCopyDraft = canCopyDraft(record.type);
@@ -193,7 +193,7 @@ function ClipTaskList({
               >
                 详情
               </Button>
-              <Popconfirm
+              {/* <Popconfirm
                 title="确定删除该任务吗？"
                 okText="删除"
                 cancelText="取消"
@@ -210,7 +210,7 @@ function ClipTaskList({
                 >
                   删除
                 </Button>
-              </Popconfirm>
+              </Popconfirm> */}
               {showCopyDraft ? (
                 <Button
                   type="link"
