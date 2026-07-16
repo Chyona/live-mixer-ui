@@ -1718,7 +1718,8 @@
   background: var(--color-danger-bg-hover);
 }
 
-.slice-ai-select-btn {
+.slice-ai-select-btn,
+.slice-mode-switch-btn.ant-btn {
   padding: 8px 20px;
   font-size: 13px;
   font-weight: 500;
@@ -1734,10 +1735,11 @@
     background-color 0.2s ease;
 }
 
-.slice-ai-select-btn:hover:not(:disabled) {
-  color: #fff;
-  background: var(--primary-color);
-  border-color: var(--primary-color);
+.slice-ai-select-btn:hover:not(:disabled),
+.slice-mode-switch-btn.ant-btn:hover:not(:disabled) {
+  color: #fff !important;
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
 }
 
 .slice-ai-select-btn:disabled {

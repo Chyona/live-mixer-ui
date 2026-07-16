@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Space, Modal } from 'antd';
+import { Button, Popconfirm, Space } from 'antd';
 import { LuDownload } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -579,17 +579,8 @@ const ManualVideoSlicePage = () => {
   }, [paragraphs, video?.name]);
 
   const handleSwitchToTimeline = useCallback(() => {
-    Modal.confirm({
-      title: '切换到时间轴切片',
-      content: '未保存的改动切换后将丢失，确定要继续吗？',
-      okText: '确定切换',
-      cancelText: '取消',
-      className: 'noanimation-modal',
-      onOk: () => {
-        navigate(buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
-          state: { from: entryFrom },
-        });
-      },
+    navigate(buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
+      state: { from: entryFrom },
     });
   }, [entryFrom, navigate, projectId, sourceVideoId]);
 
@@ -648,9 +639,15 @@ const ManualVideoSlicePage = () => {
             <Button icon={<LuDownload size={16} />} onClick={handleDownloadSubtitle}>
               字幕下载
             </Button>
-            <Button type="primary" ghost onClick={handleSwitchToTimeline}>
-              切换到时间轴切片
-            </Button>
+            <Popconfirm
+              title="切换到时间轴切片？"
+              description="未保存的改动切换后将丢失，确定要继续吗？"
+              okText="确定切换"
+              cancelText="取消"
+              onConfirm={handleSwitchToTimeline}
+            >
+              <Button className="slice-mode-switch-btn">切换到时间轴切片</Button>
+            </Popconfirm>
           </Space>
         }
       />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Descriptions, Modal, Typography } from 'antd';
+import { Button, Descriptions, Modal, Popconfirm, Typography } from 'antd';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -410,17 +410,8 @@ const SourceVideoSlicePage = () => {
   }
 
   const handleSwitchToManual = () => {
-    Modal.confirm({
-      title: '切换到人工切片',
-      content: '未保存的改动切换后将丢失，确定要继续吗？',
-      okText: '确定切换',
-      cancelText: '取消',
-      className: 'noanimation-modal',
-      onOk: () => {
-        navigate(buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
-          state: { from: entryFrom },
-        });
-      },
+    navigate(buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
+      state: { from: entryFrom },
     });
   };
 
@@ -431,9 +422,15 @@ const SourceVideoSlicePage = () => {
       actions={
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-          <Button type="primary" ghost onClick={handleSwitchToManual}>
-            切换到人工切片
-          </Button>
+          <Popconfirm
+            title="切换到人工切片？"
+            description="未保存的改动切换后将丢失，确定要继续吗？"
+            okText="确定切换"
+            cancelText="取消"
+            onConfirm={handleSwitchToManual}
+          >
+            <Button className="slice-mode-switch-btn">切换到人工切片</Button>
+          </Popconfirm>
         </>
       }
       tip={{
