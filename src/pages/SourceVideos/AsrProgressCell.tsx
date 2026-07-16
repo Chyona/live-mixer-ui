@@ -1,5 +1,5 @@
-import { Button, Progress, Spin, Tooltip } from 'antd';
-import { LuRotateCw } from 'react-icons/lu';
+import { Button, Progress, Tooltip } from 'antd';
+import { LuCircleAlert, LuHourglass, LuRotateCw } from 'react-icons/lu';
 
 import type { AsrStatus } from '~/services/sourceVideo';
 
@@ -32,7 +32,7 @@ const AsrProgressCell = ({ status, progress, errorMessage, retrying, onRetry }: 
   if (status === 'pending') {
     return (
       <div className="source-videos-asr source-videos-asr_pending">
-        <Spin size="small" />
+        <LuHourglass size={14} className="source-videos-asr-pending-icon" aria-hidden />
         <span className="source-videos-asr-pending-text">{label}</span>
       </div>
     );
@@ -40,22 +40,22 @@ const AsrProgressCell = ({ status, progress, errorMessage, retrying, onRetry }: 
 
   if (status === 'failed') {
     const tooltipMessage = errorMessage?.trim();
+    const failedLabel = (
+      <span className="source-videos-asr-failed-text">
+        <LuCircleAlert size={14} aria-hidden />
+        解析失败
+      </span>
+    );
 
     return (
       <div className="source-videos-asr source-videos-asr_failed">
-        {tooltipMessage ? (
-          <Tooltip title={tooltipMessage}>
-            <span className="source-videos-asr-failed-text">解析失败</span>
-          </Tooltip>
-        ) : (
-          <span className="source-videos-asr-failed-text">解析失败</span>
-        )}
+        {tooltipMessage ? <Tooltip title={tooltipMessage}>{failedLabel}</Tooltip> : failedLabel}
         {onRetry ? (
           <Button
             type="link"
             size="small"
             className="source-videos-asr-retry-btn"
-            icon={<LuRotateCw size={12} />}
+            icon={<LuRotateCw size={14} />}
             loading={retrying}
             onClick={onRetry}
           >

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuCirclePlay, LuPlus, LuTextSelect, LuTrash2 } from 'react-icons/lu';
+import { LuPlus, LuScissors, LuSparkles, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
 import ListPageLayout from '~/components/ListPageLayout';
@@ -289,7 +289,7 @@ const SourceVideosPage = () => {
       {
         title: 'ASR解析进度',
         key: 'asr_progress',
-        width: 180,
+        width: 220,
         render: (_, record) => (
           <AsrProgressCell
             status={record.asr_status}
@@ -307,7 +307,7 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 270,
+        width: 260,
         fixed: 'right',
         render: (_, record) => {
           const asrDisabledReason = getAsrActionDisabledReason(
@@ -319,14 +319,14 @@ const SourceVideosPage = () => {
             <Space size={8}>
               {renderSliceAction({
                 to: buildSourceVideoSliceLink(String(record.id)),
-                icon: <LuCirclePlay size={14} />,
-                label: '进入选片',
+                icon: <LuSparkles size={14} />,
+                label: '智能切片',
                 disabledReason: asrDisabledReason,
                 onNavigate: navigate,
               })}
               {renderSliceAction({
                 to: buildManualVideoSliceLink(String(record.id)),
-                icon: <LuTextSelect size={14} />,
+                icon: <LuScissors size={14} />,
                 label: '人工切片',
                 disabledReason: asrDisabledReason,
                 onNavigate: navigate,

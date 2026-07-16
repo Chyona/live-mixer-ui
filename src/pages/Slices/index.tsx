@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button, DatePicker, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuTextSelect, LuTrash2, LuVideo } from 'react-icons/lu';
+import { LuSquarePen, LuTrash2, LuVideo } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
@@ -247,7 +247,7 @@ const SlicesPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 180,
+        width: 150,
         fixed: 'right',
         render: (_, record) => (
           <Space size={8}>
@@ -255,7 +255,7 @@ const SlicesPage = () => {
               type="link"
               size="small"
               className="list-page__action-btn"
-              icon={<LuTextSelect size={14} />}
+              icon={<LuSquarePen size={14} />}
               onClick={() =>
                 navigate(
                   buildSliceProjectEditLink({
@@ -269,7 +269,7 @@ const SlicesPage = () => {
                 )
               }
             >
-              编辑项目
+              编辑
             </Button>
             <Popconfirm
               title="确认删除该剪辑项目？"

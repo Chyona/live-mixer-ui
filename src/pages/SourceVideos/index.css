@@ -4,16 +4,23 @@
 }
 
 .source-videos-asr_failed {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .source-videos-asr_pending {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   color: var(--text-gray);
+}
+
+.source-videos-asr-pending-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary, var(--text-gray));
 }
 
 .source-videos-asr-pending-text {
@@ -23,11 +30,13 @@
 }
 
 .source-videos-asr-failed-text {
-  flex: 1;
-  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   color: var(--color-danger);
   line-height: 1.4;
+  white-space: nowrap;
   cursor: default;
 }
 
@@ -38,9 +47,11 @@
 .source-videos-asr-retry-btn {
   flex-shrink: 0;
   height: auto;
+  margin: 0;
   padding: 0;
   font-size: 12px;
   line-height: 1.4;
+  gap: 4px;
 }
 
 .source-videos-count-link {

@@ -9,6 +9,10 @@ import { getTranscript } from './transcript';
 
 type MockSourceVideo = SourceVideo & {
   ownerId: string;
+  /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
+  _lastAsrTickMs?: number;
+  /** 等待解析停留次数，避免首屏 pending 一刷新就消失 */
+  _pendingTicks?: number;
 };
 
 const CURRENT_USER_ID = '222';
@@ -61,6 +65,7 @@ function resolveMockAsrState(
   index: number,
   created_at: string
 ): Pick<SourceVideo, 'asr_status' | 'asr_progress' | 'asr_error_msg' | 'asr_started_at' | 'asr_updated_at' | 'duration'> {
+  // 演示数据以「等待 / 处理中 / 失败」为主，方便对照三种态
   const mod = index % 5;
 
   if (mod === 0) {
@@ -74,17 +79,17 @@ function resolveMockAsrState(
     };
   }
 
-  if (mod === 1) {
+  if (mod === 1 || mod === 2) {
     return {
       ...createInitialAsrState(),
       duration: 0,
     };
   }
 
-  if (mod === 2) {
+  if (mod === 3) {
     return {
       asr_status: 'processing',
-      asr_progress: 35 + (index % 40),
+      asr_progress: 18 + (index % 4) * 6,
       asr_error_msg: '',
       asr_started_at: created_at,
       asr_updated_at: created_at,
@@ -93,12 +98,12 @@ function resolveMockAsrState(
   }
 
   return {
-    asr_status: 'completed',
-    asr_progress: 100,
+    asr_status: 'processing',
+    asr_progress: 52 + (index % 5) * 7,
     asr_error_msg: '',
     asr_started_at: created_at,
     asr_updated_at: created_at,
-    duration: (3600 + index * 317) * 1000,
+    duration: 0,
   };
 }
 
@@ -159,7 +164,12 @@ function matchKeywords(text: string, keywords: string[]) {
 }
 
 function toPublicItem(item: MockSourceVideo): SourceVideo {
-  const { ownerId: _ownerId, ...rest } = item;
+  const {
+    ownerId: _ownerId,
+    _lastAsrTickMs: _tick,
+    _pendingTicks: _pending,
+    ...rest
+  } = item;
   return { ...rest, live_asr: null };
 }
 
@@ -174,20 +184,31 @@ function toPublicDetail(item: MockSourceVideo): SourceVideo {
   };
 }
 
+const ASR_TICK_INTERVAL_MS = 3000;
+
 function advanceAsrProgress(item: MockSourceVideo) {
   if (item.asr_status === 'completed' || item.asr_status === 'failed') return;
+
+  const tickAt = Date.now();
+  if (item._lastAsrTickMs && tickAt - item._lastAsrTickMs < ASR_TICK_INTERVAL_MS) return;
+  item._lastAsrTickMs = tickAt;
 
   const now = nowIso();
 
   if (item.asr_status === 'pending') {
+    item._pendingTicks = (item._pendingTicks ?? 0) + 1;
+    // 约停留 5 次 tick（~15s），方便查看「等待解析」态
+    if (item._pendingTicks < 5) return;
+
     item.asr_status = 'processing';
-    item.asr_progress = 8;
+    item.asr_progress = 6;
     item.asr_started_at = now;
     item.asr_updated_at = now;
     return;
   }
 
-  item.asr_progress = Math.min(100, item.asr_progress + 10 + Math.floor(Math.random() * 10));
+  // 演示数据推进更慢，避免很快全部变成「已完成」
+  item.asr_progress = Math.min(100, item.asr_progress + 2 + Math.floor(Math.random() * 3));
 
   if (item.asr_progress >= 100) {
     item.asr_progress = 100;
