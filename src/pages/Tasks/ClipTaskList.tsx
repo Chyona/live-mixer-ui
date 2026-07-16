@@ -157,7 +157,7 @@ function ClipTaskList({
         title: '错误信息',
         dataIndex: 'error_message',
         key: 'error_message',
-        width: 260,
+        width: 280,
         ellipsis: true,
         render: (message: string) => {
           const text = message?.trim();
