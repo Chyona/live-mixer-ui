@@ -48,3 +48,10 @@ export function buildSliceProjectEditLink(params: {
 export function getSliceEditorEntryFrom(state: unknown): SliceEditorEntryFrom | undefined {
   return (state as { from?: SliceEditorEntryFrom } | null)?.from;
 }
+
+/** 解析 URL query 中的 projectId（正整数）；非法则返回 null */
+export function parseProjectId(value: string | null | undefined): number | null {
+  if (value == null || value.trim() === '') return null;
+  const id = Number(value.trim());
+  return Number.isInteger(id) && id > 0 ? id : null;
+}

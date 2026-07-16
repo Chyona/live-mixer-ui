@@ -21,7 +21,7 @@ import {
   type SourceVideo,
 } from '~/services/sourceVideo';
 import { formatToDateTime } from '~/utils/date';
-import { formatVideoDuration } from '~/utils/duration';
+import { formatVideoDurationMs } from '~/utils/duration';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
@@ -277,7 +277,7 @@ const SourceVideosPage = () => {
         dataIndex: 'duration',
         key: 'duration',
         width: 100,
-        render: (duration: number) => formatVideoDuration(duration),
+        render: (duration: number) => (duration > 0 ? formatVideoDurationMs(duration) : '-'),
       },
       {
         title: '创建时间',

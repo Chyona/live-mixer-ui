@@ -98,7 +98,7 @@ function resolveMockAsrState(
     asr_error_msg: '',
     asr_started_at: created_at,
     asr_updated_at: created_at,
-    duration: 3600 + index * 317,
+    duration: (3600 + index * 317) * 1000,
   };
 }
 
@@ -130,7 +130,7 @@ const sourceVideos: MockSourceVideo[] = [
     name: '其他用户直播素材',
     live_url: 'rtmp://live.example.com/stream/other',
     remark: '不应展示',
-    duration: 1200,
+    duration: 1200 * 1000,
     ext: '',
     asr_error_msg: '',
     asr_started_at: isoAt('05', 12),
@@ -194,7 +194,7 @@ function advanceAsrProgress(item: MockSourceVideo) {
     item.asr_status = 'completed';
     item.asr_error_msg = '';
     if (item.duration === 0) {
-      item.duration = 1800 + Math.floor(Math.random() * 3600);
+      item.duration = (1800 + Math.floor(Math.random() * 3600)) * 1000;
     }
   }
 

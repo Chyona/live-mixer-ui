@@ -24,6 +24,7 @@ export interface SourceVideo {
   name: string;
   live_url: string;
   remark: string;
+  /** 时长，单位毫秒 */
   duration: number;
   ext: string;
   asr_status: AsrStatus;

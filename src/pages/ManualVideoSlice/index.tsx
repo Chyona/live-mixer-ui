@@ -23,6 +23,7 @@ import type { SliceEditorEntryFrom } from '~/routes/links';
 import {
   buildManualVideoSliceLink,
   buildSourceVideoSliceLink,
+  parseProjectId,
 } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import TranscriptPanel from './components/TranscriptPanel';
@@ -66,8 +67,8 @@ const ManualVideoSlicePage = () => {
   const rafRef = useRef<number>(0);
 
   /** 项目管理进入时带 ?projectId=；源视频首次保存后也会回写 */
-  const projectIdFromQuery = searchParams.get('projectId')?.trim() || '';
-  const [projectId, setProjectId] = useState(projectIdFromQuery);
+  const projectIdFromQuery = parseProjectId(searchParams.get('projectId'));
+  const [projectId, setProjectId] = useState<number | null>(projectIdFromQuery);
   /** 保存/另存为后回写 URL，不触发整页数据重载 */
   const skipProjectReloadRef = useRef(false);
 
@@ -136,7 +137,7 @@ const ManualVideoSlicePage = () => {
   const effectiveActiveCopySegmentId = playbackActiveCopySegmentId ?? activeSegmentId;
 
   const syncProjectIdInUrl = useCallback(
-    (nextProjectId: string, options?: { reload?: boolean }) => {
+    (nextProjectId: number, options?: { reload?: boolean }) => {
       if (!nextProjectId) return;
 
       setProjectId(nextProjectId);
@@ -147,7 +148,7 @@ const ManualVideoSlicePage = () => {
       }
 
       const nextSearch = new URLSearchParams(searchParams);
-      nextSearch.set('projectId', nextProjectId);
+      nextSearch.set('projectId', String(nextProjectId));
       navigate(
         { pathname: location.pathname, search: `?${nextSearch.toString()}` },
         { replace: true, state: location.state }
@@ -188,7 +189,7 @@ const ManualVideoSlicePage = () => {
       setDraftName((current) => current || defaultProjectName);
 
       if (!projectIdFromQuery) {
-        setProjectId('');
+        setProjectId(null);
         setProjectRemark('');
         if (!hasAiSegments) {
           setSelectedSegments([]);
@@ -198,7 +199,7 @@ const ManualVideoSlicePage = () => {
 
       const projectRes = projectSettled;
       if (projectRes?.code === 0 && projectRes.data) {
-        setProjectId(String(projectRes.data.id || projectIdFromQuery));
+        setProjectId(projectRes.data.id || projectIdFromQuery);
         setProjectRemark(projectRes.data.remark || '');
         if (!hasAiSegments && projectRes.data.segments.length > 0) {
           setSelectedSegments(projectRes.data.segments);
@@ -408,7 +409,7 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(String(response.data.id), { reload: false });
+          syncProjectIdInUrl(response.data.id, { reload: false });
         }
         setDraftName(response.data.name);
         setProjectRemark(response.data.remark || nextRemark);
@@ -490,7 +491,7 @@ const ManualVideoSlicePage = () => {
         }
 
         if (response.data.id) {
-          syncProjectIdInUrl(String(response.data.id), { reload: false });
+          syncProjectIdInUrl(response.data.id, { reload: false });
         }
         localStorage.setItem(DRAFT_STORAGE_KEY, response.data.name);
         setDraftName(response.data.name);

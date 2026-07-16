@@ -20,9 +20,13 @@ import {
 } from '~/services/sliceProject';
 import { showAppError, toast } from '~/utils/toast';
 import { formatToDateTime } from '~/utils/date';
-import { formatVideoDuration } from '~/utils/duration';
+import { formatVideoDurationMs } from '~/utils/duration';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
-import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
+import {
+  buildManualVideoSliceLink,
+  buildSourceVideoSliceLink,
+  parseProjectId,
+} from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import SelectedSegmentsPanel from './SelectedSegmentsPanel';
@@ -48,7 +52,7 @@ function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] 
 const SourceVideoSlicePage = () => {
   const { id: sourceVideoId = '' } = useParams();
   const [searchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId')?.trim() || '';
+  const projectId = parseProjectId(searchParams.get('projectId'));
   const navigate = useNavigate();
   const entryFrom = useSliceEntryFrom();
   const [loading, setLoading] = useState(true);
@@ -540,7 +544,7 @@ const SourceVideoSlicePage = () => {
               </Typography.Paragraph>
             </Descriptions.Item>
             <Descriptions.Item label="时长">
-              {video.duration > 0 ? formatVideoDuration(video.duration) : '-'}
+              {video.duration > 0 ? formatVideoDurationMs(video.duration) : '-'}
             </Descriptions.Item>
             <Descriptions.Item label="创建时间">{formatToDateTime(video.created_at)}</Descriptions.Item>
             <Descriptions.Item label="预览状态">

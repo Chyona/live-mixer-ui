@@ -19,6 +19,11 @@ export function formatVideoDuration(seconds: number): string {
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 }
 
+/** 源视频等接口字段：时长单位为毫秒 */
+export function formatVideoDurationMs(ms: number): string {
+  return formatVideoDuration(ms / 1000);
+}
+
 export function formatMediaTime(seconds: number, withMs = false): string {
   const safeSeconds = normalizeSeconds(seconds);
   const totalSeconds = Math.floor(safeSeconds);
