@@ -34,14 +34,11 @@ function buildActionDisabledReason(options: {
 
 interface SelectedSegmentsPanelProps {
   videoDuration: number;
-  currentTime: number;
   selectedRanges: TimeRange[];
   totalSelectedDuration: number;
   maxTotalDuration: number;
   submitting: boolean;
   aiSelecting: boolean;
-  autoPlayOnSelect: boolean;
-  onAutoPlayChange: (value: boolean) => void;
   zoomLevel: number;
   onZoomLevelChange: (level: number) => void;
   activeRangeId: string | null;
@@ -55,14 +52,11 @@ interface SelectedSegmentsPanelProps {
 
 const SelectedSegmentsPanel = ({
   videoDuration,
-  currentTime,
   selectedRanges,
   totalSelectedDuration,
   maxTotalDuration,
   submitting,
   aiSelecting,
-  autoPlayOnSelect,
-  onAutoPlayChange,
   zoomLevel,
   onZoomLevelChange,
   activeRangeId,
@@ -117,18 +111,14 @@ const SelectedSegmentsPanel = ({
               已选中片段
               <span className="slice-selected-subtitle">（左键拖拽可继续新增片段）</span>
             </h3>
-            <p className="slice-selected-stats">
-              总时长约 {formatVideoDuration(videoDuration)} · 播放位置 {formatVideoDuration(currentTime)}
-              {selectedRanges.length > 0 && (
-                <>
-                  {' '}
-                  · 已选时长 {formatVideoDuration(totalSelectedDuration)}
-                  {isOverLimit && (
-                    <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
-                  )}
-                </>
-              )}
-            </p>
+            {selectedRanges.length > 0 && (
+              <p className="slice-selected-stats">
+                已选时长 {formatVideoDuration(totalSelectedDuration)}
+                {isOverLimit && (
+                  <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
+                )}
+              </p>
+            )}
           </div>
         </div>
 
@@ -141,7 +131,7 @@ const SelectedSegmentsPanel = ({
             onClick={onClearAll}
             disabled={selectedRanges.length === 0 || actionLoading}
           >
-            清空全部
+            清空
           </button>
         </div>
       </div>
@@ -187,9 +177,16 @@ const SelectedSegmentsPanel = ({
           )}
         </div>
 
-        <div className="slice-selected-zoom">
-          <span className="slice-selected-zoom-label">时间轴缩放</span>
-          <TimelineZoomControls zoomLevel={zoomLevel} onChange={onZoomLevelChange} />
+        <div className="slice-selected-meta">
+          {videoDuration > 0 && (
+            <span className="slice-timeline-duration">
+              视频总时长 {formatVideoDuration(videoDuration)}
+            </span>
+          )}
+          <div className="slice-selected-zoom">
+            <span className="slice-selected-zoom-label">时间轴缩放</span>
+            <TimelineZoomControls zoomLevel={zoomLevel} onChange={onZoomLevelChange} />
+          </div>
         </div>
       </div>
     </div>

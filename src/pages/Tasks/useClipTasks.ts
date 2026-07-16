@@ -74,7 +74,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
 
   useEffect(() => {
     void refreshTasks({
-      showLoading: tasksRef.current.length === 0,
+      showLoading: true,
     });
   }, [
     filters.type,

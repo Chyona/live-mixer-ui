@@ -1,12 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { Button, Input } from 'antd';
-import { LuChevronDown, LuRefreshCw, LuSearch, LuSlidersHorizontal } from 'react-icons/lu';
+import { LuChevronDown, LuRefreshCw, LuSlidersHorizontal } from 'react-icons/lu';
 
 export interface ListSearchToolbarProps {
   keyword: string;
   onKeywordChange: (value: string) => void;
   keywordPlaceholder?: string;
   onSearch: () => void;
+  /** 点击清除按钮时：清空关键词并触发无关键词查询 */
+  onKeywordClear?: () => void;
+  /** 搜索请求进行中（Input.Search 转圈） */
+  loading?: boolean;
   /** 刷新当前列表 */
   onRefresh?: () => void;
   refreshing?: boolean;
@@ -26,6 +30,7 @@ const ListSearchToolbar = ({
   onKeywordChange,
   keywordPlaceholder = '搜索',
   onSearch,
+  onKeywordClear,
   onRefresh,
   refreshing = false,
   advanced,
@@ -39,14 +44,15 @@ const ListSearchToolbar = ({
   return (
     <div className="list-page__toolbar-search">
       <div className="list-page__toolbar-main">
-        <Input
+        <Input.Search
           className="list-page__search-primary"
+          size="large"
           allowClear
-          prefix={<LuSearch size={16} />}
           placeholder={keywordPlaceholder}
           value={keyword}
           onChange={(event) => onKeywordChange(event.target.value)}
-          onPressEnter={onSearch}
+          onSearch={() => onSearch()}
+          onClear={onKeywordClear}
         />
 
         {inlineFilters}

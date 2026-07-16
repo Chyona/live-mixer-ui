@@ -36,6 +36,7 @@
   justify-content: flex-end;
 }
 
+.slice-prompt-panel__header-actions .slice-prompt-panel__search,
 .slice-prompt-panel__header-actions .ant-input-affix-wrapper {
   flex: 1;
   min-width: 0;

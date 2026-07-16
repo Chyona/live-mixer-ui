@@ -201,7 +201,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
           成片前需先选择提示词，新建后即可在此快速选用
         </p>
         <div className="slice-prompt-panel__empty-actions">
-          <Button type="primary" size="small" icon={<LuPlus size={14} />} onClick={openCreate}>
+          <Button type="primary" size="middle" icon={<LuPlus size={14} />} onClick={openCreate}>
             新增提示词
           </Button>
         </div>
@@ -218,16 +218,24 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
         </div>
 
         <div className="slice-prompt-panel__header-actions">
-          <Input
+          <Input.Search
+            className="slice-prompt-panel__search"
+            size="middle"
             allowClear
-            size="small"
-            prefix={<LuSearch size={14} />}
+            // loading={loading && !loadingMore}
             placeholder="搜索名称 / 提示词"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={handleSearch}
+            onSearch={(_value, _event, info) => {
+              if (info?.source === 'clear') {
+                handleClearSearch();
+                return;
+              }
+              handleSearch();
+            }}
+            onClear={handleClearSearch}
           />
-          <Button type="primary" size="small" icon={<LuPlus size={14} />} onClick={openCreate}>
+          <Button type="primary" size="middle" icon={<LuPlus size={14} />} onClick={openCreate}>
             新增
           </Button>
         </div>

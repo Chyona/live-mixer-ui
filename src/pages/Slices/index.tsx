@@ -44,6 +44,7 @@ const SlicesPage = () => {
     setKeyword,
     appliedKeyword,
     applySearch: applyKeywordSearch,
+    clearSearch: clearKeywordSearch,
     dateRange,
     handleDateChange,
     dateFilters,
@@ -58,7 +59,7 @@ const SlicesPage = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
-    const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
+    const silent = options?.silent ?? false;
     const refresh = options?.refresh ?? false;
 
     if (refresh) {
@@ -105,6 +106,11 @@ const SlicesPage = () => {
 
   const applySearch = () => {
     applyKeywordSearch();
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    clearKeywordSearch();
     setPage(1);
   };
 
@@ -309,6 +315,8 @@ const SlicesPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索项目名称 / 源视频名称 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onKeywordClear={clearSearch}
+          loading={loading || refreshing}
           onRefresh={() => void loadList({ refresh: true })}
           refreshing={refreshing}
           hasActiveAdvancedFilters={Boolean(dateRange?.[0])}

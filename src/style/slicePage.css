@@ -1542,8 +1542,16 @@
 .slice-selected-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.slice-timeline-duration {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .slice-selected-zoom {
@@ -1611,8 +1619,9 @@
 
 .slice-selected-stats {
   margin: 0;
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-gray);
 }
 
 .slice-selected-header-right {
@@ -1662,9 +1671,12 @@
   align-items: center;
 }
 
+.slice-selected-toolbar .slice-selected-meta {
+  align-self: flex-end;
+}
+
 .slice-selected-toolbar .slice-selected-zoom {
   flex-shrink: 0;
-  align-self: flex-end;
 }
 
 .slice-selected-empty {
@@ -1957,7 +1969,7 @@
     align-items: stretch;
   }
 
-  .slice-selected-toolbar .slice-selected-zoom {
+  .slice-selected-toolbar .slice-selected-meta {
     align-self: flex-end;
   }
 }

@@ -209,7 +209,7 @@ export function toPublicSliceProject(project: SliceProjectRecord) {
     live_id: Number(project.sourceVideoId) || 0,
     live_name: project.sourceVideoName,
     prompt_id: 0,
-    created_by: String(project.createdBy || 'admin'),
+    created_by: String(project.createdBy || '管理员'),
     created_at: project.updatedAt,
     updated_at: project.updatedAt,
     remark: project.remarkName,

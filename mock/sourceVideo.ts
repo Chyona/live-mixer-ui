@@ -122,7 +122,7 @@ function buildMockSourceVideos(): MockSourceVideo[] {
       ext: '',
       created_at,
       updated_at: created_at,
-      created_by: 1,
+      created_by: '管理员',
       ownerId: CURRENT_USER_ID,
       ...resolveMockAsrState(index, created_at),
     };
@@ -145,7 +145,7 @@ const sourceVideos: MockSourceVideo[] = [
     asr_progress: 100,
     created_at: isoAt('05', 12),
     updated_at: isoAt('05', 12),
-    created_by: 2,
+    created_by: '其他用户',
     ownerId: 'other-user',
   },
 ];
@@ -313,7 +313,7 @@ export default [
         ...createInitialAsrState(),
         created_at: now,
         updated_at: now,
-        created_by: 1,
+        created_by: '管理员',
         ownerId: CURRENT_USER_ID,
       };
 

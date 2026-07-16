@@ -430,7 +430,7 @@ export function toPublicClipTask(task: StoredClipTask) {
     sys_prompt: task.promptName || task.clipName,
     video_project_name: task.clipName,
     draft_url: task.draftUrls[0] || '',
-    created_by: 1,
+    created_by: '管理员',
     error_message: task.message ?? '',
     ext: JSON.stringify(ext),
     created_at: task.createdAt,

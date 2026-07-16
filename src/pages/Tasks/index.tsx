@@ -29,6 +29,7 @@ const TasksPage = () => {
     setKeyword,
     appliedKeyword,
     applySearch: applyKeywordSearch,
+    clearSearch: clearKeywordSearch,
     dateRange,
     handleDateChange,
     dateFilters,
@@ -67,6 +68,10 @@ const TasksPage = () => {
     applyKeywordSearch();
   };
 
+  const clearSearch = () => {
+    clearKeywordSearch();
+  };
+
   const handleTableChange = (pagination: TablePaginationConfig) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
@@ -95,6 +100,8 @@ const TasksPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索项目名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onKeywordClear={clearSearch}
+          loading={loading || refreshing}
           onRefresh={() => void reload()}
           refreshing={refreshing}
           hasActiveAdvancedFilters={Boolean(dateRange?.[0] || status)}

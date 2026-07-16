@@ -484,14 +484,11 @@ const SourceVideoSlicePage = () => {
             <div className="slice-timeline-section">
               <SelectedSegmentsPanel
                 videoDuration={videoDuration}
-                currentTime={currentTime}
                 selectedRanges={selectedRanges}
                 totalSelectedDuration={totalSelectedDuration}
                 maxTotalDuration={MAX_TOTAL_DURATION}
                 submitting={submitting}
                 aiSelecting={aiSelecting}
-                autoPlayOnSelect={autoPlayOnSelect}
-                onAutoPlayChange={setAutoPlayOnSelect}
                 zoomLevel={timelineZoomLevel}
                 onZoomLevelChange={setTimelineZoomLevel}
                 activeRangeId={activeRangeId}

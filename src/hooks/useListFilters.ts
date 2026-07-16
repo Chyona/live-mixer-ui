@@ -12,6 +12,12 @@ export function useListFilters(options?: { initialKeyword?: string }) {
     setAppliedKeyword(keyword.trim());
   }, [keyword]);
 
+  /** 清空关键词并立即生效（用于输入框清除按钮） */
+  const clearSearch = useCallback(() => {
+    setKeyword('');
+    setAppliedKeyword('');
+  }, []);
+
   const handleDateChange = useCallback((value: [Dayjs | null, Dayjs | null] | null) => {
     setDateRange(value);
   }, []);
@@ -23,6 +29,7 @@ export function useListFilters(options?: { initialKeyword?: string }) {
     setKeyword,
     appliedKeyword,
     applySearch,
+    clearSearch,
     dateRange,
     handleDateChange,
     dateFilters,

@@ -33,7 +33,8 @@ const AiPromptsPage = () => {
     robots: 'noindex, nofollow',
   });
 
-  const { keyword, setKeyword, appliedKeyword, applySearch: applyKeywordSearch } = useListFilters();
+  const { keyword, setKeyword, appliedKeyword, applySearch: applyKeywordSearch, clearSearch: clearKeywordSearch } =
+    useListFilters();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -47,7 +48,7 @@ const AiPromptsPage = () => {
   const [previewPrompt, setPreviewPrompt] = useState<AiPrompt | null>(null);
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
-    const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
+    const silent = options?.silent ?? false;
     const refresh = options?.refresh ?? false;
 
     if (refresh) {
@@ -92,6 +93,11 @@ const AiPromptsPage = () => {
 
   const applySearch = () => {
     applyKeywordSearch();
+    setPage(1);
+  };
+
+  const clearSearch = () => {
+    clearKeywordSearch();
     setPage(1);
   };
 
@@ -305,6 +311,8 @@ const AiPromptsPage = () => {
           onKeywordChange={setKeyword}
           keywordPlaceholder="搜索名称 / 提示词 / 备注（支持 关键词A+关键词B）"
           onSearch={applySearch}
+          onKeywordClear={clearSearch}
+          loading={loading || refreshing}
           onRefresh={() => void loadList({ refresh: true })}
           refreshing={refreshing}
           extra={
