@@ -459,6 +459,13 @@
 
 .list-page__action-btn {
   padding-inline: 0;
+  gap: 4px;
+}
+
+.list-page__action-btn .ant-btn-icon {
+  margin-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .list-page__cell-link {

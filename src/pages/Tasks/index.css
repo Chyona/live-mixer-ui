@@ -7,7 +7,8 @@
 .tasks-type-label {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: 1px 8px;
+  border: 1px solid transparent;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
@@ -15,21 +16,27 @@
   white-space: nowrap;
 }
 
+/* 生成草稿：青绿，与状态色区分 */
 .tasks-type-label_clip_generate,
 .tasks-type-label_draft {
-  background: var(--color-info-bg);
-  color: var(--color-info-dark);
+  color: #0f766e;
+  background: rgba(13, 148, 136, 0.08);
+  border-color: rgba(13, 148, 136, 0.16);
 }
 
+/* AI 选片：淡紫 */
 .tasks-type-label_ai_slice_select,
 .tasks-type-label_ai_slice {
-  background: var(--color-purple-bg);
-  color: var(--color-purple);
+  color: #6b4fbb;
+  background: rgba(114, 46, 209, 0.08);
+  border-color: rgba(114, 46, 209, 0.16);
 }
 
+/* 一键成片：主色蓝 */
 .tasks-type-label_ai_slice_draft {
-  background: var(--color-success-bg, var(--color-info-bg));
-  color: var(--color-success-dark, var(--primary-color));
+  color: var(--primary-color);
+  background: rgba(var(--primary-color-rgb), 0.08);
+  border-color: rgba(var(--primary-color-rgb), 0.18);
 }
 
 .tasks-status {
@@ -50,11 +57,11 @@
 }
 
 .tasks-status_pending {
-  color: var(--text-secondary);
+  color: var(--text-gray);
 }
 
 .tasks-status_pending .tasks-status-dot {
-  background: var(--text-secondary);
+  background: var(--text-gray);
 }
 
 .tasks-status_processing,
@@ -102,6 +109,11 @@
 
 .tasks-progress-bar.ant-progress-status-success .ant-progress-text {
   color: var(--color-success) !important;
+  font-size: 14px;
+}
+
+.tasks-progress-bar.ant-progress-status-success .ant-progress-text .anticon {
+  font-size: 14px;
 }
 
 .tasks-error-message {
@@ -160,6 +172,40 @@
 .tasks-detail-descriptions .ant-descriptions-item-label {
   width: 96px;
   color: var(--text-gray);
+}
+
+.tasks-detail-descriptions .ant-descriptions-item-content {
+  align-items: flex-start;
+}
+
+.tasks-detail-status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tasks-detail-error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger-dark);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.tasks-detail-progress {
+  max-width: 280px;
+  margin-bottom: 0;
+}
+
+.tasks-detail-draft {
+  margin-bottom: 0 !important;
+  word-break: break-all;
+  color: var(--primary-color);
 }
 
 .tasks-preview-modal .ant-modal-body {

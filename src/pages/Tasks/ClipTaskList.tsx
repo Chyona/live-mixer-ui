@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Popconfirm, Progress, Space } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuCopy, LuInfo, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuFileText, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageTable from '~/components/ListPageTable';
@@ -66,7 +66,7 @@ function renderProgress(progress: number, status: ClipTaskItemStatus) {
       percent={isCompleted ? 100 : percent}
       size="small"
       status={isCompleted ? 'success' : 'normal'}
-      format={(value) => (isCompleted ? undefined : `${value}%`)}
+      {...(isCompleted ? {} : { format: (value?: number) => `${value ?? 0}%` })}
     />
   );
 }
@@ -188,7 +188,7 @@ function ClipTaskList({
                 type="link"
                 size="small"
                 className="list-page__action-btn"
-                icon={<LuInfo size={14} />}
+                icon={<LuFileText size={14} />}
                 onClick={() => setDetailTask(record)}
               >
                 详情
