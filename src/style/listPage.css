@@ -273,6 +273,8 @@
 }
 
 .list-page__table-wrap .ant-spin-container > .ant-table {
+  position: relative;
+  z-index: 0;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
@@ -314,6 +316,8 @@
   max-width: 100%;
   border-radius: 0 !important;
   overflow: hidden;
+  /* 固定列 sticky 不得画出表格区域盖住分页 */
+  clip-path: inset(0);
 }
 
 .list-page__table-wrap .ant-table-header,
@@ -322,6 +326,8 @@
 }
 
 .list-page__table-wrap .ant-table-body {
+  position: relative;
+  z-index: 0;
   overflow: auto !important;
 }
 
@@ -352,7 +358,9 @@
   max-width: 100%;
   box-sizing: border-box;
   position: relative;
-  z-index: 1;
+  /* 高于固定操作列，避免被遮挡 */
+  z-index: 5;
+  isolation: isolate;
 }
 
 .list-page__table-wrap .ant-table-pagination .ant-pagination {

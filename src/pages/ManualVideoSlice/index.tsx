@@ -16,6 +16,7 @@ import {
   updateSliceProject,
 } from '~/services/sliceProject';
 import { submitDraft } from '~/services/slice';
+import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
 import { isPlayableVideoUrl } from '~/utils/videoUrl';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
@@ -54,6 +55,11 @@ interface ManualSliceLocationState {
 
 const MAX_TOTAL_DURATION = 30 * 60;
 const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
+
+/** 人工切片项目自动命名：人工切片_时间 */
+function buildManualProjectAutoName() {
+  return `人工切片_${formatToDateTime(Date.now(), 'YYYY-MM-DD_HH:mm:ss')}`;
+}
 
 const ManualVideoSlicePage = () => {
   const { id: sourceVideoId = '' } = useParams();
@@ -185,8 +191,7 @@ const ManualVideoSlicePage = () => {
       setParagraphs(
         normalizeTranscriptParagraphs(liveAsrToTranscriptParagraphs(videoRes.data.live_asr))
       );
-      const defaultProjectName = `${videoRes.data.name} 剪辑项目`;
-      setDraftName((current) => current || defaultProjectName);
+      setDraftName((current) => current || buildManualProjectAutoName());
 
       if (!projectIdFromQuery) {
         setProjectId(null);
@@ -385,7 +390,7 @@ const ManualVideoSlicePage = () => {
         return;
       }
 
-      const nextName = options?.name?.trim() || draftName || `${video.name} 剪辑项目`;
+      const nextName = options?.name?.trim() || draftName || buildManualProjectAutoName();
       const nextRemark = options?.remark ?? projectRemark;
       const payload = {
         live_id: video.id,
@@ -781,8 +786,10 @@ const ManualVideoSlicePage = () => {
         }
         defaultName={
           saveModalMode === 'saveAs'
-            ? `${draftName || video?.name || '剪辑项目'}-副本`
-            : draftName || `${video?.name || '未命名'} 剪辑项目`
+            ? `${draftName || '人工切片'}-副本`
+            : saveModalMode === 'create'
+              ? buildManualProjectAutoName()
+              : draftName || buildManualProjectAutoName()
         }
         defaultRemark={saveModalMode === 'saveAs' ? '' : projectRemark}
         showRemark={saveModalMode !== 'export'}
