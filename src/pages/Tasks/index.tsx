@@ -5,14 +5,12 @@ import type { TablePaginationConfig } from 'antd/es/table';
 import { LuVideo } from 'react-icons/lu';
 
 import { useAppSEO } from '~/hooks/useAppSEO';
-import { useListTableScrollY } from '~/hooks/useListTableScrollY';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
-import PageLoading from '~/components/PageLoading';
 import ClipTaskList from './ClipTaskList';
-import { useClipTasks } from './useClipTasks';
+import { CLIP_TASK_POLL_INTERVAL_SEC, useClipTasks } from './useClipTasks';
 import { useListFilters } from '~/hooks/useListFilters';
-import { buildListPagePagination, handleTablePaginationChange } from '~/utils/table';
+import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import type { ClipTaskItemStatus } from '~/services/task';
 import { CLIP_TASK_STATUS_OPTIONS } from './utils';
 
@@ -51,16 +49,8 @@ const TasksPage = () => {
     [appliedKeyword, dateFilters, page, pageSize, status]
   );
 
-  const { tasks, total, loading, refreshing, polling, hasActiveTasks, reload, refreshTask } =
+  const { tasks, total, loading, refreshing, polling, hasActiveTasks, reload } =
     useClipTasks(filters);
-
-  const { wrapRef, scrollY, needScroll, compactPagination } = useListTableScrollY([
-    loading,
-    tasks.length,
-    page,
-    pageSize,
-    total,
-  ]);
 
   useEffect(() => {
     setPage(1);
@@ -76,21 +66,11 @@ const TasksPage = () => {
     applyKeywordSearch();
   };
 
-  const tablePagination = buildListPagePagination(
-    {
-      current: page,
-      pageSize,
-      total,
-    },
-    { compact: compactPagination }
-  );
-
   const handleTableChange = (pagination: TablePaginationConfig) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
   };
 
   const hasActiveFilters = Boolean(appliedKeyword || dateRange?.[0] || status);
-  const isEmpty = !loading && total === 0;
 
   return (
     <ListPageLayout
@@ -100,7 +80,11 @@ const TasksPage = () => {
         <>
           统一查看「AI 选片」「生成草稿」「一键成片」任务的执行进度、状态与操作。
           {hasActiveTasks && (
-            <span className="tasks-polling-hint">{polling ? '进度刷新中...' : '进行中任务将每 3 秒自动刷新'}</span>
+            <span className="tasks-polling-hint">
+              {polling
+                ? '进度刷新中...'
+                : `进行中任务将每 ${CLIP_TASK_POLL_INTERVAL_SEC} 秒自动刷新`}
+            </span>
           )}
         </>
       }
@@ -139,56 +123,38 @@ const TasksPage = () => {
         />
       }
     >
-      <div
-        ref={wrapRef}
-        className={[
-          'list-page__table-wrap',
-          'list-page__panel',
-          needScroll ? 'list-page__table-wrap--scrollable' : '',
-          compactPagination ? 'list-page__table-wrap--compact-pagination' : '',
-          isEmpty ? 'list-page__table-wrap--empty' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={
-          needScroll && scrollY !== undefined
-            ? ({ '--list-table-body-height': `${scrollY}px` } as React.CSSProperties)
-            : undefined
+      <ClipTaskList
+        tasks={tasks}
+        loading={loading && tasks.length === 0}
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          ...DEFAULT_TABLE_PAGINATION,
+        }}
+        onTableChange={handleTableChange}
+        onChanged={reload}
+        empty={
+          hasActiveFilters
+            ? {
+                title: '未找到匹配的任务',
+                description: '试试更换关键词，或调整状态与日期范围后重新搜索',
+              }
+            : {
+                title: '暂无生成任务',
+                description:
+                  '在源视频切片页提交「AI 选片」「生成草稿」或「一键成片」后，任务进度会显示在这里',
+                tone: 'primary',
+                action: (
+                  <Link to="/source-videos">
+                    <Button type="primary" icon={<LuVideo size={16} />}>
+                      前往源视频管理
+                    </Button>
+                  </Link>
+                ),
+              }
         }
-      >
-        {loading && tasks.length === 0 ? (
-          <PageLoading />
-        ) : (
-          <ClipTaskList
-            tasks={tasks}
-            total={total}
-            scrollY={needScroll ? scrollY : undefined}
-            pagination={tablePagination}
-            onTableChange={handleTableChange}
-            onChanged={reload}
-            onRefreshTask={refreshTask}
-            empty={
-              hasActiveFilters
-                ? {
-                  title: '未找到匹配的任务',
-                  description: '试试更换关键词，或调整状态与日期范围后重新搜索',
-                }
-                : {
-                  title: '暂无生成任务',
-                    description: '在源视频切片页提交「AI 选片」「生成草稿」或「一键成片」后，任务进度会显示在这里',
-                  tone: 'primary',
-                  action: (
-                    <Link to="/source-videos">
-                      <Button type="primary" icon={<LuVideo size={16} />}>
-                        前往源视频管理
-                      </Button>
-                    </Link>
-                  ),
-                }
-            }
-          />
-        )}
-      </div>
+      />
     </ListPageLayout>
   );
 };

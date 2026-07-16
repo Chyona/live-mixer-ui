@@ -123,27 +123,8 @@
   white-space: nowrap;
 }
 
-.tasks-table .ant-table-cell {
-  overflow: hidden;
-}
-
 .tasks-error-empty {
   color: var(--text-gray);
-}
-
-.tasks-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tasks-actions-row {
-  flex-wrap: wrap;
-}
-
-.tasks-actions .ant-btn-link,
-.tasks-actions-row .ant-btn-link {
-  padding-inline: 4px;
 }
 
 .tasks-detail-link {

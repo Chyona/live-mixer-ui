@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Popconfirm, Progress, Space, Table } from 'antd';
+import { Button, Popconfirm, Progress, Space } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuCopy, LuInfo, LuRefreshCw, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuInfo, LuTrash2 } from 'react-icons/lu';
 
 import EllipsisTooltip from '~/components/EllipsisTooltip';
-import ListTableEmpty, { type ListTableEmptyProps } from '~/components/ListTableEmpty';
+import ListPageTable from '~/components/ListPageTable';
+import type { ListTableEmptyProps } from '~/components/ListTableEmpty';
 import { AppError } from '~/services/http';
 import {
   deleteClipTask,
@@ -25,12 +26,10 @@ import {
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
-  total: number;
-  scrollY?: number;
+  loading?: boolean;
   pagination: TablePaginationConfig | false;
   onTableChange: (pagination: TablePaginationConfig) => void;
   onChanged: () => Promise<void>;
-  onRefreshTask: (taskId: string | number) => Promise<void>;
   empty?: ListTableEmptyProps;
 }
 
@@ -74,17 +73,14 @@ function renderProgress(progress: number, status: ClipTaskItemStatus) {
 
 function ClipTaskList({
   tasks,
-  total,
-  scrollY,
+  loading = false,
   pagination,
   onTableChange,
   onChanged,
-  onRefreshTask,
   empty,
 }: ClipTaskListProps) {
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [refreshingId, setRefreshingId] = useState<number | null>(null);
 
   const handleDelete = useCallback(
     async (taskId: number) => {
@@ -108,18 +104,6 @@ function ClipTaskList({
       }
     },
     [onChanged]
-  );
-
-  const handleRefresh = useCallback(
-    async (taskId: number) => {
-      setRefreshingId(taskId);
-      try {
-        await onRefreshTask(taskId);
-      } finally {
-        setRefreshingId(null);
-      }
-    },
-    [onRefreshTask]
   );
 
   const handleCopyDraft = useCallback(async (url: string) => {
@@ -149,6 +133,7 @@ function ClipTaskList({
         title: '项目名称',
         dataIndex: 'video_project_name',
         key: 'video_project_name',
+        minWidth: 220,
         ellipsis: true,
         render: (_, record) => (
           <EllipsisTooltip text={getClipTaskDisplayName(record)} className="tasks-cell-ellipsis" />
@@ -192,80 +177,72 @@ function ClipTaskList({
       {
         title: '操作',
         key: 'actions',
-        width: 245,
+        width: 240,
+        fixed: 'right',
         render: (_, record) => {
           const showCopyDraft = canCopyDraft(record.type);
           const draftUrl = record.draft_url?.trim() || '';
-
           return (
-            <div className="tasks-actions">
-              <Space size={0} className="tasks-actions-row" wrap>
+            <Space size={8} wrap>
+              <Button
+                type="link"
+                size="small"
+                className="list-page__action-btn"
+                icon={<LuInfo size={14} />}
+                onClick={() => setDetailTask(record)}
+              >
+                详情
+              </Button>
+              <Popconfirm
+                title="确定删除该任务吗？"
+                okText="删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true, loading: deletingId === record.id }}
+                onConfirm={() => void handleDelete(record.id)}
+              >
                 <Button
                   type="link"
                   size="small"
-                  icon={<LuRefreshCw size={14} />}
-                  loading={refreshingId === record.id}
-                  onClick={() => void handleRefresh(record.id)}
+                  danger
+                  className="list-page__action-btn"
+                  icon={<LuTrash2 size={14} />}
+                  loading={deletingId === record.id}
                 >
-                  同步状态
+                  删除
                 </Button>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<LuInfo size={14} />}
-                  onClick={() => setDetailTask(record)}
-                >
-                  详情
-                </Button>
-                <Popconfirm
-                  title="确定删除该任务吗？"
-                  okText="删除"
-                  cancelText="取消"
-                  onConfirm={() => void handleDelete(record.id)}
-                >
-                  <Button
-                    type="link"
-                    size="small"
-                    danger
-                    icon={<LuTrash2 size={14} />}
-                    loading={deletingId === record.id}
-                  >
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
+              </Popconfirm>
               {showCopyDraft ? (
-                <div className="tasks-actions-row">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<LuCopy size={14} />}
-                    disabled={!draftUrl}
-                    onClick={() => void handleCopyDraft(draftUrl)}
-                  >
-                    复制草稿地址
-                  </Button>
-                </div>
+                <Button
+                  type="link"
+                  size="small"
+                  className="list-page__action-btn"
+                  icon={<LuCopy size={14} />}
+                  disabled={!draftUrl}
+                  onClick={() => void handleCopyDraft(draftUrl)}
+                >
+                  草稿地址
+                </Button>
               ) : null}
-            </div>
+            </Space>
           );
         },
       },
     ],
-    [deletingId, handleCopyDraft, handleDelete, handleRefresh, refreshingId]
+    [deletingId, handleCopyDraft, handleDelete]
   );
 
   return (
     <>
-      <Table
-        className="list-page__table tasks-table"
+      <ListPageTable<ClipTaskItem>
+        className="tasks-table"
         rowKey="id"
+        loading={loading}
         columns={columns}
         dataSource={tasks}
+        scrollX={1200}
+        empty={empty}
         pagination={pagination}
-        locale={{ emptyText: <ListTableEmpty {...empty} /> }}
         onChange={(nextPagination) => onTableChange(nextPagination)}
-        scroll={scrollY !== undefined ? { y: scrollY } : undefined}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />

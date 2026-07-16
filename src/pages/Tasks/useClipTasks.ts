@@ -8,7 +8,9 @@ import {
 } from '~/services/task';
 import { isAiSliceTask, isClipTaskActive, mergeClipTaskPollResult } from './utils';
 
-const POLL_INTERVAL = 3000;
+/** 进行中任务自动刷新间隔（秒） */
+export const CLIP_TASK_POLL_INTERVAL_SEC = 5;
+const POLL_INTERVAL_MS = CLIP_TASK_POLL_INTERVAL_SEC * 1000;
 
 export function useClipTasks(filters: ClipTaskListParams = {}) {
   const [tasks, setTasks] = useState<ClipTaskItem[]>([]);
@@ -185,7 +187,7 @@ export function useClipTasks(filters: ClipTaskListParams = {}) {
       const hasActive = tasksRef.current.some((task) => isClipTaskActive(task.status));
       if (!hasActive) return;
       void refreshTasks({ withPoll: true, showLoading: false });
-    }, POLL_INTERVAL);
+    }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
   }, [refreshTasks]);
