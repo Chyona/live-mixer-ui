@@ -1,6 +1,6 @@
 import { lazy, type ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { LuListTodo, LuMessageSquareText, LuScissors, LuVideo } from 'react-icons/lu';
+import { LuClapperboard, LuListTodo, LuMessageSquareText, LuScissors, LuVideo } from 'react-icons/lu';
 
 export const DEFAULT_APP_PATH = '/source-videos';
 
@@ -77,7 +77,7 @@ export const RoutesCfg: RouteCfgType[] = [
   {
     path: '/slices',
     text: '项目管理',
-    icon: LuScissors,
+    icon: LuClapperboard,
     element: SlicesPage,
     iconProps: { strokeWidth: 1.75 },
   },
