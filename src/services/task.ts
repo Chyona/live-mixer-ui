@@ -29,7 +29,7 @@ export interface ClipTaskItem {
   video_project_name: string;
   /** 草稿地址（一键成片 / 生成草稿） */
   draft_url: string;
-  created_by: number;
+  created_by: string;
   error_message: string;
   /** 原始 JSON 字符串 */
   ext: string;
@@ -128,7 +128,7 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
         ''
     ),
     draft_url: resolveDraftUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>),
-    created_by: Number(raw?.created_by ?? 0),
+    created_by: String(raw?.created_by ?? ''),
     error_message: String(raw?.error_message ?? ''),
     ext,
     created_at: String(raw?.created_at ?? ''),

@@ -111,8 +111,11 @@ export function getSliceProjectSource(project: {
 }
 
 export function getSliceProjectSegmentCount(
-  project: Pick<SliceProject, 'clips1'>
+  project: Pick<SliceProject, 'project_source' | 'clips0' | 'clips1'>
 ): number {
+  if (project.project_source === 'timeline') {
+    return project.clips0?.length ?? 0;
+  }
   return project.clips1?.length ?? 0;
 }
 

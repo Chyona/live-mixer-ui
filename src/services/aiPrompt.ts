@@ -6,7 +6,7 @@ export interface AiPrompt {
   name: string;
   content: string;
   remark: string;
-  created_by: number;
+  created_by: string;
   created_at: string;
   updated_at: string;
   is_editable: number;
@@ -26,7 +26,7 @@ export function normalizeAiPrompt(raw: AiPromptRaw): AiPrompt {
     name: String(raw.name ?? ''),
     content,
     remark: String(raw.remark ?? ''),
-    created_by: Number(raw.created_by ?? 0),
+    created_by: String(raw.created_by ?? ''),
     created_at: String(raw.created_at ?? ''),
     updated_at: String(raw.updated_at ?? ''),
     is_editable: Number(raw.is_editable ?? 0),

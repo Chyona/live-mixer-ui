@@ -7,13 +7,14 @@ type MockAiPrompt = {
   name: string;
   content: string;
   remark: string;
-  created_by: number;
+  created_by: string;
   created_at: string;
   updated_at: string;
   is_editable: number;
 };
 
-const CURRENT_USER_ID = 1;
+const CURRENT_USER_NAME = '管理员';
+const OTHER_USER_NAME = '其他用户';
 
 const PROMPT_TEMPLATES = [
   { name: '同商品连贯性', content: '确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品确保生成的视频整体都是在讲同一个商品', remark: '时间轴切片默认提示词' },
@@ -51,7 +52,7 @@ function buildMockAiPrompts(): MockAiPrompt[] {
       name: item.name,
       content: item.content,
       remark: item.remark,
-      created_by: CURRENT_USER_ID,
+      created_by: CURRENT_USER_NAME,
       created_at: timestamp,
       updated_at: timestamp,
       is_editable: 1,
@@ -66,7 +67,7 @@ const aiPrompts: MockAiPrompt[] = [
     name: '其他用户提示词',
     content: '不应展示',
     remark: '',
-    created_by: 2,
+    created_by: OTHER_USER_NAME,
     created_at: '2026-06-01T10:00:00.000000+08:00',
     updated_at: '2026-06-01T10:00:00.000000+08:00',
     is_editable: 0,
@@ -91,7 +92,7 @@ function parsePromptId(id: string | number | undefined) {
 function findOwnedPrompt(id: string | number | undefined) {
   const numericId = parsePromptId(id);
   if (!Number.isFinite(numericId)) return undefined;
-  return aiPrompts.find((prompt) => prompt.id === numericId && prompt.created_by === CURRENT_USER_ID);
+  return aiPrompts.find((prompt) => prompt.id === numericId && prompt.created_by === CURRENT_USER_NAME);
 }
 
 function filterList(query: Record<string, string | string[] | undefined>) {
@@ -101,7 +102,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
   const endDate = typeof query.end_date === 'string' ? query.end_date : undefined;
 
   return aiPrompts.filter((item) => {
-    if (item.created_by !== CURRENT_USER_ID) return false;
+    if (item.created_by !== CURRENT_USER_NAME) return false;
 
     const createdDate = item.created_at.slice(0, 10);
     if (startDate && createdDate < startDate) return false;
@@ -157,7 +158,7 @@ export default [
         name,
         content,
         remark: body.remark?.trim() || '',
-        created_by: CURRENT_USER_ID,
+        created_by: CURRENT_USER_NAME,
         created_at: now,
         updated_at: now,
         is_editable: 1,

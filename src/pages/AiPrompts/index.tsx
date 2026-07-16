@@ -243,8 +243,8 @@ const AiPromptsPage = () => {
         key: 'created_by',
         width: 120,
         ellipsis: true,
-        render: (createdBy: number) => (
-          <EllipsisTooltip text={String(createdBy)} className="prompts-cell-ellipsis" />
+        render: (createdBy: string) => (
+          <EllipsisTooltip text={createdBy || '-'} className="prompts-cell-ellipsis" />
         ),
       },
       {
