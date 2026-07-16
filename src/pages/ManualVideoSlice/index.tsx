@@ -251,9 +251,14 @@ const ManualVideoSlicePage = () => {
     setVideoDuration(0);
     setCurrentTime(0);
     setIsVideoPlaying(false);
-    setSelectedSegments([]);
     setActiveSegmentId(null);
   }, [streamUrl]);
+
+  useEffect(() => {
+    // 切换源视频时清空文案预览；同视频加载播放地址时不要清，避免盖掉项目回填
+    setSelectedSegments([]);
+    setActiveSegmentId(null);
+  }, [sourceVideoId]);
 
   useEffect(() => {
     setActiveMatchIndex(0);

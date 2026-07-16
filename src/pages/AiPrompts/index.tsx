@@ -208,7 +208,7 @@ const AiPromptsPage = () => {
         ellipsis: true,
         render: (content: string, record) => (
           <div className="prompts-content-cell">
-            <EllipsisTooltip text={content} className="list-page__cell-ellipsis prompts-content-cell__text" />
+            <div className="list-page__cell-ellipsis prompts-content-cell__text">{content}</div>
             <Button
               type="link"
               size="small"
