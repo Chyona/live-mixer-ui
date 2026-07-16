@@ -10,6 +10,7 @@ import ListSearchToolbar from '~/components/ListSearchToolbar';
 import ClipTaskList from './ClipTaskList';
 import { CLIP_TASK_POLL_INTERVAL_SEC, useClipTasks } from './useClipTasks';
 import { useListFilters } from '~/hooks/useListFilters';
+import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import type { ClipTaskItemStatus } from '~/services/task';
 import { CLIP_TASK_STATUS_OPTIONS } from './utils';
@@ -41,7 +42,7 @@ const TasksPage = () => {
     () => ({
       start_date: dateFilters.date,
       end_date: dateFilters.dateEnd,
-      keywords: appliedKeyword || undefined,
+      keywords: toApiKeywords(appliedKeyword),
       status,
       page,
       page_size: pageSize,

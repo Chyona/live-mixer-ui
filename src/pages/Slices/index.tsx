@@ -22,6 +22,7 @@ import {
   type SliceProject,
 } from '~/services/sliceProject';
 import { formatToDateTime } from '~/utils/date';
+import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
@@ -68,7 +69,7 @@ const SlicesPage = () => {
 
     try {
       const response = await fetchSliceProjectList({
-        keywords: appliedKeyword ? appliedKeyword.replace(/[+＋]/g, ',') : undefined,
+        keywords: toApiKeywords(appliedKeyword),
         start_date: dateFilters.date,
         end_date: dateFilters.dateEnd,
         page,

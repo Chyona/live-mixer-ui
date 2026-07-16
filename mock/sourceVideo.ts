@@ -3,6 +3,7 @@ import {
   createInitialAsrState,
   type SourceVideo,
 } from '../src/services/sourceVideo.model';
+import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 import { getTranscript } from './transcript';
@@ -149,20 +150,6 @@ const sourceVideos: MockSourceVideo[] = [
   },
 ];
 
-function parseKeywords(input?: string) {
-  if (!input?.trim()) return [];
-  return input
-    .split(/[+＋]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function matchKeywords(text: string, keywords: string[]) {
-  if (!keywords.length) return true;
-  const lower = text.toLowerCase();
-  return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
-}
-
 function toPublicItem(item: MockSourceVideo): SourceVideo {
   const {
     ownerId: _ownerId,
@@ -255,8 +242,8 @@ function filterList(query: Record<string, string | string[] | undefined>) {
       : typeof query.globalKeyword === 'string'
         ? query.globalKeyword
         : undefined;
-  const titleKeywords = parseKeywords(titleKeyword);
-  const globalKeywords = parseKeywords(globalKeyword);
+  const titleKeywords = parseListKeywords(titleKeyword);
+  const globalKeywords = parseListKeywords(globalKeyword);
 
   return sourceVideos.filter((item) => {
     if (item.ownerId !== CURRENT_USER_ID) return false;
@@ -266,10 +253,10 @@ function filterList(query: Record<string, string | string[] | undefined>) {
     if (endDate && createdDate > endDate) return false;
 
     const titleText = `${item.name} ${item.remark}`;
-    if (!matchKeywords(titleText, titleKeywords)) return false;
+    if (!matchListKeywords(titleText, titleKeywords)) return false;
 
     const globalText = `${item.name} ${item.remark} ${item.live_url} ${item.asr_error_msg ?? ''} ${createdDate}`;
-    if (!matchKeywords(globalText, globalKeywords)) return false;
+    if (!matchListKeywords(globalText, globalKeywords)) return false;
 
     return true;
   });

@@ -1,4 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock';
+import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 
 type MockAiPrompt = {
@@ -74,20 +75,6 @@ const aiPrompts: MockAiPrompt[] = [
 
 let nextId = 1000;
 
-function parseKeywords(input?: string) {
-  if (!input?.trim()) return [];
-  return input
-    .split(/[,，+＋]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function matchKeywords(text: string, keywords: string[]) {
-  if (!keywords.length) return true;
-  const lower = text.toLowerCase();
-  return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
-}
-
 function toPublicItem(item: MockAiPrompt) {
   return item;
 }
@@ -109,7 +96,7 @@ function findOwnedPrompt(id: string | number | undefined) {
 
 function filterList(query: Record<string, string | string[] | undefined>) {
   const keywordsParam = typeof query.keywords === 'string' ? query.keywords : undefined;
-  const keywords = parseKeywords(keywordsParam);
+  const keywords = parseListKeywords(keywordsParam);
   const startDate = typeof query.start_date === 'string' ? query.start_date : undefined;
   const endDate = typeof query.end_date === 'string' ? query.end_date : undefined;
 
@@ -121,7 +108,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
     if (endDate && createdDate > endDate) return false;
 
     const searchText = `${item.name} ${item.content} ${item.remark}`;
-    return matchKeywords(searchText, keywords);
+    return matchListKeywords(searchText, keywords);
   });
 }
 

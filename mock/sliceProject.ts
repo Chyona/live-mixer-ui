@@ -1,4 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock';
+import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
 import {
@@ -9,20 +10,6 @@ import {
   updateSliceProjectName,
   deleteSliceProjectRecord,
 } from './sliceProjectStore';
-
-function parseKeywords(input?: string) {
-  if (!input?.trim()) return [];
-  return input
-    .split(/[+＋]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function matchKeywords(text: string, keywords: string[]) {
-  if (!keywords.length) return true;
-  const lower = text.toLowerCase();
-  return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
-}
 
 function clipsToSegments(
   clips: Array<{ start_time?: number; end_time?: number }> | undefined,
@@ -125,7 +112,7 @@ export default [
             : undefined;
       const page = Number(query.page || 1);
       const pageSize = Number(query.page_size || query.pageSize || 10);
-      const titleKeywords = parseKeywords(
+      const titleKeywords = parseListKeywords(
         keywordsRaw?.includes(',') ? keywordsRaw.replace(/,/g, '+') : keywordsRaw
       );
 
@@ -137,7 +124,7 @@ export default [
         if (endDate && updatedDate > endDate) return false;
 
         const titleText = `${item.projectName} ${item.sourceVideoName} ${item.remarkName}`;
-        return matchKeywords(titleText, titleKeywords);
+        return matchListKeywords(titleText, titleKeywords);
       });
 
       const start = (page - 1) * pageSize;

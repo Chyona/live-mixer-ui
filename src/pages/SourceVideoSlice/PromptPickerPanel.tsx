@@ -7,6 +7,7 @@ import AiPromptFormModal from '~/components/AiPromptFormModal';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { AppError } from '~/services/http';
 import { fetchAiPromptList, type AiPrompt } from '~/services/aiPrompt';
+import { toApiKeywords } from '~/utils/listKeywords';
 import { showAppError, toast } from '~/utils/toast';
 
 import './PromptPickerPanel.css';
@@ -48,7 +49,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
 
       try {
         const response = await fetchAiPromptList({
-          keywords: keywordValue ? keywordValue.replace(/[+＋]/g, ',') : undefined,
+          keywords: toApiKeywords(keywordValue),
           page: nextPage,
           page_size: PAGE_SIZE,
         });

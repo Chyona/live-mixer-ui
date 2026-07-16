@@ -22,6 +22,7 @@ import {
 } from '~/services/sourceVideo';
 import { formatToDateTime } from '~/utils/date';
 import { formatVideoDurationMs } from '~/utils/duration';
+import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
@@ -100,12 +101,8 @@ const SourceVideosPage = () => {
       const response = await fetchSourceVideoList({
         start_date: dateFilters.date,
         end_date: dateFilters.dateEnd,
-        title_keyword: appliedKeyword
-          ? appliedKeyword.replace(/[+＋]/g, ',')
-          : undefined,
-        global_keyword: appliedGlobalKeyword
-          ? appliedGlobalKeyword.replace(/[+＋]/g, ',')
-          : undefined,
+        title_keyword: toApiKeywords(appliedKeyword),
+        global_keyword: toApiKeywords(appliedGlobalKeyword),
         page,
         page_size: pageSize,
       });

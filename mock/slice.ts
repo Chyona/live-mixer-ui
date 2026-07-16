@@ -1,4 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock';
+import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 
 type MockSliceItem = {
@@ -117,20 +118,6 @@ const slices: MockSliceItem[] = [
   },
 ];
 
-function parseKeywords(input?: string) {
-  if (!input?.trim()) return [];
-  return input
-    .split(/[+＋]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function matchKeywords(text: string, keywords: string[]) {
-  if (!keywords.length) return true;
-  const lower = text.toLowerCase();
-  return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
-}
-
 function toPublicItem(item: MockSliceItem) {
   const { ownerId: _ownerId, ...rest } = item;
   return rest;
@@ -140,7 +127,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
   const date = typeof query.date === 'string' ? query.date : undefined;
   const dateEnd = typeof query.dateEnd === 'string' ? query.dateEnd : undefined;
   const keyword = typeof query.keyword === 'string' ? query.keyword : undefined;
-  const titleKeywords = parseKeywords(keyword);
+  const titleKeywords = parseListKeywords(keyword);
 
   return slices.filter((item) => {
     if (item.ownerId !== CURRENT_USER_ID) return false;
@@ -149,7 +136,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
     if (dateEnd && item.date > dateEnd) return false;
 
     const titleText = `${item.sourceVideoName} ${item.sourceVideoRemarkName}`;
-    if (!matchKeywords(titleText, titleKeywords)) return false;
+    if (!matchListKeywords(titleText, titleKeywords)) return false;
 
     return true;
   });

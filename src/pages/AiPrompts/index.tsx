@@ -20,6 +20,7 @@ import {
   type AiPrompt,
 } from '~/services/aiPrompt';
 import { formatToDateTime } from '~/utils/date';
+import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
@@ -57,7 +58,7 @@ const AiPromptsPage = () => {
 
     try {
       const response = await fetchAiPromptList({
-        keywords: appliedKeyword ? appliedKeyword.replace(/[+＋]/g, ',') : undefined,
+        keywords: toApiKeywords(appliedKeyword),
         page,
         page_size: pageSize,
       });

@@ -1,4 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock';
+import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import {
   clipTaskStore,
@@ -8,20 +9,6 @@ import {
   toPublicClipTask,
 } from './clipTaskStore';
 import { getSliceProject } from './sliceProjectStore';
-
-function parseKeywords(input?: string) {
-  if (!input?.trim()) return [];
-  return input
-    .split(/[+＋]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function matchKeywords(text: string, keywords: string[]) {
-  if (!keywords.length) return true;
-  const lower = text.toLowerCase();
-  return keywords.every((keyword) => lower.includes(keyword.toLowerCase()));
-}
 
 function filterClipTasks(query: Record<string, string | string[] | undefined>) {
   const startDate =
@@ -44,7 +31,7 @@ function filterClipTasks(query: Record<string, string | string[] | undefined>) {
         : undefined;
   const status = typeof query.status === 'string' ? query.status : undefined;
   const type = typeof query.type === 'string' ? query.type : undefined;
-  const titleKeywords = parseKeywords(keyword);
+  const titleKeywords = parseListKeywords(keyword);
 
   return clipTaskStore.filter((task) => {
     const createdDate = task.createdAt.slice(0, 10);
@@ -66,7 +53,7 @@ function filterClipTasks(query: Record<string, string | string[] | undefined>) {
     if (type && publicType !== type) return false;
 
     const titleText = `${task.sourceVideoName} ${task.clipName} ${task.promptName ?? ''}`;
-    if (!matchKeywords(titleText, titleKeywords)) return false;
+    if (!matchListKeywords(titleText, titleKeywords)) return false;
 
     return true;
   });
