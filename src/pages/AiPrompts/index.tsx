@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
+import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListPageTable from '~/components/ListPageTable';
@@ -42,6 +43,7 @@ const AiPromptsPage = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<AiPrompt | null>(null);
+  const [previewPrompt, setPreviewPrompt] = useState<AiPrompt | null>(null);
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
     const silent = options?.silent ?? options?.refresh ?? hasLoadedRef.current;
@@ -204,8 +206,18 @@ const AiPromptsPage = () => {
         dataIndex: 'content',
         key: 'content',
         ellipsis: true,
-        render: (content: string) => (
-          <EllipsisTooltip text={content} className="list-page__cell-ellipsis" />
+        render: (content: string, record) => (
+          <div className="prompts-content-cell">
+            <EllipsisTooltip text={content} className="list-page__cell-ellipsis prompts-content-cell__text" />
+            <Button
+              type="link"
+              size="small"
+              className="prompts-content-cell__action"
+              onClick={() => setPreviewPrompt(record)}
+            >
+              查看
+            </Button>
+          </div>
         ),
       },
       {
@@ -339,6 +351,16 @@ const AiPromptsPage = () => {
         prompt={editingPrompt}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
+      />
+
+      <AiPromptPreviewDrawer
+        open={Boolean(previewPrompt)}
+        prompt={previewPrompt}
+        onClose={() => setPreviewPrompt(null)}
+        onEdit={(prompt) => {
+          setPreviewPrompt(null);
+          openEdit(prompt);
+        }}
       />
     </ListPageLayout>
   );

@@ -8,12 +8,25 @@ export interface EllipsisTooltipProps {
   className?: string;
   /** 悬停提示内容，默认与 text 相同 */
   title?: ReactNode;
+  /** 为 true 时始终显示 Tooltip（不检测溢出） */
+  forceTooltip?: boolean;
+  /** 透传给 Tooltip 的 overlayClassName */
+  overlayClassName?: string;
+  /** Tooltip 弹出位置 */
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
 }
 
 /**
- * 单行省略场景：仅当文本在容器内水平溢出时包裹 Tooltip，否则不显示悬停层。
+ * 单行省略场景：默认仅当文本水平溢出时显示 Tooltip；可 forceTooltip 强制显示。
  */
-export function EllipsisTooltip({ text, className, title }: EllipsisTooltipProps) {
+export function EllipsisTooltip({
+  text,
+  className,
+  title,
+  forceTooltip = false,
+  overlayClassName,
+  placement = 'topLeft',
+}: EllipsisTooltipProps) {
   const textRef = useRef<HTMLDivElement>(null);
   const [overflow, setOverflow] = useState(false);
 
@@ -49,7 +62,20 @@ export function EllipsisTooltip({ text, className, title }: EllipsisTooltipProps
   }
 
   const tipTitle = title !== undefined ? title : text;
-  return overflow ? <Tooltip title={tipTitle}>{inner}</Tooltip> : inner;
+  const showTooltip = forceTooltip || overflow;
+
+  return showTooltip ? (
+    <Tooltip
+      title={tipTitle}
+      placement={placement}
+      overlayClassName={overlayClassName}
+      mouseEnterDelay={0.25}
+    >
+      {inner}
+    </Tooltip>
+  ) : (
+    inner
+  );
 }
 
 export default EllipsisTooltip;

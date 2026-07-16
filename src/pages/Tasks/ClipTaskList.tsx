@@ -59,13 +59,14 @@ function renderStatusLabel(status: ClipTaskItemStatus) {
 function renderProgress(progress: number, status: ClipTaskItemStatus) {
   const percent = Math.max(0, Math.min(100, Math.round(progress)));
   const isCompleted = status === 'completed';
+  const isFailed = status === 'failed';
 
   return (
     <Progress
       className="tasks-progress-bar"
       percent={isCompleted ? 100 : percent}
       size="small"
-      status={isCompleted ? 'success' : 'normal'}
+      status={isCompleted ? 'success' : isFailed ? 'exception' : 'normal'}
       {...(isCompleted ? {} : { format: (value?: number) => `${value ?? 0}%` })}
     />
   );

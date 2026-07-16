@@ -88,7 +88,7 @@ function clipsToUiSegments(
       id: `${prefix}-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
       speakerId: '1',
       speakerName: '',
-      text: '',
+      text: clip.text?.trim() ?? '',
       start,
       end,
     };
@@ -119,10 +119,8 @@ export function getSliceProjectSegmentCount(
 export function clipsToSliceSegments(
   project: Pick<SliceProject, 'clips0' | 'clips1'>
 ): SelectedCopySegment[] {
-  return [
-    ...clipsToUiSegments(project.clips0, 'timeline'),
-    ...clipsToUiSegments(project.clips1, 'manual'),
-  ].sort((a, b) => a.start - b.start);
+  // 文案预览 / 人工切片只使用 clips1；clips0 为时间轴选段，通常无 text
+  return clipsToUiSegments(project.clips1, 'manual');
 }
 
 /** 规范化接口返回，补齐默认值 */
@@ -162,11 +160,12 @@ function normalizeSliceProjectDetail(
 
 /** 内部秒级片段 → 接口毫秒级 clips */
 export function toSliceProjectClips(
-  segments: Array<{ start: number; end: number }>
+  segments: Array<{ start: number; end: number; text?: string }>
 ): SliceProjectClip[] {
   return segments.map((segment) => ({
     start_time: Math.round(segment.start * 1000),
     end_time: Math.round(segment.end * 1000),
+    text: segment.text?.trim() || undefined,
   }));
 }
 

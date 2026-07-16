@@ -147,7 +147,9 @@ const SelectedSegmentsPanel = ({
       </div>
 
       <div className="slice-selected-toolbar">
-        <div className="slice-selected-tags">
+        <div
+          className={`slice-selected-tags${selectedRanges.length === 0 ? ' slice-selected-tags_empty' : ''}`}
+        >
           {selectedRanges.length === 0 ? (
             <span className="slice-selected-empty">暂无选中片段，请在下方时间轴左键拖拽标记</span>
           ) : (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Descriptions, Modal, Popconfirm, Typography } from 'antd';
+import { Button, Descriptions, Drawer, Modal, Popconfirm, Typography } from 'antd';
+import { LuX } from 'react-icons/lu';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -520,39 +521,59 @@ const SourceVideoSlicePage = () => {
         </div>
       )}
 
-      <Modal
+      <Drawer
         open={sourceModalVisible}
-        centered
-        width={520}
-        footer={null}
-        closable
+        placement="right"
+        width="min(520px, 100vw)"
         title={null}
-        className="slice-source-modal noanimation-modal"
-        onCancel={() => setSourceModalVisible(false)}
+        closable={false}
+        destroyOnClose
+        className="slice-source-drawer"
+        onClose={() => setSourceModalVisible(false)}
       >
-        <div className="slice-source-modal-body">
-          <h3 className="slice-source-modal-title">播放源信息</h3>
-          <Descriptions column={1} size="small" className="slice-source-descriptions">
-            <Descriptions.Item label="源视频名称">{video.name}</Descriptions.Item>
-            <Descriptions.Item label="备注">{video.remark || '-'}</Descriptions.Item>
-            <Descriptions.Item label="直播地址">
-              <Typography.Paragraph
-                className="slice-source-url"
-                copyable={{ text: video.live_url }}
-              >
-                {video.live_url}
-              </Typography.Paragraph>
-            </Descriptions.Item>
-            <Descriptions.Item label="时长">
-              {video.duration > 0 ? formatVideoDurationMs(video.duration) : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="创建时间">{formatToDateTime(video.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="预览状态">
-              {canPreview ? `支持浏览器预览（${videoFormatLabel}）` : hasVideoUrl ? '格式不受支持' : '暂无播放地址'}
-            </Descriptions.Item>
-          </Descriptions>
+        <div className="slice-source-drawer__layout">
+          <header className="slice-source-drawer__header">
+            <div className="slice-source-drawer__header-main">
+              <h3 className="slice-source-drawer__title">播放源信息</h3>
+              <p className="slice-source-drawer__meta">{video.name}</p>
+            </div>
+            <button
+              type="button"
+              className="slice-source-drawer__close"
+              aria-label="关闭"
+              onClick={() => setSourceModalVisible(false)}
+            >
+              <LuX size={18} />
+            </button>
+          </header>
+
+          <div className="slice-source-drawer__body">
+            <Descriptions column={1} size="small" className="slice-source-descriptions">
+              <Descriptions.Item label="源视频名称">{video.name}</Descriptions.Item>
+              <Descriptions.Item label="备注">{video.remark || '-'}</Descriptions.Item>
+              <Descriptions.Item label="直播地址">
+                <Typography.Paragraph
+                  className="slice-source-url"
+                  copyable={{ text: video.live_url }}
+                >
+                  {video.live_url}
+                </Typography.Paragraph>
+              </Descriptions.Item>
+              <Descriptions.Item label="时长">
+                {video.duration > 0 ? formatVideoDurationMs(video.duration) : '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="创建时间">{formatToDateTime(video.created_at)}</Descriptions.Item>
+              <Descriptions.Item label="预览状态">
+                {canPreview
+                  ? `支持浏览器预览（${videoFormatLabel}）`
+                  : hasVideoUrl
+                    ? '格式不受支持'
+                    : '暂无播放地址'}
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
         </div>
-      </Modal>
+      </Drawer>
 
       <Modal
         className="noanimation-modal"

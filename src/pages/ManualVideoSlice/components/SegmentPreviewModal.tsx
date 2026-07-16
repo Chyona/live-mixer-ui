@@ -280,7 +280,16 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
     const container = playlistRef.current;
     if (!container) return;
     const active = container.querySelector<HTMLElement>(`[data-preview-index="${currentIndex}"]`);
-    active?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!active) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    const padding = 8;
+    if (activeRect.top < containerRect.top + padding) {
+      container.scrollTop -= containerRect.top + padding - activeRect.top;
+    } else if (activeRect.bottom > containerRect.bottom - padding) {
+      container.scrollTop += activeRect.bottom - (containerRect.bottom - padding);
+    }
   }, [currentIndex]);
 
   useLayoutEffect(() => {
@@ -617,13 +626,13 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
           style={stageHeight ? { height: stageHeight } : undefined}
         >
           <div className="slice-editor-preview-panel">
+            <div className="slice-editor-preview-playlist-title">
+              播放列表
+              <span>
+                {segments.length} 段 · {formatComposedClock(composedTotal)}
+              </span>
+            </div>
             <div className="slice-editor-preview-playlist" ref={playlistRef}>
-              <div className="slice-editor-preview-playlist-title">
-                播放列表
-                <span>
-                  {segments.length} 段 · {formatComposedClock(composedTotal)}
-                </span>
-              </div>
               {chapterMarks.map((mark) => (
                 <button
                   key={mark.index}
