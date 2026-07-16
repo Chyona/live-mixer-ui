@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, type Location } from 'react-router-dom';
-import { Spin } from 'antd';
+import PageLoading from '~/components/PageLoading';
 import { UserLoginResult } from '~/services/login';
 import { getUserInfo } from '~/services/user';
 import { closeLogin, completeLoginRedirect, openLogin } from '~/utils/loginFlow';
@@ -26,11 +26,7 @@ export const AUTH_TOKEN_KEY = 'auth_token';
 
 const AuthContext = createContext<AuthContextType>(null!);
 
-const AuthLoading = () => (
-  <div className="flex min-h-[40vh] size-full items-center justify-center">
-    <Spin size="large" />
-  </div>
-);
+const AuthLoading = () => <PageLoading viewport />;
 
 function ModalLoginGate({ from }: { from: Location }) {
   useEffect(() => {
@@ -124,9 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <AuthContext.Provider value={value}>
-        <div className="flex min-h-screen items-center justify-center">
-          <Spin size="large" />
-        </div>
+        <PageLoading viewport />
       </AuthContext.Provider>
     );
   }
