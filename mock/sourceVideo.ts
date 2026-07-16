@@ -411,4 +411,52 @@ export default [
       return { code: 0, message: '', data: toPublicItem(item) };
     },
   },
+  {
+    url: `${API_PREFIX}/v1/live-materials/:id/asr/subtitle`,
+    method: 'get',
+    rawResponse: (req, res) => {
+      const id = String(req.url?.match(/live-materials\/([^/]+)\/asr\/subtitle/)?.[1] ?? '');
+      const item = sourceVideos.find(
+        (video) => String(video.id) === id && video.ownerId === CURRENT_USER_ID
+      );
+
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+      if (!item) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ code: 404, message: '源视频不存在', data: null }));
+        return;
+      }
+
+      if (item.asr_status !== 'completed') {
+        res.statusCode = 400;
+        res.end(
+          JSON.stringify({
+            code: 400,
+            message: 'ASR 未完成，暂不可下载字幕',
+            data: null,
+          })
+        );
+        return;
+      }
+
+      const liveAsr = getTranscript(String(item.id));
+      if (!liveAsr.length) {
+        res.statusCode = 400;
+        res.end(
+          JSON.stringify({
+            code: 400,
+            message: '字幕内容为空，暂不可下载',
+            data: null,
+          })
+        );
+        return;
+      }
+
+      const filename = encodeURIComponent(`${item.name || 'subtitle'}-字幕.json`);
+      res.statusCode = 200;
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+      res.end(JSON.stringify(liveAsr));
+    },
+  },
 ] as MockMethod[];

@@ -11,6 +11,20 @@ import { apiPath } from '~/utils/api';
 export type { BaseResponse } from '~/services/types';
 
 export const HTTP_STATUS_UNAUTHORIZED = 401;
+export const HTTP_STATUS_TIMEOUT = 408;
+
+/** 接口默认超时（毫秒）；单次请求可在 options.timeout 覆盖 */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
+axios.defaults.timeout = DEFAULT_REQUEST_TIMEOUT_MS;
+
+function isTimeoutError(error: AxiosError): boolean {
+  return (
+    error.code === 'ECONNABORTED' ||
+    error.code === 'ETIMEDOUT' ||
+    /timeout/i.test(error.message ?? '')
+  );
+}
 
 export class AppError extends Error {
   errorMessage: string;
@@ -141,6 +155,9 @@ export function setupHttpInterceptors(navigate: NavigateFunction) {
         const resolved = resolveHttpErrorMessage(error, '请求响应错误！');
         message = resolved.message;
         code = resolved.code;
+      } else if (isTimeoutError(error)) {
+        message = '请求超时，请稍后重试';
+        code = HTTP_STATUS_TIMEOUT;
       } else if (error.request) {
         message = '请求未收到响应！';
         code = 500;
@@ -159,7 +176,11 @@ export function setupHttpInterceptors(navigate: NavigateFunction) {
 }
 
 export async function request<T>(url: string, options: AxiosRequestConfig = {}): Promise<T> {
-  const { data } = await axios.request<T>({ url: apiPath(url), ...options });
+  const { data } = await axios.request<T>({
+    url: apiPath(url),
+    timeout: DEFAULT_REQUEST_TIMEOUT_MS,
+    ...options,
+  });
 
   handleBusinessResponse(data as BaseResponse);
 

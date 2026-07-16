@@ -8,7 +8,11 @@ import SlicePageEmptyState from '~/components/SlicePageEmptyState';
 import ManualVideoSlicePageSkeleton from './ManualVideoSlicePageSkeleton';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { AppError } from '~/services/http';
-import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
+import {
+  downloadSourceVideoAsrSubtitle,
+  fetchSourceVideoDetail,
+  type SourceVideo,
+} from '~/services/sourceVideo';
 import {
   fetchSliceProjectDetail,
   saveSliceProject,
@@ -34,9 +38,7 @@ import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
 import type { SelectedCopySegment, TranscriptParagraph } from './types';
 import {
-  buildTranscriptSrt,
   deleteSelectedRangeFromSegment,
-  downloadTextFile,
   findActiveSegment,
   buildTranscriptHighlight,
   findActiveCopySegment,
@@ -94,6 +96,7 @@ const ManualVideoSlicePage = () => {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveModalMode, setSaveModalMode] = useState<'create' | 'saveAs' | 'export'>('saveAs');
   const [savingProject, setSavingProject] = useState(false);
+  const [downloadingSubtitle, setDownloadingSubtitle] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
   const [projectRemark, setProjectRemark] = useState('');
 
@@ -567,22 +570,27 @@ const ManualVideoSlicePage = () => {
     void handleSaveProject();
   };
 
-  const handleDownloadSubtitle = useCallback(() => {
-    if (!paragraphs.length) {
+  const handleDownloadSubtitle = useCallback(async () => {
+    if (!sourceVideoId) {
       toast.notify.warning('暂无字幕文案');
       return;
     }
 
-    const srt = buildTranscriptSrt(paragraphs);
-    if (!srt.trim()) {
-      toast.notify.warning('暂无字幕文案');
-      return;
+    setDownloadingSubtitle(true);
+    try {
+      const filename = `${sanitizeDownloadFilename(video?.name ?? 'subtitle')}-字幕.json`;
+      await downloadSourceVideoAsrSubtitle(sourceVideoId, filename);
+      toast.notify.success('字幕文件已开始下载');
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error(error instanceof Error ? error.message : '字幕下载失败');
+      }
+    } finally {
+      setDownloadingSubtitle(false);
     }
-
-    const filename = `${sanitizeDownloadFilename(video?.name ?? 'subtitle')}-字幕.srt`;
-    downloadTextFile(srt, filename);
-    toast.notify.success('字幕文件已开始下载');
-  }, [paragraphs, video?.name]);
+  }, [sourceVideoId, video?.name]);
 
   const handleSwitchToTimeline = useCallback(() => {
     navigate(buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
@@ -642,7 +650,11 @@ const ManualVideoSlicePage = () => {
         // description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
           <Space size={12}>
-            <Button icon={<LuDownload size={16} />} onClick={handleDownloadSubtitle}>
+            <Button
+              icon={<LuDownload size={16} />}
+              loading={downloadingSubtitle}
+              onClick={() => void handleDownloadSubtitle()}
+            >
               字幕下载
             </Button>
             <Popconfirm
