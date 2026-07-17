@@ -34,7 +34,7 @@ export const MobileBottomNav = () => {
               onClick={() => {
                 const firstLink = item.links?.[0];
                 if (firstLink) {
-                  window.open(firstLink.href, '_blank');
+                  window.open(firstLink.href, '_blank', 'noopener,noreferrer');
                 }
               }}
             >
