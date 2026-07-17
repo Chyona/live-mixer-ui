@@ -7,15 +7,42 @@ import { navigateTo } from '~/utils/navigation';
 
 type LoginFrom = Pick<Location, 'pathname' | 'search' | 'hash'>;
 
+/**
+ * 仅允许站内相对路径：以单个 `/` 开头。
+ * 拒绝 `//evil.com`、带 scheme、反斜杠等开放重定向载荷。
+ */
+export function isSafeInternalPath(path: string): boolean {
+  if (!path || typeof path !== 'string') return false;
+  if (!path.startsWith('/') || path.startsWith('//')) return false;
+  if (path.includes('\\')) return false;
+
+  try {
+    const decoded = decodeURIComponent(path);
+    if (decoded.startsWith('//') || decoded.includes('\\')) return false;
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(decoded)) return false;
+  } catch {
+    return false;
+  }
+
+  return true;
+}
+
+/** 不安全回跳时回落到默认应用路径 */
+export function sanitizeReturnPath(path: string | null | undefined, fallback = DEFAULT_APP_PATH): string {
+  if (path && isSafeInternalPath(path)) return path;
+  return fallback;
+}
+
 function buildReturnPath(from?: LoginFrom) {
   const pathname = from?.pathname ?? window.location.pathname;
   const search = from?.search ?? window.location.search;
   const hash = from?.hash ?? window.location.hash;
-  return `${pathname}${search}${hash}`;
+  return sanitizeReturnPath(`${pathname}${search}${hash}`);
 }
 
 export { buildReturnPath };
 export type { LoginFrom };
+
 /** 按 VITE_LOGIN_MODE 打开登录页或登录弹窗 */
 export function openLogin(from?: LoginFrom) {
   if (isLoginModalMode) {
@@ -32,11 +59,12 @@ export function openLogin(from?: LoginFrom) {
     return;
   }
 
+  const pathnameSafe = isSafeInternalPath(pathname);
   navigateTo('/login', {
     from: {
-      pathname,
-      search: from?.search ?? '',
-      hash: from?.hash ?? '',
+      pathname: pathnameSafe ? pathname : DEFAULT_APP_PATH,
+      search: pathnameSafe ? (from?.search ?? '') : '',
+      hash: pathnameSafe ? (from?.hash ?? '') : '',
     },
   });
 }
@@ -52,7 +80,7 @@ export function completeLoginRedirect() {
   if (!isLoginModalMode) return;
 
   const store = getLoginModalStore();
-  const returnTo = store.returnTo || DEFAULT_APP_PATH;
+  const returnTo = sanitizeReturnPath(store.returnTo || DEFAULT_APP_PATH);
   store.open = false;
   store.returnTo = null;
 
