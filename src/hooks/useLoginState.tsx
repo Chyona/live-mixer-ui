@@ -6,8 +6,9 @@ export function useLoginChange() {
 
   useEffect(() => {
     const handleLoginChange = (event: CustomEvent<{ state: 'login' | 'logout' }>) => {
-      console.log('登录状态事件触发:', event.detail);
-      setTrigger((prev) => prev + 1);
+      if (event.detail?.state === 'login' || event.detail?.state === 'logout') {
+        setTrigger((prev) => prev + 1);
+      }
     };
 
     window.addEventListener(LOGIN_CHANGE_EVENT, handleLoginChange as EventListener);

@@ -115,14 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleLoginChange = (event: Event) => {
-      const detail = (event as CustomEvent<Partial<UserLoginResult> & { state?: string }>).detail;
+      const detail = (event as CustomEvent<{ state?: string }>).detail;
       if (detail?.state === 'logout') {
         setUserInfo({});
-        return;
       }
-      if (detail?.state === 'login') {
-        setUserInfo(detail);
-      }
+      // login：会话已由 updateAuthInfo 写入，事件仅作信号，不携带 token
     };
 
     window.addEventListener(LOGIN_CHANGE_EVENT, handleLoginChange as EventListener);
@@ -151,9 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(newData));
       setUserInfo(newData);
       closeLogin();
-      window.dispatchEvent(
-        new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { ...newData, state: 'login' } })
-      );
+      window.dispatchEvent(new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { state: 'login' } }));
       completeLoginRedirect();
     } catch (error) {
       console.error('auth_token JSON 失败:', error);
