@@ -1,9 +1,9 @@
 import { Button, Input, Radio, Spin } from 'antd';
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { LuMessageSquarePlus, LuPencil, LuPlus, LuSearch } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
+import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { AppError } from '~/services/http';
 import { fetchAiPromptList, type AiPrompt } from '~/services/aiPrompt';
@@ -31,6 +31,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
   const [loadingMore, setLoadingMore] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<AiPrompt | null>(null);
+  const [previewPrompt, setPreviewPrompt] = useState<AiPrompt | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
@@ -165,10 +166,18 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
     setFormOpen(true);
   };
 
-  const openEdit = (prompt: AiPrompt, event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
+  const openEdit = (prompt: AiPrompt, event?: MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    setPreviewPrompt(null);
     setEditingPrompt(prompt);
     setFormOpen(true);
+  };
+
+  const openPreview = (prompt: AiPrompt, event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setPreviewPrompt(prompt);
   };
 
   const renderEmpty = () => {
@@ -265,22 +274,35 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
                 <Radio value={item.id} className="slice-prompt-panel__radio" />
                 <div className="slice-prompt-panel__item-body">
                   <div className="slice-prompt-panel__item-head">
-                    <span className="slice-prompt-panel__item-name">{item.name}</span>
+                    <div className="slice-prompt-panel__item-name-wrap">
+                      <EllipsisTooltip
+                        text={item.name}
+                        className="slice-prompt-panel__item-name"
+                        placement="topLeft"
+                      />
+                    </div>
                     {item.is_editable === 1 ? (
                       <button
                         type="button"
                         className="slice-prompt-panel__edit-btn"
                         aria-label={`编辑 ${item.name}`}
+                        title="编辑"
                         onClick={(event) => openEdit(item, event)}
                       >
                         <LuPencil size={13} />
                       </button>
                     ) : null}
                   </div>
-                  <EllipsisTooltip
-                    text={item.content}
-                    className="slice-prompt-panel__item-content"
-                  />
+                  <div className="slice-prompt-panel__item-content-row">
+                    <div className="slice-prompt-panel__item-content">{item.content}</div>
+                    <button
+                      type="button"
+                      className="slice-prompt-panel__action-btn"
+                      onClick={(event) => openPreview(item, event)}
+                    >
+                      查看
+                    </button>
+                  </div>
                 </div>
               </label>
             ))}
@@ -307,6 +329,17 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
           setEditingPrompt(null);
         }}
         onSuccess={handleFormSuccess}
+      />
+
+      <AiPromptPreviewDrawer
+        open={previewPrompt != null}
+        prompt={previewPrompt}
+        onClose={() => setPreviewPrompt(null)}
+        onEdit={
+          previewPrompt?.is_editable === 1
+            ? (prompt) => openEdit(prompt)
+            : undefined
+        }
       />
     </aside>
   );

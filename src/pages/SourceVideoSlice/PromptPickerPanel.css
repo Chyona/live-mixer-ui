@@ -194,30 +194,44 @@
 .slice-prompt-panel__item-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
+  max-width: 100%;
+  width: fit-content;
+  min-width: 0;
+}
+
+.slice-prompt-panel__item-name-wrap {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .slice-prompt-panel__item-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slice-prompt-panel__edit-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--text-gray);
   cursor: pointer;
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .slice-prompt-panel__edit-btn:hover {
@@ -225,14 +239,41 @@
   background: rgba(var(--primary-color-rgb), 0.1);
 }
 
+.slice-prompt-panel__item-content-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  min-width: 0;
+}
+
 .slice-prompt-panel__item-content {
-  margin: 6px 0 0;
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.slice-prompt-panel__action-btn {
+  margin: 0;
+  padding: 0 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--primary-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.slice-prompt-panel__action-btn:hover {
+  background: rgba(var(--primary-color-rgb), 0.08);
 }
 
 .slice-prompt-panel__loading {

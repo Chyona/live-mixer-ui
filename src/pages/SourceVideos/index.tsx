@@ -27,6 +27,8 @@ import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/t
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
 const SOURCE_VIDEOS_LIST_ERROR_SCOPE = 'source-videos-list';
+/** ASR 进行中时列表静默刷新间隔（秒） */
+const ASR_POLL_INTERVAL_MS = 2 * 1000;
 
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
@@ -145,7 +147,7 @@ const SourceVideosPage = () => {
 
     const timer = window.setInterval(() => {
       void loadList({ silent: true });
-    }, 2000);
+    }, ASR_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(timer);
   }, [hasProcessingAsr, loadList]);
