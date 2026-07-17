@@ -5,6 +5,7 @@ import { LuPlus, LuTrash2 } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
 import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
+import PromptContentCell from '~/components/AiPromptPreviewDrawer/PromptContentCell';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListPageTable from '~/components/ListPageTable';
@@ -23,6 +24,7 @@ import { formatToDateTime } from '~/utils/date';
 import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
+import { G_EmptyStr } from '~/utils/const';
 
 const PROMPTS_LIST_ERROR_SCOPE = 'prompts-list';
 
@@ -214,17 +216,7 @@ const AiPromptsPage = () => {
         key: 'content',
         ellipsis: true,
         render: (content: string, record) => (
-          <div className="prompts-content-cell">
-            <div className="list-page__cell-ellipsis prompts-content-cell__text">{content}</div>
-            <Button
-              type="link"
-              size="small"
-              className="prompts-content-cell__action"
-              onClick={() => setPreviewPrompt(record)}
-            >
-              查看
-            </Button>
-          </div>
+          <PromptContentCell content={content} onView={() => setPreviewPrompt(record)} />
         ),
       },
       {
@@ -292,9 +284,7 @@ const AiPromptsPage = () => {
                 删除
               </Button>
             </Popconfirm>
-          ) : (
-            '—'
-          ),
+          ) : <span className="list-page__cell-empty">{G_EmptyStr}</span>,
       },
     ],
     [deletingId]

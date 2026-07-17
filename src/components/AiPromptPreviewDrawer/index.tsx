@@ -1,5 +1,5 @@
 import { Button, Drawer } from 'antd';
-import { LuPencil, LuX } from 'react-icons/lu';
+import { LuSquarePen, LuX } from 'react-icons/lu';
 
 import type { AiPrompt } from '~/services/aiPrompt';
 
@@ -13,7 +13,7 @@ interface AiPromptPreviewDrawerProps {
 }
 
 const AiPromptPreviewDrawer = ({ open, prompt, onClose, onEdit }: AiPromptPreviewDrawerProps) => {
-  const canEdit = prompt?.is_editable === 1 && onEdit;
+  const canEdit = prompt?.is_editable === 1 && Boolean(onEdit);
   const charCount = prompt?.content?.length ?? 0;
 
   return (
@@ -52,20 +52,22 @@ const AiPromptPreviewDrawer = ({ open, prompt, onClose, onEdit }: AiPromptPrevie
             <pre className="ai-prompt-preview-drawer__content">{prompt.content}</pre>
           </div>
 
-          {canEdit ? (
-            <footer className="ai-prompt-preview-drawer__footer">
+          <footer className="ai-prompt-preview-drawer__footer">
+            {canEdit ? (
               <Button
                 type="primary"
-                icon={<LuPencil size={14} />}
+                icon={<LuSquarePen size={14} />}
                 onClick={() => {
-                  onEdit(prompt);
+                  onEdit?.(prompt);
                   onClose();
                 }}
               >
                 编辑提示词
               </Button>
-            </footer>
-          ) : null}
+            ) : (
+              <span className="ai-prompt-preview-drawer__footer-hint">系统提示词不可编辑</span>
+            )}
+          </footer>
         </div>
       ) : null}
     </Drawer>

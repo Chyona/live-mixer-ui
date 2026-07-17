@@ -1,18 +1,50 @@
 import { Button, Input, Radio, Spin } from 'antd';
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import { LuMessageSquarePlus, LuPencil, LuPlus, LuSearch } from 'react-icons/lu';
+import { LuEye, LuMessageSquarePlus, LuPlus, LuSearch, LuSquarePen } from 'react-icons/lu';
 
 import AiPromptFormModal from '~/components/AiPromptFormModal';
 import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import { AppError } from '~/services/http';
 import { fetchAiPromptList, type AiPrompt } from '~/services/aiPrompt';
+import { useTextOverflow } from '~/hooks/useTextOverflow';
 import { toApiKeywords } from '~/utils/listKeywords';
 import { showAppError, toast } from '~/utils/toast';
 
 import './PromptPickerPanel.css';
 
 const PAGE_SIZE = 8;
+
+function PromptItemContent({
+  name,
+  content,
+  onView,
+}: {
+  name: string;
+  content: string;
+  onView: (event: MouseEvent) => void;
+}) {
+  const { ref, overflow } = useTextOverflow(content);
+
+  return (
+    <div className="slice-prompt-panel__item-content-row">
+      <div ref={ref} className="slice-prompt-panel__item-content">
+        {content}
+      </div>
+      {overflow ? (
+        <button
+          type="button"
+          className="slice-prompt-panel__view-btn"
+          aria-label={`查看 ${name}`}
+          title="查看"
+          onClick={onView}
+        >
+          <LuEye size={13} />
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 interface PromptPickerPanelProps {
   selectedId: number | null;
@@ -252,8 +284,9 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
 
       <div ref={listRef} className="slice-prompt-panel__list">
         {loading && list.length === 0 ? (
-          <div className="slice-prompt-panel__loading">
-            <Spin size="small" />
+          <div className="slice-prompt-panel__loading" aria-busy="true" aria-label="提示词加载中">
+            <Spin size="default" />
+            <p className="slice-prompt-panel__loading-text">正在加载提示词…</p>
           </div>
         ) : list.length === 0 ? (
           renderEmpty()
@@ -289,20 +322,15 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
                         title="编辑"
                         onClick={(event) => openEdit(item, event)}
                       >
-                        <LuPencil size={13} />
+                        <LuSquarePen size={13} />
                       </button>
                     ) : null}
                   </div>
-                  <div className="slice-prompt-panel__item-content-row">
-                    <div className="slice-prompt-panel__item-content">{item.content}</div>
-                    <button
-                      type="button"
-                      className="slice-prompt-panel__action-btn"
-                      onClick={(event) => openPreview(item, event)}
-                    >
-                      查看
-                    </button>
-                  </div>
+                  <PromptItemContent
+                    name={item.name}
+                    content={item.content}
+                    onView={(event) => openPreview(item, event)}
+                  />
                 </div>
               </label>
             ))}
@@ -335,11 +363,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
         open={previewPrompt != null}
         prompt={previewPrompt}
         onClose={() => setPreviewPrompt(null)}
-        onEdit={
-          previewPrompt?.is_editable === 1
-            ? (prompt) => openEdit(prompt)
-            : undefined
-        }
+        onEdit={(prompt) => openEdit(prompt)}
       />
     </aside>
   );
