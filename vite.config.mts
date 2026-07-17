@@ -6,6 +6,26 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react-swc';
 import { viteMockServe } from 'vite-plugin-mock';
 
+/**
+ * 生产环境 CSP：收紧 script 来源以降低 XSS 窃取 localStorage Token 的风险。
+ * Ant Design 依赖内联 style；媒体/图片允许 https（直播源与 TOS）。
+ * 开发环境不注入，避免打断 Vite HMR。
+ */
+const PRODUCTION_CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
+  "script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https: http:",
+  "media-src 'self' blob: https: http:",
+  "font-src 'self' data:",
+  "connect-src 'self' https: wss: ws:",
+  "worker-src 'self' blob:",
+  "frame-src 'self' https://www.googletagmanager.com https://mp.weixin.qq.com",
+].join('; ');
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
@@ -14,6 +34,7 @@ export default defineConfig(({ mode }) => {
   const appTitle = env.VITE_APP_TITLE || 'Base UI';
   const appDescription =
     env.VITE_APP_DESCRIPTION || '基于 React + Vite + Ant Design 的前端项目模板';
+  const isProduction = mode === 'production';
 
   return {
     clearScreen: false,
@@ -44,7 +65,8 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      sourcemap: process.env.GENERATE_SOURCEMAP === 'false' ? false : true,
+      // 默认不产出 sourcemap；需要时设置 GENERATE_SOURCEMAP=true
+      sourcemap: process.env.GENERATE_SOURCEMAP === 'true',
       outDir: 'dist',
       assetsDir: '.',
     },
@@ -63,6 +85,9 @@ export default defineConfig(({ mode }) => {
           data: {
             title: appTitle,
             description: appDescription,
+            cspMeta: isProduction
+              ? `<meta http-equiv="Content-Security-Policy" content="${PRODUCTION_CSP}" />`
+              : '',
           },
         },
       }),
