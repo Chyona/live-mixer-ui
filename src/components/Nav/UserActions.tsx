@@ -1,7 +1,7 @@
 import { Avatar, Button, Divider, Dropdown, Flex, Tooltip, Typography } from 'antd';
 import { FaSignOutAlt, FaUser } from 'react-icons/fa';
 import { useAuth } from '~/context/AuthContext';
-import type { UserLoginResult } from '~/services/login';
+import { hasAuthCredentials, type UserLoginResult } from '~/services/login';
 import { openLogin } from '~/utils/loginFlow';
 
 type UserActionsProps = {
@@ -49,7 +49,7 @@ const userDropdownMenu = (userInfo: Partial<UserLoginResult>, logout: () => void
 const UserActions = ({ compact, collapsed = false }: UserActionsProps) => {
   const { userInfo = {}, logout } = useAuth();
 
-  if (userInfo?.id) {
+  if (hasAuthCredentials(userInfo)) {
     if (compact) {
       const userPanel = (
         <div

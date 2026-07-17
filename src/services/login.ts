@@ -41,6 +41,11 @@ export async function pwdlogin(params: UserLoginParams): Promise<BaseResponse<Us
   });
 }
 
+/** 本地会话是否具备进入受保护路由的最低凭证（id + token） */
+export function hasAuthCredentials(info: Partial<UserLoginResult> | null | undefined): boolean {
+  return Boolean(info?.id && typeof info.token === 'string' && info.token.length > 0);
+}
+
 export async function getPhoneCode(phone: string) {
   return await request('/v1/auth/sms', {
     method: 'post',

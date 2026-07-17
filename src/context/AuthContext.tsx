@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, type Location } from 'react-router-dom';
 import PageLoading from '~/components/PageLoading';
-import { UserLoginResult } from '~/services/login';
+import { hasAuthCredentials, UserLoginResult } from '~/services/login';
 import { getUserInfo } from '~/services/user';
+import { isUnauthorizedError } from '~/services/http';
 import { closeLogin, completeLoginRedirect, openLogin } from '~/utils/loginFlow';
 import { isLoginModalMode } from '~/utils/config';
 
@@ -28,6 +29,27 @@ const AuthContext = createContext<AuthContextType>(null!);
 
 const AuthLoading = () => <PageLoading viewport />;
 
+function readStoredAuth(): Partial<UserLoginResult> | null {
+  const raw = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<UserLoginResult>;
+    if (!hasAuthCredentials(parsed)) {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    return null;
+  }
+}
+
+function clearLocalAuth() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
 function ModalLoginGate({ from }: { from: Location }) {
   useEffect(() => {
     openLogin(from);
@@ -41,15 +63,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (token) {
+    let cancelled = false;
+
+    async function bootstrapAuth() {
+      const stored = readStoredAuth();
+      if (!stored?.id) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      // 先写入内存态，便于校验请求带上 Bearer；最终以服务端结果为准
+      setUserInfo(stored);
+
       try {
-        setUserInfo(JSON.parse(token));
-      } catch {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
+        const { code, data } = await getUserInfo(stored.id);
+        if (cancelled) return;
+
+        if (code === 0 && data) {
+          const next: Partial<UserLoginResult> = {
+            ...stored,
+            ...data,
+            // 用户信息接口可能不回传 token，保留本地凭证
+            token: data.token || stored.token,
+          };
+          if (!hasAuthCredentials(next)) {
+            clearLocalAuth();
+            setUserInfo({});
+          } else {
+            localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(next));
+            setUserInfo(next);
+          }
+        } else {
+          clearLocalAuth();
+          setUserInfo({});
+        }
+      } catch (error) {
+        // 401 已由拦截器清 session；网络等瞬时错误保留本地凭证，避免误登出
+        if (!cancelled && isUnauthorizedError(error)) {
+          setUserInfo({});
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
-    setLoading(false);
+
+    void bootstrapAuth();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -71,10 +132,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateAuthInfo = (tokenData: Partial<UserLoginResult>) => {
-    let oldData = {};
+    let oldData: Partial<UserLoginResult> = {};
     try {
       const val = localStorage.getItem(AUTH_TOKEN_KEY);
-      oldData = val ? JSON.parse(val) : {};
+      oldData = val ? (JSON.parse(val) as Partial<UserLoginResult>) : {};
     } catch (error) {
       console.error('auth_token JSON old 失败:', error);
     }
@@ -83,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...oldData,
         ...tokenData,
       };
+      if (!hasAuthCredentials(newData)) {
+        console.error('登录结果缺少 id 或 token，已拒绝写入会话');
+        return;
+      }
       localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(newData));
       setUserInfo(newData);
       closeLogin();
@@ -103,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    clearLocalAuth();
     setUserInfo({});
     emitAuthLogoutEvent();
     openLogin();
@@ -134,7 +199,7 @@ export function ProtectedRoute() {
 
   if (loading) return <AuthLoading />;
 
-  if (userInfo?.id) return <Outlet />;
+  if (hasAuthCredentials(userInfo)) return <Outlet />;
 
   if (isLoginModalMode) {
     return <ModalLoginGate from={location} />;

@@ -1,6 +1,7 @@
 import { message } from 'antd';
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '~/context/AuthContext';
+import { hasAuthCredentials } from '~/services/login';
 import { getUserInfo } from '~/services/user';
 
 interface Props {
@@ -22,7 +23,7 @@ export function useUserInfo({ immediate = true }: Props = {}) {
   );
 
   const fetchUser = useCallback(async () => {
-    if (!userInfo?.id) {
+    if (!hasAuthCredentials(userInfo) || !userInfo.id) {
       return errorLogout();
     }
 
@@ -31,7 +32,7 @@ export function useUserInfo({ immediate = true }: Props = {}) {
       return errorLogout(msg);
     }
     updateAuthInfo(data);
-  }, [userInfo?.id, updateAuthInfo, errorLogout]);
+  }, [userInfo, updateAuthInfo, errorLogout]);
 
   const execute = () => fetchUser();
 

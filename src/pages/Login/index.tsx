@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import LoginModal from '~/components/LoginModal';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useAuth } from '~/context/AuthContext';
+import { hasAuthCredentials } from '~/services/login';
 import { buildReturnPath, openLogin, type LoginFrom } from '~/utils/loginFlow';
 import { DEFAULT_APP_PATH } from '~/routes/const';
 
@@ -26,12 +27,12 @@ const LoginPage = () => {
   }, [location]);
 
   useEffect(() => {
-    if (userInfo?.id) {
+    if (hasAuthCredentials(userInfo)) {
       const from = (location.state as { from?: LoginFrom })?.from;
       const returnTo = from?.pathname ? buildReturnPath(from) : DEFAULT_APP_PATH;
       navigate(returnTo, { replace: true });
     }
-  }, [userInfo?.id, location.state, navigate]);
+  }, [userInfo, location.state, navigate]);
 
   return (
     <div className="login-page">
