@@ -45,10 +45,10 @@ cp .env.minimal.example .env
 | `VITE_API_PROXY_TARGET`   | 开发代理目标                                       | http://127.0.0.1:3000 |
 | `VITE_GTM_ID`             | Google Tag Manager ID                              | 空（不启用）          |
 | `VITE_ENABLE_FLOAT`       | 是否显示悬浮客服                                   | true                  |
-| `VITE_AUTH_SCENE_ID`      | 扫码登录场景 ID                                    | default               |
 | `VITE_LOGIN_MODE`         | 登录方式 `page` / `modal`                          | page                  |
 | `VITE_CONTACT_QRCODE_URL` | 客服二维码图片 URL                                 | 空（不显示二维码）    |
 | `VITE_SUPPORT_TITLE`      | 客服悬浮窗标题                                     | `{应用名} 技术支持`   |
+| `VITE_MOCK`               | 开发环境是否启用 Mock                              | false                 |
 
 ## 自定义 API 前缀
 
@@ -85,7 +85,7 @@ Mock 仅在开发环境生效，生产构建不会打包 mock 代码。
 
 | 模式       | 值             | 行为                                            |
 | ---------- | -------------- | ----------------------------------------------- |
-| 独立登录页 | `page`（默认） | 跳转 `/login`，带 `LoginMask` 背景              |
+| 独立登录页 | `page`（默认） | 跳转 `/login`，使用登录页布局                   |
 | 弹窗登录   | `modal`        | 在 `MainLayout` 挂载 `LoginModal`，不离开当前壳 |
 
 ```bash
@@ -99,24 +99,9 @@ VITE_LOGIN_MODE=modal
 - 直接访问 `/login` 会重定向到 `/` 并打开弹窗
 - 登录成功后跳回 `returnTo` 记录的来源路径
 
-### 登录状态事件（可选）
-
-若需在登录/退出时触发副作用（如刷新局部 UI），可使用 `useLoginChange`（`src/hooks/useLoginState.tsx`）：
-
-```tsx
-import { useLoginChange } from '~/hooks/useLoginState';
-
-function MyComponent() {
-  const loginVersion = useLoginChange();
-  // loginVersion 在 login / logout 时递增，可放入 effect 依赖
-}
-```
-
-内部监听 `AuthContext` 派发的 `LOGIN_CHANGE_EVENT`；常规场景请优先使用 `useAuth()`。
-
 ## 登录流程
 
-未登录访问受保护路由、会话过期（401 / 业务码 12010）、退出登录，均通过 `src/utils/loginFlow.ts` 按上述模式处理。
+未登录访问受保护路由、会话过期（HTTP 401 / 业务码 12010）、退出登录，均通过 `src/services/authSession.ts` 的 `handleSessionExpired` / `src/utils/loginFlow.ts` 按上述模式处理。会话失效时**立即**清本地凭证并进入登录。
 
 ## 全局提示（Toast）
 
@@ -165,26 +150,16 @@ src/
 ├── components/         # 通用组件（Header、Nav、LoginModal、ErrorBoundary…）
 ├── context/            # React Context（AuthContext）
 ├── hooks/              # 自定义 Hooks
-├── pages/              # 页面（Home、Login、404…）
+├── pages/              # 页面（Login、业务页、404…）
 ├── routes/             # 路由 & 菜单配置
 ├── services/           # API 层（http / 业务码 / 会话处理）
 ├── style/              # 全局 CSS
 └── utils/              # 工具函数
 ```
 
-## 路由与登录（公开白名单）
+## 路由与登录
 
-采用**白名单**控制公开页：**只有**加入白名单的路径未登录可访问，其余业务页默认需登录。
-
-| 配置方式                                             | 说明                                    |
-| ---------------------------------------------------- | --------------------------------------- |
-| `RoutesCfg` 中 `public: true`                        | 业务页加入白名单（如首页 `/`）          |
-| `src/routes/publicPaths.ts` 中 `SYSTEM_PUBLIC_PATHS` | 系统路由白名单（如 `/login`、`/error`） |
-| 未标记 `public` 的业务页                             | 默认需登录                              |
-
-工具函数 `isPublicPath(pathname)` / `getPublicPathWhitelist()` 可在鉴权、埋点等场景复用。
-
-系统路由 `/login`、`/error`、404 始终公开；404 不在白名单常量中，由路由层单独注册。
+业务页默认需登录。在 `RoutesCfg` 中设置 `public: true` 可将业务页加入公开访问；系统路由 `/login`、`/error`、404 始终公开。
 
 ## 新增需登录页面
 

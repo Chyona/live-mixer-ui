@@ -8,7 +8,6 @@ interface ImportMetaEnv {
   readonly VITE_NAV_LAYOUT?: 'top' | 'left';
   readonly VITE_API_PREFIX?: string;
   readonly VITE_API_PROXY_TARGET?: string;
-  readonly VITE_AUTH_SCENE_ID?: string;
   readonly VITE_LOGIN_MODE?: 'page' | 'modal';
   readonly VITE_GTM_ID?: string;
   readonly VITE_ENABLE_GTM?: string;

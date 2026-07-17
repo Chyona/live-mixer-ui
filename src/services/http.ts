@@ -1,9 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import type { NavigateFunction } from 'react-router-dom';
 import { AUTH_TOKEN_KEY } from '~/context/AuthContext';
-import { clearAuthSession } from '~/services/authSession';
-import { openLogin } from '~/utils/loginFlow';
-import { isLoginPageMode } from '~/utils/config';
+import { handleSessionExpired } from '~/services/authSession';
 import { handleBusinessResponse } from '~/services/responseHandlers';
 import type { BaseResponse } from '~/services/types';
 import { apiPath } from '~/utils/api';
@@ -90,29 +88,6 @@ function resolveHttpErrorMessage(error: AxiosError, fallback: string): { message
   return { message: fallback, code: codeCandidate };
 }
 
-let handlingUnauthorized = false;
-
-function handleUnauthorized(navigate: NavigateFunction) {
-  if (handlingUnauthorized) return;
-
-  handlingUnauthorized = true;
-  const { pathname, search, hash } = window.location;
-  clearAuthSession();
-
-  if (isLoginPageMode && pathname !== '/login') {
-    navigate('/login', {
-      replace: true,
-      state: { from: { pathname, search, hash } },
-    });
-  } else {
-    openLogin({ pathname, search, hash });
-  }
-
-  window.setTimeout(() => {
-    handlingUnauthorized = false;
-  }, 3000);
-}
-
 axios.interceptors.request.use(
   (config) => {
     const tokenData = localStorage.getItem(AUTH_TOKEN_KEY);
@@ -146,7 +121,8 @@ export function setupHttpInterceptors(navigate: NavigateFunction) {
             return Promise.reject(new AppError(resolved.message, resolved.code, error));
           }
 
-          handleUnauthorized(navigate);
+          const { pathname, search, hash } = window.location;
+          handleSessionExpired({ pathname, search, hash }, navigate);
           return Promise.reject(
             new AppError('未登录或登录已过期', HTTP_STATUS_UNAUTHORIZED, error)
           );

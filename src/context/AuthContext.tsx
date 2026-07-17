@@ -7,10 +7,10 @@ import { isUnauthorizedError } from '~/services/http';
 import { closeLogin, completeLoginRedirect, openLogin } from '~/utils/loginFlow';
 import { isLoginModalMode } from '~/utils/config';
 
-/** @deprecated 请优先使用 AuthContext；保留供 useLoginChange 监听 */
+/** 非 React 层（如 http / authSession）与 AuthProvider 同步登录态 */
 export const LOGIN_CHANGE_EVENT = 'loginStateChange';
 
-/** 非 React 层（如 http 拦截器）清会话后通知 AuthProvider 重置 userInfo */
+/** 清会话后通知 AuthProvider 重置 userInfo */
 export function emitAuthLogoutEvent() {
   window.dispatchEvent(new CustomEvent(LOGIN_CHANGE_EVENT, { detail: { state: 'logout' } }));
 }
