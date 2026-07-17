@@ -10,12 +10,6 @@ cp .env.example .env   # 按需修改配置
 pnpm dev
 ```
 
-需要干净起点时，可使用最小化配置：
-
-```bash
-cp .env.minimal.example .env
-```
-
 ## 常用命令
 
 | 命令             | 说明                             |
@@ -33,7 +27,14 @@ cp .env.minimal.example .env
 
 ## 环境变量
 
-复制 `.env.example` 为 `.env` 后修改：
+| 文件                     | 用途                                              |
+| ------------------------ | ------------------------------------------------- |
+| `.env.example`           | 模板，复制为 `.env`                               |
+| `.env`                   | 本地开发默认（gitignore）                         |
+| `.env.development.local` | 本地联调代理/Mock（gitignore，**仅** `pnpm dev`） |
+| `.env.production`        | **生产打包**（`pnpm build`）                      |
+
+复制 `.env.example` 为 `.env` 后按需修改：
 
 | 变量                      | 说明                                               | 默认值                |
 | ------------------------- | -------------------------------------------------- | --------------------- |
@@ -129,16 +130,6 @@ try {
 `App.tsx` 已通过 `AppWithToast` 挂载 antd `App` 上下文，可在组件外（如 axios 拦截器）安全调用 `toast.*`。
 
 `toast.notify.*` 默认开启 `showProgress`（通知自动关闭倒计时条）；短提示请用 `toast.success` 等 message API。
-
-## 最小化配置
-
-复制 `.env.minimal.example` 为 `.env` 可快速关闭可选功能：
-
-- `VITE_ENABLE_GTM=false` — 关闭 Google Tag Manager
-- `VITE_ENABLE_FLOAT=false` — 关闭右下角悬浮客服
-- `VITE_GTM_ID=` — 留空
-
-适合 fork 后作为干净起点，再按需逐项开启。
 
 ## 项目结构
 
