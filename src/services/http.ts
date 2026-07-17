@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import type { NavigateFunction } from 'react-router-dom';
 import { AUTH_TOKEN_KEY } from '~/context/AuthContext';
 import { handleSessionExpired } from '~/services/authSession';
+import { BusinessCode } from '~/services/businessCodes';
 import { handleBusinessResponse } from '~/services/responseHandlers';
 import type { BaseResponse } from '~/services/types';
 import { apiPath } from '~/utils/api';
@@ -27,9 +28,9 @@ function isTimeoutError(error: AxiosError): boolean {
 export class AppError extends Error {
   errorMessage: string;
   errorCode: number;
-  resp: AxiosError;
+  resp?: AxiosError;
 
-  constructor(message: string, code: number, resp: AxiosError) {
+  constructor(message: string, code: number, resp?: AxiosError) {
     super(message);
     this.errorCode = code;
     this.errorMessage = message;
@@ -38,8 +39,13 @@ export class AppError extends Error {
   }
 }
 
+/** 会话失效（HTTP 401 或业务码 12010），调用方不应再弹业务错误提示 */
 export function isUnauthorizedError(error: unknown): boolean {
-  return error instanceof AppError && error.errorCode === HTTP_STATUS_UNAUTHORIZED;
+  return (
+    error instanceof AppError &&
+    (error.errorCode === HTTP_STATUS_UNAUTHORIZED ||
+      error.errorCode === BusinessCode.SESSION_EXPIRED)
+  );
 }
 
 const AUTH_LOGIN_PATH = '/v1/auth/login';
@@ -158,7 +164,16 @@ export async function request<T>(url: string, options: AxiosRequestConfig = {}):
     ...options,
   });
 
-  handleBusinessResponse(data as BaseResponse);
+  const response = data as BaseResponse;
+  // 业务码会话过期：立即清会话并 reject，避免调用方再按 code!==0 弹提示
+  if (response?.code === BusinessCode.SESSION_EXPIRED) {
+    handleSessionExpired();
+    const message =
+      (typeof response.message === 'string' && response.message.trim()) || '未登录或登录已过期';
+    throw new AppError(message, BusinessCode.SESSION_EXPIRED);
+  }
+
+  handleBusinessResponse(response);
 
   return data;
 }

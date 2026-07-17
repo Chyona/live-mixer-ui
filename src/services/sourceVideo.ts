@@ -44,7 +44,7 @@ async function resolveBlobErrorMessage(error: unknown, fallback: string): Promis
     return fallback;
   }
 
-  const data = error.resp.response?.data;
+  const data = error.resp?.response?.data;
   if (data instanceof Blob) {
     try {
       const text = await data.text();

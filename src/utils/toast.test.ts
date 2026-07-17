@@ -144,4 +144,24 @@ describe('toast', () => {
 
     expect(error).toHaveBeenCalledTimes(1);
   });
+
+  it('silences session-expired app errors', () => {
+    const error = vi.fn();
+    registerToast({
+      message: { success: vi.fn(), error, info: vi.fn(), warning: vi.fn() } as never,
+      notification: {
+        success: vi.fn(),
+        error,
+        info: vi.fn(),
+        warning: vi.fn(),
+        open: vi.fn(),
+        destroy: vi.fn(),
+      } as never,
+    });
+
+    showAppError(new AppError('未登录或登录已过期', 12010));
+    handleRequestError('list', new AppError('未登录或登录已过期', 401), '加载失败');
+
+    expect(error).not.toHaveBeenCalled();
+  });
 });
