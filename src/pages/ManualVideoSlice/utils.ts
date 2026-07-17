@@ -388,12 +388,24 @@ export function reorderSegments(
   return next;
 }
 
-export function highlightKeyword(text: string, keyword: string) {
-  if (!keyword.trim()) return text;
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** 生成用于 dangerouslySetInnerHTML 的高亮 HTML；先转义再包 mark，避免 XSS */
+export function highlightKeyword(text: string, keyword: string) {
+  const safeText = escapeHtml(text);
+  if (!keyword.trim()) return safeText;
+
+  const safeKeyword = escapeHtml(keyword);
+  const escaped = safeKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${escaped})`, 'gi');
-  return text.replace(regex, '<mark>$1</mark>');
+  return safeText.replace(regex, '<mark>$1</mark>');
 }
 
 function formatSrtTimestamp(seconds: number): string {
