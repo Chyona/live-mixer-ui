@@ -6,8 +6,8 @@
 /public/sitemap.xml
 sitemap.xml
 
-# env（保留示例文件）
-# .env
+# env（保留示例文件 .env.example）
+.env
 .env.local
 .env.*.local
 
