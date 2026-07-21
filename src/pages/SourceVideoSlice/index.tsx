@@ -315,16 +315,14 @@ const SourceVideoSlicePage = () => {
         return;
       }
 
-      const nextProjectName = data?.name || projectName;
-      toast.notify.success('任务已提交', '可前往任务管理查看进度');
-      navigate(`/slices?keyword=${encodeURIComponent(nextProjectName)}`);
+      toast.notify.success('创建成功', '可前往任务管理查看');
     } catch (error) {
       const msg = error instanceof AppError ? error.errorMessage : '提交失败';
       toast.notify.error(msg);
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, projectId, selectedPrompt, selectedRanges, video]);
+  }, [projectId, selectedPrompt, selectedRanges, video]);
 
   const handleAiSelect = useCallback(async () => {
     if (!video) return;
@@ -375,8 +373,7 @@ const SourceVideoSlicePage = () => {
         return;
       }
 
-      toast.notify.success('AI 选片任务已提交', '可前往任务管理查看进度');
-      navigate('/tasks');
+      toast.notify.success('创建成功', '可前往任务管理查看');
     } catch (error) {
       if (error instanceof AppError) {
         showAppError(error);
@@ -386,7 +383,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setAiSelecting(false);
     }
-  }, [navigate, projectId, selectedPrompt, selectedRanges, video]);
+  }, [projectId, selectedPrompt, selectedRanges, video]);
 
   const breadcrumbItems = useMemo(
     () =>
