@@ -97,6 +97,48 @@
   font-variant-numeric: tabular-nums;
 }
 
+.tasks-progress-cell {
+  min-width: 120px;
+}
+
+.tasks-progress-cell_pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-gray);
+  white-space: nowrap;
+}
+
+.tasks-progress-pending-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary, var(--text-gray));
+}
+
+.tasks-progress-pending-text {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.tasks-progress-cell_failed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.tasks-progress-failed-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-danger);
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: default;
+}
+
 .tasks-progress-bar {
   margin-inline-end: 0;
   line-height: 1;
@@ -118,16 +160,6 @@
 
 .tasks-progress-bar.ant-progress-status-exception .ant-progress-text {
   color: var(--color-danger) !important;
-}
-
-.tasks-error-message {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-danger);
 }
 
 .tasks-cell-ellipsis {
@@ -239,8 +271,9 @@
 }
 
 .tasks-detail-descriptions .ant-descriptions-item-label {
-  width: 72px;
+  width: 148px;
   color: var(--text-gray);
+  white-space: normal;
 }
 
 .tasks-detail-descriptions .ant-descriptions-item-content {

@@ -10,9 +10,20 @@ interface AiPromptPreviewDrawerProps {
   prompt: AiPrompt | null;
   onClose: () => void;
   onEdit?: (prompt: AiPrompt) => void;
+  /** 是否展示底部操作区，默认 true */
+  showFooter?: boolean;
+  /** 不可编辑时的底部提示，默认「系统提示词不可编辑」 */
+  readOnlyHint?: string;
 }
 
-const AiPromptPreviewDrawer = ({ open, prompt, onClose, onEdit }: AiPromptPreviewDrawerProps) => {
+const AiPromptPreviewDrawer = ({
+  open,
+  prompt,
+  onClose,
+  onEdit,
+  showFooter = true,
+  readOnlyHint = '系统提示词不可编辑',
+}: AiPromptPreviewDrawerProps) => {
   const canEdit = prompt?.is_editable === 1 && Boolean(onEdit);
   const charCount = prompt?.content?.length ?? 0;
 
@@ -52,22 +63,24 @@ const AiPromptPreviewDrawer = ({ open, prompt, onClose, onEdit }: AiPromptPrevie
             <pre className="ai-prompt-preview-drawer__content">{prompt.content}</pre>
           </div>
 
-          <footer className="ai-prompt-preview-drawer__footer">
-            {canEdit ? (
-              <Button
-                type="primary"
-                icon={<LuSquarePen size={14} />}
-                onClick={() => {
-                  onEdit?.(prompt);
-                  onClose();
-                }}
-              >
-                编辑提示词
-              </Button>
-            ) : (
-              <span className="ai-prompt-preview-drawer__footer-hint">系统提示词不可编辑</span>
-            )}
-          </footer>
+          {showFooter ? (
+            <footer className="ai-prompt-preview-drawer__footer">
+              {canEdit ? (
+                <Button
+                  type="primary"
+                  icon={<LuSquarePen size={14} />}
+                  onClick={() => {
+                    onEdit?.(prompt);
+                    onClose();
+                  }}
+                >
+                  编辑提示词
+                </Button>
+              ) : (
+                <span className="ai-prompt-preview-drawer__footer-hint">{readOnlyHint}</span>
+              )}
+            </footer>
+          ) : null}
         </div>
       ) : null}
     </Drawer>

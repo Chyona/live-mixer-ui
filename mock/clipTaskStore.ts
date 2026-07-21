@@ -423,12 +423,14 @@ export function toPublicClipTask(task: StoredClipTask) {
   };
 
   return {
-    id: numericId,
+    id: String(task.taskId),
     type,
     status,
     progress: task.progress,
     sys_prompt: task.promptName || task.clipName,
+    usr_prompt: task.taskType === 'ai_slice' || task.taskType === 'ai_slice_select' ? '请按高光片段剪辑' : '',
     video_project_name: task.clipName,
+    live_url: task.m3u8Url || task.videoUrls[0] || '',
     draft_url: task.draftUrls[0] || '',
     created_by: '管理员',
     error_message: task.message ?? '',

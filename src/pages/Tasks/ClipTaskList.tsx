@@ -1,11 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Popconfirm, Progress, Space } from 'antd';
+import { Button, Popconfirm, Space } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { LuCopy, LuFileText, LuTrash2 } from 'react-icons/lu';
 
+import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
+import PromptContentCell from '~/components/AiPromptPreviewDrawer/PromptContentCell';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageTable from '~/components/ListPageTable';
 import type { ListTableEmptyProps } from '~/components/ListTableEmpty';
+import type { AiPrompt } from '~/services/aiPrompt';
 import { AppError } from '~/services/http';
 import {
   deleteClipTask,
@@ -17,12 +20,26 @@ import { formatToDateTime } from '~/utils/date';
 import { showAppError, toast } from '~/utils/toast';
 
 import ClipTaskDetailModal from './ClipTaskDetailModal';
+import TaskProgressCell from './TaskProgressCell';
 import {
   copyTextToClipboard,
   getClipTaskDisplayName,
   getClipTaskStatusLabel,
   getGenerationTaskTypeLabel,
 } from './utils';
+
+function buildPromptPreview(name: string, content: string): AiPrompt {
+  return {
+    id: 0,
+    name,
+    content,
+    remark: '',
+    created_by: '',
+    created_at: '',
+    updated_at: '',
+    is_editable: 0,
+  };
+}
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
@@ -56,22 +73,6 @@ function renderStatusLabel(status: ClipTaskItemStatus) {
   );
 }
 
-function renderProgress(progress: number, status: ClipTaskItemStatus) {
-  const percent = Math.max(0, Math.min(100, Math.round(progress)));
-  const isCompleted = status === 'completed';
-  const isFailed = status === 'failed';
-
-  return (
-    <Progress
-      className="tasks-progress-bar"
-      percent={isCompleted ? 100 : percent}
-      size="small"
-      status={isCompleted ? 'success' : isFailed ? 'exception' : 'normal'}
-      {...(isCompleted ? {} : { format: (value?: number) => `${value ?? 0}%` })}
-    />
-  );
-}
-
 function ClipTaskList({
   tasks,
   loading = false,
@@ -81,10 +82,17 @@ function ClipTaskList({
   empty,
 }: ClipTaskListProps) {
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [previewPrompt, setPreviewPrompt] = useState<AiPrompt | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const openPromptPreview = useCallback((name: string, content: string) => {
+    const text = content.trim();
+    if (!text) return;
+    setPreviewPrompt(buildPromptPreview(name, text));
+  }, []);
 
   const handleDelete = useCallback(
-    async (taskId: number) => {
+    async (taskId: string) => {
       setDeletingId(taskId);
       try {
         const response = await deleteClipTask(taskId);
@@ -134,39 +142,56 @@ function ClipTaskList({
         title: '项目名称',
         dataIndex: 'video_project_name',
         key: 'video_project_name',
-        minWidth: 220,
+        width: 230,
         ellipsis: true,
         render: (_, record) => (
           <EllipsisTooltip text={getClipTaskDisplayName(record)} className="tasks-cell-ellipsis" />
         ),
       },
       {
+        title: '系统提示词',
+        dataIndex: 'sys_prompt',
+        key: 'sys_prompt',
+        ellipsis: true,
+        render: (value: string) => {
+          const text = value?.trim() || '';
+          if (!text) return <span className="tasks-error-empty">-</span>;
+          return (
+            <PromptContentCell
+              content={text}
+              onView={() => openPromptPreview('系统提示词', text)}
+            />
+          );
+        },
+      },
+      {
+        title: '用户提示词',
+        dataIndex: 'usr_prompt',
+        key: 'usr_prompt',
+        ellipsis: true,
+        render: (value: string) => {
+          const text = value?.trim() || '';
+          if (!text) return <span className="tasks-error-empty">-</span>;
+          return (
+            <PromptContentCell
+              content={text}
+              onView={() => openPromptPreview('用户提示词', text)}
+            />
+          );
+        },
+      },
+      {
         title: '进度',
         dataIndex: 'progress',
         key: 'progress',
-        width: 180,
-        render: (progress: number, record) => renderProgress(progress, record.status),
-      },
-      {
-        title: '状态',
-        dataIndex: 'status',
-        key: 'status',
-        width: 100,
-        render: (status: ClipTaskItemStatus) => renderStatusLabel(status),
-      },
-      {
-        title: '错误信息',
-        dataIndex: 'error_message',
-        key: 'error_message',
-        width: 280,
-        ellipsis: true,
-        render: (message: string) => {
-          const text = message?.trim();
-          if (!text) return <span className="tasks-error-empty">-</span>;
-          return (
-            <EllipsisTooltip text={text} className="tasks-error-message tasks-cell-ellipsis" />
-          );
-        },
+        width: 160,
+        render: (progress: number, record) => (
+          <TaskProgressCell
+            progress={progress}
+            status={record.status}
+            errorMessage={record.error_message}
+          />
+        ),
       },
       {
         title: '创建时间',
@@ -229,7 +254,7 @@ function ClipTaskList({
         },
       },
     ],
-    [deletingId, handleCopyDraft, handleDelete]
+    [deletingId, handleCopyDraft, handleDelete, openPromptPreview]
   );
 
   return (
@@ -240,13 +265,20 @@ function ClipTaskList({
         loading={loading}
         columns={columns}
         dataSource={tasks}
-        scrollX={1200}
+        scrollX={1600}
         empty={empty}
         pagination={pagination}
         onChange={(nextPagination) => onTableChange(nextPagination)}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />
+
+      <AiPromptPreviewDrawer
+        open={Boolean(previewPrompt)}
+        prompt={previewPrompt}
+        onClose={() => setPreviewPrompt(null)}
+        showFooter={false}
+      />
     </>
   );
 }

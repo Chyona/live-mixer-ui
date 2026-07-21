@@ -14,19 +14,25 @@ export interface ClipTaskExt {
   target_duration_ms?: number;
   draft_url?: string;
   draft_urls?: string[];
+  live_url?: string;
 }
 
 /**
  * 任务列表项（与接口返回结构一致）
  */
 export interface ClipTaskItem {
-  id: number;
+  id: string;
   type: GenerationTaskType;
   status: ClipTaskItemStatus;
   progress: number;
+  /** 系统提示词 */
   sys_prompt: string;
+  /** 用户提示词 */
+  usr_prompt: string;
   /** 项目名称 */
   video_project_name: string;
+  /** 直播素材 URL */
+  live_url: string;
   /** 草稿地址（一键成片 / 生成草稿） */
   draft_url: string;
   created_by: string;
@@ -74,6 +80,18 @@ export function parseClipTaskExt(ext: string | ClipTaskExt | null | undefined): 
   }
 }
 
+function resolveLiveUrl(
+  raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined,
+  ext: ClipTaskExt
+): string {
+  const topLevel = String(
+    raw?.live_url ?? (raw as { video_url?: string })?.video_url ?? ''
+  ).trim();
+  if (topLevel) return topLevel;
+  if (ext.live_url?.trim()) return ext.live_url.trim();
+  return '';
+}
+
 function resolveDraftUrl(
   raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined
 ): string {
@@ -115,18 +133,21 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
 
   const ext =
     typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : '';
+  const parsedExt = parseClipTaskExt(ext);
 
   return {
-    id: Number(raw?.id ?? 0),
+    id: String(raw?.id ?? '').trim(),
     type: normalizedType,
     status: statusMap[rawStatus] ?? 'pending',
     progress: Number(raw?.progress ?? 0),
     sys_prompt: String(raw?.sys_prompt ?? ''),
+    usr_prompt: String(raw?.usr_prompt ?? (raw as { usrPrompt?: string })?.usrPrompt ?? ''),
     video_project_name: String(
       (raw as { video_project_name?: string; project_name?: string })?.video_project_name ??
         (raw as { project_name?: string })?.project_name ??
         ''
     ),
+    live_url: resolveLiveUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>, parsedExt),
     draft_url: resolveDraftUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>),
     created_by: String(raw?.created_by ?? ''),
     error_message: String(raw?.error_message ?? ''),
@@ -163,9 +184,7 @@ export async function fetchClipTaskList(
   };
 }
 
-export async function fetchClipTaskDetail(
-  taskId: string | number
-): Promise<BaseResponse<ClipTaskItem>> {
+export async function fetchClipTaskDetail(taskId: string): Promise<BaseResponse<ClipTaskItem>> {
   const response = await request<BaseResponse<ClipTaskItem>>(`/v1/tasks/${taskId}`, {
     method: 'get',
   });
@@ -176,7 +195,7 @@ export async function fetchClipTaskDetail(
   };
 }
 
-export async function deleteClipTask(taskId: string | number): Promise<BaseResponse<null>> {
+export async function deleteClipTask(taskId: string): Promise<BaseResponse<null>> {
   return await request(`/v1/tasks/${taskId}`, {
     method: 'delete',
   });
