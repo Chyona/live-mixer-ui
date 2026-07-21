@@ -2,15 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuPlus, LuScissors, LuSparkles, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuPlus, LuScissors, LuSparkles, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
+import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageLayout from '~/components/ListPageLayout';
 import ListPageTable from '~/components/ListPageTable';
 import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
+import TableColumnSetting, {
+  type TableColumnSettingItem,
+} from '~/components/TableColumnSetting';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListFilters } from '~/hooks/useListFilters';
+import { useTableColumnVisibility } from '~/hooks/useTableColumnVisibility';
 import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
@@ -29,6 +34,23 @@ import { showAppError, showScopedError, handleRequestError, toast } from '~/util
 const SOURCE_VIDEOS_LIST_ERROR_SCOPE = 'source-videos-list';
 /** ASR 进行中时列表静默刷新间隔（秒） */
 const ASR_POLL_INTERVAL_MS = 2 * 1000;
+const SOURCE_VIDEOS_COLUMN_STORAGE_KEY = 'source-videos-table-columns-v2';
+const SOURCE_VIDEOS_LOCKED_COLUMN_KEYS = ['name', 'actions'];
+/** 默认隐藏：ASR 开始/完成时间 */
+const SOURCE_VIDEOS_DEFAULT_HIDDEN_COLUMN_KEYS = ['asr_started_at', 'asr_updated_at'];
+
+const SOURCE_VIDEOS_COLUMN_SETTINGS: TableColumnSettingItem[] = [
+  { key: 'name', label: '源视频名称', locked: true },
+  { key: 'remark', label: '备注' },
+  { key: 'live_url', label: '视频URL' },
+  { key: 'duration', label: '时长' },
+  { key: 'asr_progress', label: 'ASR解析进度' },
+  { key: 'asr_started_at', label: 'ASR开始时间' },
+  { key: 'asr_updated_at', label: 'ASR完成时间' },
+  { key: 'created_by', label: '创建者' },
+  { key: 'created_at', label: '创建时间' },
+  { key: 'actions', label: '操作', locked: true },
+];
 
 import AddSourceVideoModal from './AddSourceVideoModal';
 import AsrProgressCell from './AsrProgressCell';
@@ -89,6 +111,18 @@ const SourceVideosPage = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [retryingAsrId, setRetryingAsrId] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+
+  const columnKeys = useMemo(
+    () => SOURCE_VIDEOS_COLUMN_SETTINGS.map((item) => item.key),
+    []
+  );
+  const { visibleKeySet, setVisibleKeys, visibleKeys, defaultVisibleKeys } =
+    useTableColumnVisibility({
+      storageKey: SOURCE_VIDEOS_COLUMN_STORAGE_KEY,
+      columnKeys,
+      lockedKeys: SOURCE_VIDEOS_LOCKED_COLUMN_KEYS,
+      defaultHiddenKeys: SOURCE_VIDEOS_DEFAULT_HIDDEN_COLUMN_KEYS,
+    });
 
   const loadList = useCallback(async (options?: { silent?: boolean; refresh?: boolean }) => {
     const silent = options?.silent ?? false;
@@ -249,8 +283,8 @@ const SourceVideosPage = () => {
     }
   };
 
-  const columns = useMemo<ColumnsType<SourceVideo>>(
-    () => [
+  const columns = useMemo<ColumnsType<SourceVideo>>(() => {
+    const allColumns: ColumnsType<SourceVideo> = [
       {
         title: '源视频名称',
         dataIndex: 'name',
@@ -278,6 +312,55 @@ const SourceVideosPage = () => {
         ),
       },
       {
+        title: '视频URL',
+        dataIndex: 'live_url',
+        key: 'live_url',
+        width: 260,
+        ellipsis: true,
+        render: (url: string) => {
+          const text = url?.trim();
+          if (!text) return '-';
+
+          const handleCopy = async () => {
+            try {
+              if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+              } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+              }
+              toast.notify.success('已复制');
+            } catch {
+              toast.notify.error('复制失败，请手动复制链接');
+            }
+          };
+
+          return (
+            <div className="source-videos-url-cell">
+              <EllipsisTooltip
+                text={text}
+                className="list-page__cell-ellipsis source-videos-url-cell__text"
+              />
+              <Button
+                type="link"
+                size="small"
+                className="source-videos-url-cell__action"
+                icon={<LuCopy size={14} />}
+                aria-label="复制视频URL"
+                title="复制"
+                onClick={() => void handleCopy()}
+              />
+            </div>
+          );
+        },
+      },
+      {
         title: '时长',
         dataIndex: 'duration',
         key: 'duration',
@@ -285,16 +368,9 @@ const SourceVideosPage = () => {
         render: (duration: number) => (duration > 0 ? formatVideoDurationMs(duration) : '-'),
       },
       {
-        title: '创建时间',
-        dataIndex: 'created_at',
-        key: 'created_at',
-        width: 160,
-        render: (created_at: string) => formatToDateTime(created_at),
-      },
-      {
         title: 'ASR解析进度',
         key: 'asr_progress',
-        width: 220,
+        width: 160,
         render: (_, record) => (
           <AsrProgressCell
             status={record.asr_status}
@@ -310,9 +386,41 @@ const SourceVideosPage = () => {
         ),
       },
       {
+        title: 'ASR开始时间',
+        dataIndex: 'asr_started_at',
+        key: 'asr_started_at',
+        width: 160,
+        render: (value: string) => formatToDateTime(value),
+      },
+      {
+        title: 'ASR完成时间',
+        dataIndex: 'asr_updated_at',
+        key: 'asr_updated_at',
+        width: 160,
+        render: (value: string, record) =>
+          record.asr_status === 'completed' ? formatToDateTime(value) : '-',
+      },
+      {
+        title: '创建者',
+        dataIndex: 'created_by',
+        key: 'created_by',
+        width: 100,
+        ellipsis: true,
+        render: (createdBy: string) => (
+          <EllipsisTooltip text={createdBy || '-'} className="list-page__cell-ellipsis" />
+        ),
+      },
+      {
+        title: '创建时间',
+        dataIndex: 'created_at',
+        key: 'created_at',
+        width: 160,
+        render: (created_at: string) => formatToDateTime(created_at),
+      },
+      {
         title: '操作',
         key: 'actions',
-        width: 260,
+        width: 245,
         fixed: 'right',
         render: (_, record) => {
           const asrDisabledReason = getAsrActionDisabledReason(
@@ -358,9 +466,33 @@ const SourceVideosPage = () => {
           );
         },
       },
-    ],
-    [deletingId, navigate, retryingAsrId]
-  );
+    ];
+
+    const visibleColumns = allColumns.filter((column) => {
+      const key = String(column.key ?? '');
+      return visibleKeySet.has(key);
+    });
+
+    return [
+      ...visibleColumns,
+      {
+        key: '__column_setting__',
+        width: 44,
+        fixed: 'right',
+        align: 'center',
+        className: 'table-column-setting-col',
+        title: (
+          <TableColumnSetting
+            items={SOURCE_VIDEOS_COLUMN_SETTINGS}
+            value={visibleKeys}
+            defaultValue={defaultVisibleKeys}
+            onChange={setVisibleKeys}
+          />
+        ),
+        render: () => null,
+      },
+    ];
+  }, [deletingId, defaultVisibleKeys, navigate, retryingAsrId, setVisibleKeys, visibleKeySet, visibleKeys]);
 
   const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedGlobalKeyword);
   const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
@@ -421,7 +553,7 @@ const SourceVideosPage = () => {
         loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
-        scrollX={1200}
+        scrollX={1600}
         empty={
           hasActiveFilters
             ? {
