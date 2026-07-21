@@ -54,9 +54,27 @@ export type SliceProject = CreateSliceProjectParams & {
   draft_url: string;
   video_url: string;
   ext: string;
+  /** 视频宽度（像素） */
+  width?: number;
+  /** 视频高度（像素） */
+  height?: number;
   created_at: string;
   updated_at: string;
 };
+
+/** 根据宽高推导列表展示比例：竖屏 9:16，横屏 16:9 */
+export function getSliceProjectAspectRatio(
+  project: Pick<SliceProject, 'width' | 'height'>
+): '9:16' | '16:9' | '-' {
+  const width = Number(project.width);
+  const height = Number(project.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return '-';
+  }
+  if (height > width) return '9:16';
+  if (width > height) return '16:9';
+  return '-';
+}
 
 /** 详情：在接口字段基础上，补充 UI 用 segments */
 export interface SliceProjectDetail extends SliceProject {
@@ -139,6 +157,8 @@ export function normalizeSliceProject(raw: Partial<SliceProject> | null | undefi
     draft_url: String(raw?.draft_url ?? ''),
     video_url: String(raw?.video_url ?? ''),
     ext: String(raw?.ext ?? ''),
+    width: Number(raw?.width) > 0 ? Number(raw?.width) : undefined,
+    height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],
     clips1: Array.isArray(raw?.clips1) ? raw.clips1 : [],
     project_source: getSliceProjectSource({

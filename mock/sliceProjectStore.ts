@@ -216,6 +216,9 @@ export function toPublicSliceProject(project: SliceProjectRecord) {
     draft_url: '',
     video_url: '',
     ext: '',
+    // mock：奇数竖屏 9:16，偶数横屏 16:9
+    width: (Number(project.sourceVideoId) || 0) % 2 === 1 ? 1080 : 1920,
+    height: (Number(project.sourceVideoId) || 0) % 2 === 1 ? 1920 : 1080,
     project_source: project.projectSource,
     clips0: timelineClips,
     clips1: manualClips,

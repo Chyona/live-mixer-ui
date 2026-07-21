@@ -17,6 +17,7 @@ import {
   deleteSliceProject,
   fetchSliceProjectList,
   getSliceProjectSegmentCount,
+  getSliceProjectAspectRatio,
   updateSliceProject,
   updateSliceProjectName,
   type SliceProject,
@@ -243,6 +244,13 @@ const SlicesPage = () => {
         width: 100,
         align: 'center',
         render: (_, record) => getSliceProjectSegmentCount(record),
+      },
+      {
+        title: '视频比例',
+        key: 'aspect_ratio',
+        width: 100,
+        align: 'center',
+        render: (_, record) => getSliceProjectAspectRatio(record),
       },
       {
         title: '更新时间',
