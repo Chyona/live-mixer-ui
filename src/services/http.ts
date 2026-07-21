@@ -39,7 +39,7 @@ export class AppError extends Error {
   }
 }
 
-/** 会话失效（HTTP 401 或业务码 12010），调用方不应再弹业务错误提示 */
+/** 会话失效（HTTP 401 或业务码 401 / 12010），调用方不应再弹业务错误提示 */
 export function isUnauthorizedError(error: unknown): boolean {
   return (
     error instanceof AppError &&
@@ -128,9 +128,14 @@ export function setupHttpInterceptors(navigate: NavigateFunction) {
           }
 
           const { pathname, search, hash } = window.location;
-          handleSessionExpired({ pathname, search, hash }, navigate);
+          const resolved = resolveHttpErrorMessage(error, '未登录或登录已过期');
+          handleSessionExpired(
+            { pathname, search, hash },
+            navigate,
+            { message: resolved.message }
+          );
           return Promise.reject(
-            new AppError('未登录或登录已过期', HTTP_STATUS_UNAUTHORIZED, error)
+            new AppError(resolved.message, HTTP_STATUS_UNAUTHORIZED, error)
           );
         }
 
@@ -165,12 +170,16 @@ export async function request<T>(url: string, options: AxiosRequestConfig = {}):
   });
 
   const response = data as BaseResponse;
-  // 业务码会话过期：立即清会话并 reject，避免调用方再按 code!==0 弹提示
-  if (response?.code === BusinessCode.SESSION_EXPIRED) {
-    handleSessionExpired();
+  // 业务码会话过期：立即提示、清会话并 reject，避免调用方再按 code!==0 弹提示
+  const businessCode = Number(response?.code);
+  if (
+    businessCode === BusinessCode.SESSION_EXPIRED ||
+    businessCode === HTTP_STATUS_UNAUTHORIZED
+  ) {
     const message =
       (typeof response.message === 'string' && response.message.trim()) || '未登录或登录已过期';
-    throw new AppError(message, BusinessCode.SESSION_EXPIRED);
+    handleSessionExpired(undefined, undefined, { message });
+    throw new AppError(message, businessCode);
   }
 
   handleBusinessResponse(response);

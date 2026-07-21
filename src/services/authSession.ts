@@ -20,16 +20,29 @@ function currentFrom(): LoginFrom {
   };
 }
 
+function notifySessionExpired(message?: string) {
+  const title = message?.trim() || '登录已过期';
+  // 动态导入避免与 http ↔ toast 循环依赖；固定 key 防止并发请求叠多条
+  void import('~/utils/toast').then(({ toast }) => {
+    toast.notify.warning(title, undefined, { key: 'session-expired' });
+  });
+}
+
 /**
- * 会话失效统一入口：立即清本地凭证并进入登录。
- * HTTP 401 与业务码 12010 共用，避免延迟清会话造成的竞态。
+ * 会话失效统一入口：提示、清本地凭证并进入登录。
+ * HTTP 401 与业务码 12010/401 共用，避免延迟清会话造成的竞态与重复提示。
  */
-export function handleSessionExpired(from?: LoginFrom, navigate?: NavigateFunction) {
+export function handleSessionExpired(
+  from?: LoginFrom,
+  navigate?: NavigateFunction,
+  options?: { message?: string }
+) {
   if (handlingSessionExpired) return;
   handlingSessionExpired = true;
 
   const location = from ?? currentFrom();
   clearAuthSession();
+  notifySessionExpired(options?.message);
 
   if (isLoginPageMode && location.pathname !== '/login') {
     if (navigate) {

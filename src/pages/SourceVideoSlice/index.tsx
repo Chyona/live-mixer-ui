@@ -317,8 +317,11 @@ const SourceVideoSlicePage = () => {
 
       toast.notify.success('创建成功', '可前往任务管理查看');
     } catch (error) {
-      const msg = error instanceof AppError ? error.errorMessage : '提交失败';
-      toast.notify.error(msg);
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('提交失败');
+      }
     } finally {
       setSubmitting(false);
     }

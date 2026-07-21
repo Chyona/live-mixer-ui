@@ -512,8 +512,11 @@ const ManualVideoSlicePage = () => {
         setSaveModalOpen(false);
         toast.notify.success('已另存为新的剪辑项目，可在项目管理中查看');
       } catch (error) {
-        const msg = error instanceof AppError ? error.errorMessage : '保存失败';
-        toast.notify.error(msg);
+        if (error instanceof AppError) {
+          showAppError(error);
+        } else {
+          toast.notify.error('保存失败');
+        }
       } finally {
         setSavingProject(false);
       }
@@ -551,8 +554,11 @@ const ManualVideoSlicePage = () => {
       toast.notify.success('任务已提交，正在跳转到任务管理');
       navigate('/tasks');
     } catch (error) {
-      const msg = error instanceof AppError ? error.errorMessage : '提交失败';
-      toast.notify.error(msg);
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('提交失败');
+      }
     } finally {
       setSubmitting(false);
     }
