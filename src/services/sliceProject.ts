@@ -110,12 +110,10 @@ export function getSliceProjectSource(project: {
   return 'manual';
 }
 
+/** 项目列表「片段数」统一取 clips1 */
 export function getSliceProjectSegmentCount(
-  project: Pick<SliceProject, 'project_source' | 'clips0' | 'clips1'>
+  project: Pick<SliceProject, 'clips1'>
 ): number {
-  if (project.project_source === 'timeline') {
-    return project.clips0?.length ?? 0;
-  }
   return project.clips1?.length ?? 0;
 }
 
