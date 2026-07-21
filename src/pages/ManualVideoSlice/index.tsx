@@ -598,6 +598,10 @@ const ManualVideoSlicePage = () => {
   }, [sourceVideoId, video?.name]);
 
   const handleSwitchToTimeline = useCallback(() => {
+    if (projectId) {
+      updateSliceProject(projectId, { project_source: 'timeline' });
+    }
+
     navigate(buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
       state: { from: entryFrom },
     });

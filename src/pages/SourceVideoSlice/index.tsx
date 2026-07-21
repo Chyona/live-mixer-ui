@@ -399,6 +399,16 @@ const SourceVideoSlicePage = () => {
     [entryFrom, sourceVideoId, video?.name]
   );
 
+  const handleSwitchToManual = useCallback(() => {
+    if (projectId) {
+      updateSliceProject(projectId, { project_source: 'manual' });
+    }
+
+    navigate(buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
+      state: { from: entryFrom },
+    });
+  }, [entryFrom, navigate, projectId, sourceVideoId]);
+
   if (loading) {
     return <SourceVideoSlicePageSkeleton breadcrumbItems={breadcrumbItems} />;
   }
@@ -413,12 +423,6 @@ const SourceVideoSlicePage = () => {
       </div>
     );
   }
-
-  const handleSwitchToManual = () => {
-    navigate(buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
-      state: { from: entryFrom },
-    });
-  };
 
   const pageHeader = (
     <SlicePageHeader
