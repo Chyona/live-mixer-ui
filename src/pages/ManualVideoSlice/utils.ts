@@ -530,7 +530,7 @@ export function getSegmentExtendableSeconds(
 }
 
 /**
- * 向片段前/后扩展时间；优先用字级 ASR 补齐文案并吸附字边界。
+ * 向片段前/后扩展时间；完全落在扩展窗口内的字才会补入文案。
  * 不超过上一片段结尾 / 下一片段开头、视频边界，以及单侧最多 +SEGMENT_EXTEND_MAX_SEC。
  */
 export function extendSegmentEdge(
@@ -557,33 +557,28 @@ export function extendSegmentEdge(
 
   if (edge === 'start') {
     const targetStart = Math.max(0, segment.start - applied);
-    // 扩展窗口内新出现的字（按字起点落在 [targetStart, segment.start)）
+    // 仅纳入完全落在扩展窗口内的字，避免只碰到下一字开头就整字吸入
     const addedWords = transcriptWords.filter(
-      (word) => word.start >= targetStart - EPS && word.start < segment.start - EPS
+      (word) => word.start >= targetStart - EPS && word.end <= segment.start + EPS
     );
     if (addedWords.length) {
       const prefix = addedWords.map((word) => word.text).join('');
       nextSegment.text = `${prefix}${segment.text}`;
-      nextSegment.start = Math.min(addedWords[0]!.start, segment.end - MIN_SEGMENT_DURATION);
-    } else {
-      nextSegment.start = Math.min(targetStart, segment.end - MIN_SEGMENT_DURATION);
     }
+    nextSegment.start = Math.min(targetStart, segment.end - MIN_SEGMENT_DURATION);
   } else {
     const targetEnd =
       Number.isFinite(videoDuration) && videoDuration > 0
         ? Math.min(videoDuration, segment.end + applied)
         : segment.end + applied;
     const addedWords = transcriptWords.filter(
-      (word) => word.start >= segment.end - EPS && word.start < targetEnd - EPS
+      (word) => word.start >= segment.end - EPS && word.end <= targetEnd + EPS
     );
     if (addedWords.length) {
       const suffix = addedWords.map((word) => word.text).join('');
       nextSegment.text = `${segment.text}${suffix}`;
-      const last = addedWords[addedWords.length - 1]!;
-      nextSegment.end = Math.max(last.end, segment.start + MIN_SEGMENT_DURATION);
-    } else {
-      nextSegment.end = Math.max(targetEnd, segment.start + MIN_SEGMENT_DURATION);
     }
+    nextSegment.end = Math.max(targetEnd, segment.start + MIN_SEGMENT_DURATION);
   }
 
   // 再次钳制邻居与单侧最多 +0.5s
