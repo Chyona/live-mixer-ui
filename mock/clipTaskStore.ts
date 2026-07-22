@@ -432,6 +432,8 @@ export function toPublicClipTask(task: StoredClipTask) {
     video_project_name: task.clipName,
     live_url: task.m3u8Url || task.videoUrls[0] || '',
     draft_url: task.draftUrls[0] || '',
+    width: 1080,
+    height: 1920,
     created_by: '管理员',
     error_message: task.message ?? '',
     ext: JSON.stringify(ext),

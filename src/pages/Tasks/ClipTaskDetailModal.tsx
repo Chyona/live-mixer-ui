@@ -4,6 +4,7 @@ import { LuX } from 'react-icons/lu';
 import type { ClipTaskItem } from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
 import {
+  getClipTaskAspectRatio,
   getClipTaskDisplayName,
   getClipTaskStatusLabel,
   getGenerationTaskTypeLabel,
@@ -34,6 +35,7 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
   const liveUrl = task?.live_url?.trim() || '';
   const errorMessage = task?.error_message?.trim() || '';
   const projectName = task ? getClipTaskDisplayName(task) : '';
+  const aspectRatio = task ? getClipTaskAspectRatio(task) : '-';
   const percent = task ? Math.max(0, Math.min(100, Math.round(task.progress))) : 0;
   const isCompleted = task?.status === 'completed';
   const isFailed = task?.status === 'failed';
@@ -81,10 +83,31 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
               <Descriptions.Item label="任务ID">
                 {task.id.trim() ? task.id : <EmptyValue />}
               </Descriptions.Item>
+              <Descriptions.Item label="项目名称">
+                {projectName || <EmptyValue />}
+              </Descriptions.Item>
+              <Descriptions.Item label="视频比例">
+                {aspectRatio === '-' ? <EmptyValue /> : aspectRatio}
+              </Descriptions.Item>
               <Descriptions.Item label="任务类型">
                 <span className={`tasks-type-label tasks-type-label_${task.type || 'draft'}`}>
                   {getGenerationTaskTypeLabel(task.type)}
                 </span>
+              </Descriptions.Item>
+              <Descriptions.Item label="任务创建者">
+                {task.created_by?.trim() || <EmptyValue />}
+              </Descriptions.Item>
+              <Descriptions.Item label="任务创建时间">
+                {formatToDateTime(task.created_at)}
+              </Descriptions.Item>
+              <Descriptions.Item label="任务更新时间">
+                {formatToDateTime(task.updated_at)}
+              </Descriptions.Item>
+              <Descriptions.Item label="任务开始时间">
+                {formatToDateTime(task.started_at)}
+              </Descriptions.Item>
+              <Descriptions.Item label="任务完成时间">
+                {formatToDateTime(task.completed_at)}
               </Descriptions.Item>
               <Descriptions.Item label="任务状态">
                 <span className={`tasks-status tasks-status_${task.status}`}>
@@ -108,29 +131,11 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
                   <EmptyValue />
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="项目名称">
-                {projectName || <EmptyValue />}
-              </Descriptions.Item>
               <Descriptions.Item label="直播素材URL">
                 <CopyableUrl url={liveUrl} />
               </Descriptions.Item>
               <Descriptions.Item label="草稿地址">
                 <CopyableUrl url={draftUrl} />
-              </Descriptions.Item>
-              <Descriptions.Item label="任务创建者">
-                {task.created_by?.trim() || <EmptyValue />}
-              </Descriptions.Item>
-              <Descriptions.Item label="任务创建时间">
-                {formatToDateTime(task.created_at)}
-              </Descriptions.Item>
-              <Descriptions.Item label="任务更新时间">
-                {formatToDateTime(task.updated_at)}
-              </Descriptions.Item>
-              <Descriptions.Item label="任务开始时间">
-                {formatToDateTime(task.started_at)}
-              </Descriptions.Item>
-              <Descriptions.Item label="任务完成时间">
-                {formatToDateTime(task.completed_at)}
               </Descriptions.Item>
             </Descriptions>
           </div>

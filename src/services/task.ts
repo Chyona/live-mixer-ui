@@ -35,6 +35,10 @@ export interface ClipTaskItem {
   live_url: string;
   /** 草稿地址（一键成片 / 生成草稿） */
   draft_url: string;
+  /** 视频宽度（像素） */
+  width?: number;
+  /** 视频高度（像素） */
+  height?: number;
   created_by: string;
   error_message: string;
   /** 原始 JSON 字符串 */
@@ -149,6 +153,8 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
     ),
     live_url: resolveLiveUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>, parsedExt),
     draft_url: resolveDraftUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>),
+    width: Number(raw?.width) > 0 ? Number(raw?.width) : undefined,
+    height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     created_by: String(raw?.created_by ?? ''),
     error_message: String(raw?.error_message ?? ''),
     ext,
