@@ -15,10 +15,9 @@ export const initGTM = (gtmId: string) => {
   });
 };
 
-// 跟踪事件的类型安全方法
+// 跟踪事件；未启用 GTM 时静默跳过，避免本地控制台刷屏
 export const trackEvent = (eventName: string, params: Record<string, any> = {}) => {
   if (!window.dataLayer) {
-    console.warn('dataLayer not initialized');
     return;
   }
 
