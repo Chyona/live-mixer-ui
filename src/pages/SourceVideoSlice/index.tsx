@@ -36,6 +36,7 @@ import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
 import PromptPickerPanel from './PromptPickerPanel';
 
 const MAX_TOTAL_DURATION = 30 * 60;
+const MIN_TOTAL_DURATION = 5 * 60;
 
 function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] {
   if (!clips?.length) return [];
@@ -274,6 +275,11 @@ const SourceVideoSlicePage = () => {
       return;
     }
 
+    if (totalSelectedDuration < MIN_TOTAL_DURATION) {
+      toast.notify.warning(`已选时长需不少于 ${MIN_TOTAL_DURATION / 60} 分钟`);
+      return;
+    }
+
     if (!selectedPrompt) {
       toast.notify.warning('请先选择一个 AI 提示词');
       return;
@@ -325,13 +331,18 @@ const SourceVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectId, selectedPrompt, selectedRanges, video]);
+  }, [projectId, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
 
   const handleAiSelect = useCallback(async () => {
     if (!video) return;
 
     if (selectedRanges.length === 0) {
       toast.notify.warning('请先选择至少一个时间段');
+      return;
+    }
+
+    if (totalSelectedDuration < MIN_TOTAL_DURATION) {
+      toast.notify.warning(`已选时长需不少于 ${MIN_TOTAL_DURATION / 60} 分钟`);
       return;
     }
 
@@ -386,7 +397,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setAiSelecting(false);
     }
-  }, [projectId, selectedPrompt, selectedRanges, video]);
+  }, [projectId, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
 
   const breadcrumbItems = useMemo(
     () =>
@@ -490,6 +501,7 @@ const SourceVideoSlicePage = () => {
                 videoDuration={videoDuration}
                 selectedRanges={selectedRanges}
                 totalSelectedDuration={totalSelectedDuration}
+                minTotalDuration={MIN_TOTAL_DURATION}
                 maxTotalDuration={MAX_TOTAL_DURATION}
                 submitting={submitting}
                 aiSelecting={aiSelecting}

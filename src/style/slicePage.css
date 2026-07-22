@@ -58,7 +58,12 @@
   color: var(--color-danger-dark);
 }
 
-.slice-selected-stats .slice-over-limit {
+.slice-under-min {
+  color: var(--color-warning, #d48806);
+}
+
+.slice-selected-stats .slice-over-limit,
+.slice-selected-stats .slice-under-min {
   margin-left: 4px;
 }
 

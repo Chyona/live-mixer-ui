@@ -10,11 +10,21 @@ function buildActionDisabledReason(options: {
   canAction: boolean;
   selectedRangesCount: number;
   hasSelectedPrompt: boolean;
+  isUnderMin: boolean;
   isOverLimit: boolean;
+  minTotalDuration: number;
   maxTotalDuration: number;
 }) {
-  const { actionLoading, canAction, selectedRangesCount, hasSelectedPrompt, isOverLimit, maxTotalDuration } =
-    options;
+  const {
+    actionLoading,
+    canAction,
+    selectedRangesCount,
+    hasSelectedPrompt,
+    isUnderMin,
+    isOverLimit,
+    minTotalDuration,
+    maxTotalDuration,
+  } = options;
 
   if (actionLoading || canAction) return null;
 
@@ -25,8 +35,11 @@ function buildActionDisabledReason(options: {
   if (!hasSelectedPrompt) {
     missing.push('请在上方提示词列表中选择合适的提示词');
   }
+  if (isUnderMin) {
+    missing.push(`已选时长需不少于 ${minTotalDuration / 60} 分钟`);
+  }
   if (isOverLimit) {
-    missing.push(`已选时长不超过 ${maxTotalDuration / 60} 分钟`);
+    missing.push(`已选时长需不超过 ${maxTotalDuration / 60} 分钟`);
   }
 
   return missing.length > 0 ? missing.join('；') : null;
@@ -36,6 +49,7 @@ interface SelectedSegmentsPanelProps {
   videoDuration: number;
   selectedRanges: TimeRange[];
   totalSelectedDuration: number;
+  minTotalDuration: number;
   maxTotalDuration: number;
   submitting: boolean;
   aiSelecting: boolean;
@@ -54,6 +68,7 @@ const SelectedSegmentsPanel = ({
   videoDuration,
   selectedRanges,
   totalSelectedDuration,
+  minTotalDuration,
   maxTotalDuration,
   submitting,
   aiSelecting,
@@ -67,8 +82,11 @@ const SelectedSegmentsPanel = ({
   onRangeDelete,
   hasSelectedPrompt,
 }: SelectedSegmentsPanelProps) => {
+  const isUnderMin =
+    selectedRanges.length > 0 && totalSelectedDuration < minTotalDuration;
   const isOverLimit = totalSelectedDuration > maxTotalDuration;
-  const canAction = selectedRanges.length > 0 && hasSelectedPrompt && !isOverLimit;
+  const canAction =
+    selectedRanges.length > 0 && hasSelectedPrompt && !isUnderMin && !isOverLimit;
   const actionLoading = submitting || aiSelecting;
 
   const disabledReason = buildActionDisabledReason({
@@ -76,7 +94,9 @@ const SelectedSegmentsPanel = ({
     canAction,
     selectedRangesCount: selectedRanges.length,
     hasSelectedPrompt,
+    isUnderMin,
     isOverLimit,
+    minTotalDuration,
     maxTotalDuration,
   });
 
@@ -114,6 +134,11 @@ const SelectedSegmentsPanel = ({
             {selectedRanges.length > 0 && (
               <p className="slice-selected-stats">
                 已选时长 {formatVideoDuration(totalSelectedDuration)}
+                {isUnderMin && (
+                  <span className="slice-under-min">
+                    （需不少于 {minTotalDuration / 60} 分钟）
+                  </span>
+                )}
                 {isOverLimit && (
                   <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
                 )}
