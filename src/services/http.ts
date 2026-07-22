@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, isAxiosError } from 'axios';
 import type { NavigateFunction } from 'react-router-dom';
 import { AUTH_TOKEN_KEY } from '~/context/AuthContext';
 import { handleSessionExpired } from '~/services/authSession';
@@ -100,13 +100,15 @@ function resolveHttpErrorMessage(
   return { message: fallback, code: codeCandidate };
 }
 
+/** React Router navigate；模块级拦截器始终挂载，此处仅注入导航能力 */
+let authNavigate: NavigateFunction | undefined;
+
 function rejectSessionExpired(
   message: string,
-  navigate?: NavigateFunction,
   axiosError?: AxiosError
 ): Promise<never> {
   const { pathname, search, hash } = window.location;
-  handleSessionExpired({ pathname, search, hash }, navigate, { message });
+  handleSessionExpired({ pathname, search, hash }, authNavigate, { message });
   return Promise.reject(new AppError(message, HTTP_STATUS_UNAUTHORIZED, axiosError));
 }
 
@@ -128,85 +130,122 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export function setupHttpInterceptors(navigate: NavigateFunction) {
-  const interceptorId = axios.interceptors.response.use(
-    (response) => {
-      // HTTP 200 + 业务码 401/12010：后端常见写法，需在成功回调里拦截
-      const payload = response.data;
-      const requestUrl = String(response.config?.url ?? '');
-      if (
-        !isAuthLoginRequestUrl(requestUrl) &&
-        isSessionExpiredCode(readBusinessCode(payload))
-      ) {
-        const message = readBusinessMessage(payload, '未登录或登录已过期');
-        return rejectSessionExpired(message, navigate);
-      }
-      return response;
-    },
-    (error): Promise<AppError> => {
-      let message: string;
-      let code: number;
-
-      if (error.response) {
-        // 登录接口的 401 表示账号密码错误等认证失败，不应走「会话过期」清 session / 弹登录
-        if (error.response.status === HTTP_STATUS_UNAUTHORIZED) {
-          if (isAuthLoginRequest(error)) {
-            const resolved = resolveHttpErrorMessage(error, '用户名或密码错误');
-            return Promise.reject(new AppError(resolved.message, resolved.code, error));
-          }
-
-          const resolved = resolveHttpErrorMessage(error, '未登录或登录已过期');
-          return rejectSessionExpired(resolved.message, navigate, error);
-        }
-
-        // 其他 HTTP 错误：若业务体仍带会话失效码，同样走登录
-        if (
-          !isAuthLoginRequest(error) &&
-          isSessionExpiredCode(readBusinessCode(error.response.data))
-        ) {
-          const resolved = resolveHttpErrorMessage(error, '未登录或登录已过期');
-          return rejectSessionExpired(resolved.message, navigate, error);
-        }
-
-        const resolved = resolveHttpErrorMessage(error, '请求响应错误！');
-        message = resolved.message;
-        code = resolved.code;
-      } else if (isTimeoutError(error)) {
-        message = '请求超时，请稍后重试';
-        code = HTTP_STATUS_TIMEOUT;
-      } else if (error.request) {
-        message = '请求未收到响应！';
-        code = 500;
-      } else {
-        message = '请求设置错误！';
-        code = 500;
-      }
-
-      return Promise.reject(new AppError(message, code, error));
+/**
+ * 响应拦截器在模块加载时注册一次，避免挂在 useEffect 里时
+ * 子页面首屏请求早于拦截器就绪，导致 HTTP 401 漏处理、无法退出登录。
+ */
+axios.interceptors.response.use(
+  (response) => {
+    // HTTP 200 + 业务码 401/12010：后端常见写法，需在成功回调里拦截
+    const payload = response.data;
+    const requestUrl = String(response.config?.url ?? '');
+    if (
+      !isAuthLoginRequestUrl(requestUrl) &&
+      isSessionExpiredCode(readBusinessCode(payload))
+    ) {
+      const message = readBusinessMessage(payload, '未登录或登录已过期');
+      return rejectSessionExpired(message);
     }
-  );
+    return response;
+  },
+  (error): Promise<AppError> => {
+    // 成功回调里 reject 的 AppError 会再进本错误回调，必须原样抛出，否则 401 被改写成 500
+    if (error instanceof AppError) {
+      return Promise.reject(error);
+    }
 
+    if (!isAxiosError(error)) {
+      const message = error instanceof Error ? error.message : '请求设置错误！';
+      return Promise.reject(new AppError(message, 500));
+    }
+
+    let message: string;
+    let code: number;
+
+    if (error.response) {
+      // 登录接口的 401 表示账号密码错误等认证失败，不应走「会话过期」清 session / 弹登录
+      if (error.response.status === HTTP_STATUS_UNAUTHORIZED) {
+        if (isAuthLoginRequest(error)) {
+          const resolved = resolveHttpErrorMessage(error, '用户名或密码错误');
+          return Promise.reject(new AppError(resolved.message, resolved.code, error));
+        }
+
+        const resolved = resolveHttpErrorMessage(error, '未登录或登录已过期');
+        return rejectSessionExpired(resolved.message, error);
+      }
+
+      // 其他 HTTP 错误：若业务体仍带会话失效码，同样走登录
+      if (
+        !isAuthLoginRequest(error) &&
+        isSessionExpiredCode(readBusinessCode(error.response.data))
+      ) {
+        const resolved = resolveHttpErrorMessage(error, '未登录或登录已过期');
+        return rejectSessionExpired(resolved.message, error);
+      }
+
+      const resolved = resolveHttpErrorMessage(error, '请求响应错误！');
+      message = resolved.message;
+      code = resolved.code;
+    } else if (isTimeoutError(error)) {
+      message = '请求超时，请稍后重试';
+      code = HTTP_STATUS_TIMEOUT;
+    } else if (error.request) {
+      message = '请求未收到响应！';
+      code = 500;
+    } else {
+      message = '请求设置错误！';
+      code = 500;
+    }
+
+    return Promise.reject(new AppError(message, code, error));
+  }
+);
+
+/** 注入 React Router navigate；拦截器本身不在此处注册/卸载 */
+export function setupHttpInterceptors(navigate: NavigateFunction) {
+  authNavigate = navigate;
   return () => {
-    axios.interceptors.response.eject(interceptorId);
+    if (authNavigate === navigate) {
+      authNavigate = undefined;
+    }
   };
 }
 
 export async function request<T>(url: string, options: AxiosRequestConfig = {}): Promise<T> {
-  const { data } = await axios.request<T>({
-    url: apiPath(url),
-    timeout: DEFAULT_REQUEST_TIMEOUT_MS,
-    ...options,
-  });
+  try {
+    const { data } = await axios.request<T>({
+      url: apiPath(url),
+      timeout: DEFAULT_REQUEST_TIMEOUT_MS,
+      ...options,
+    });
 
-  const response = data as BaseResponse;
-  // 兜底：拦截器未就绪时仍处理业务会话失效码
-  if (isSessionExpiredCode(response?.code)) {
-    const message = readBusinessMessage(response, '未登录或登录已过期');
-    handleSessionExpired(undefined, undefined, { message });
-    throw new AppError(message, HTTP_STATUS_UNAUTHORIZED);
+    const response = data as BaseResponse;
+    // 兜底：业务会话失效码（正常应由拦截器处理）
+    if (isSessionExpiredCode(response?.code)) {
+      const message = readBusinessMessage(response, '未登录或登录已过期');
+      handleSessionExpired(undefined, authNavigate, { message });
+      throw new AppError(message, HTTP_STATUS_UNAUTHORIZED);
+    }
+
+    handleBusinessResponse(response);
+
+    return data;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // 兜底：拦截器未覆盖时的 Axios HTTP 401 / 业务失效码
+    if (isAxiosError(error) && error.response && !isAuthLoginRequest(error)) {
+      const status = error.response.status;
+      const payload = error.response.data;
+      if (status === HTTP_STATUS_UNAUTHORIZED || isSessionExpiredCode(readBusinessCode(payload))) {
+        const message = readBusinessMessage(payload, '未登录或登录已过期');
+        handleSessionExpired(undefined, authNavigate, { message });
+        throw new AppError(message, HTTP_STATUS_UNAUTHORIZED, error);
+      }
+    }
+
+    throw error;
   }
-
-  handleBusinessResponse(response);
-
-  return data;
 }
