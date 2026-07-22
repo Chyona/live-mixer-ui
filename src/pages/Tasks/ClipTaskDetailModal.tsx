@@ -20,12 +20,31 @@ function EmptyValue() {
   return <span className="tasks-error-empty">-</span>;
 }
 
-function CopyableUrl({ url }: { url: string }) {
+function isHttpUrl(url: string) {
+  return /^https?:\/\//i.test(url);
+}
+
+function CopyableUrl({ url, linkable = false }: { url: string; linkable?: boolean }) {
   const text = url.trim();
   if (!text) return <EmptyValue />;
+
+  const content =
+    linkable && isHttpUrl(text) ? (
+      <a
+        className="tasks-detail-link"
+        href={text}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {text}
+      </a>
+    ) : (
+      text
+    );
+
   return (
     <Typography.Paragraph className="tasks-detail-draft" copyable={{ text }}>
-      {text}
+      {content}
     </Typography.Paragraph>
   );
 }
