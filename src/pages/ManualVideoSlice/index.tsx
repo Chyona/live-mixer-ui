@@ -43,7 +43,6 @@ import {
   findActiveSegment,
   flattenTranscriptWords,
   buildTranscriptHighlight,
-  findActiveCopySegment,
   getParagraphText,
   getTextSelectionOffsets,
   liveAsrToTranscriptParagraphs,
@@ -140,13 +139,6 @@ const ManualVideoSlicePage = () => {
     () => buildTranscriptHighlight({ playbackSync: activeSync }),
     [activeSync]
   );
-
-  const playbackActiveCopySegmentId = useMemo(() => {
-    if (!isVideoPlaying) return null;
-    return findActiveCopySegment(selectedSegments, currentTime)?.id ?? null;
-  }, [isVideoPlaying, selectedSegments, currentTime]);
-
-  const effectiveActiveCopySegmentId = playbackActiveCopySegmentId ?? activeSegmentId;
 
   const syncProjectIdInUrl = useCallback(
     (nextProjectId: number, options?: { reload?: boolean }) => {
@@ -791,7 +783,7 @@ const ManualVideoSlicePage = () => {
 
           <SelectedCopyPanel
             segments={selectedSegments}
-            activeSegmentId={effectiveActiveCopySegmentId}
+            activeSegmentId={activeSegmentId}
             speakerIds={speakerIds}
             maxTotalDuration={MAX_TOTAL_DURATION}
             videoDuration={videoDuration}
