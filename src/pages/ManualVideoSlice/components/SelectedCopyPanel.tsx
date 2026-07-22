@@ -11,10 +11,13 @@ import {
 import type { SelectedCopySegment } from '../types';
 import {
   formatSliceTime,
+  getSegmentExtendableSeconds,
   getSpeakerColor,
   getTextSelectionOffsets,
   getTotalSelectedDuration,
   reorderSegments,
+  SEGMENT_EXTEND_MAX_SEC,
+  SEGMENT_EXTEND_STEP_SEC,
 } from '../utils';
 import { formatVideoDuration } from '~/utils/duration';
 
@@ -41,6 +44,7 @@ interface SelectedCopyPanelProps {
   activeSegmentId: string | null;
   speakerIds: string[];
   maxTotalDuration: number;
+  videoDuration: number;
   submitting: boolean;
   onActiveSegmentChange: (segmentId: string | null) => void;
   onSeek: (time: number) => void;
@@ -52,6 +56,7 @@ interface SelectedCopyPanelProps {
     savedSelection?: { start: number; end: number } | null
   ) => void;
   onCopySegment: (segmentId: string) => void;
+  onExtendSegment: (segmentId: string, edge: 'start' | 'end') => void;
   onClearAll: () => void;
   onPreview: () => void;
   onSave: () => void;
@@ -66,6 +71,7 @@ const SelectedCopyPanel = ({
   activeSegmentId,
   speakerIds,
   maxTotalDuration,
+  videoDuration,
   submitting,
   onActiveSegmentChange,
   onSeek,
@@ -73,6 +79,7 @@ const SelectedCopyPanel = ({
   onDeleteSegment,
   onDeleteSelectedRange,
   onCopySegment,
+  onExtendSegment,
   onClearAll,
   onPreview,
   onSave,
@@ -341,6 +348,32 @@ const SelectedCopyPanel = ({
 
                 {isActive && (
                   <div className="slice-editor-copy-actions">
+                    <button
+                      type="button"
+                      disabled={
+                        getSegmentExtendableSeconds(segments, index, 'start', videoDuration) <= 0
+                      }
+                      title={`向前扩展 ${SEGMENT_EXTEND_STEP_SEC} 秒（单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s，且不超过上一片段结尾）`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onExtendSegment(segment.id, 'start');
+                      }}
+                    >
+                      向前+{SEGMENT_EXTEND_STEP_SEC}s
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        getSegmentExtendableSeconds(segments, index, 'end', videoDuration) <= 0
+                      }
+                      title={`向后扩展 ${SEGMENT_EXTEND_STEP_SEC} 秒（单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s，且不超过下一片段开头）`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onExtendSegment(segment.id, 'end');
+                      }}
+                    >
+                      向后+{SEGMENT_EXTEND_STEP_SEC}s
+                    </button>
                     <button
                       type="button"
                       onClick={(event) => {

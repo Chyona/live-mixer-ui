@@ -861,6 +861,11 @@
   cursor: pointer;
 }
 
+.slice-editor-copy-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .slice-editor-copy-actions button.danger {
   border-color: var(--color-danger);
   color: var(--color-danger);

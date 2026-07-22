@@ -39,7 +39,9 @@ import SaveDraftModal from './components/SaveDraftModal';
 import type { SelectedCopySegment, TranscriptParagraph } from './types';
 import {
   deleteSelectedRangeFromSegment,
+  extendSegmentEdge,
   findActiveSegment,
+  flattenTranscriptWords,
   buildTranscriptHighlight,
   findActiveCopySegment,
   getParagraphText,
@@ -48,6 +50,7 @@ import {
   normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
   scrollElementIntoViewPreferUpper,
+  SEGMENT_EXTEND_STEP_SEC,
 } from './utils';
 
 interface ManualSliceLocationState {
@@ -383,11 +386,38 @@ const ManualVideoSlicePage = () => {
       const copy: SelectedCopySegment = {
         ...target,
         id: `copy-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        originStart: target.start,
+        originEnd: target.end,
       };
       return [...prev, copy];
     });
     toast.notify.success('已复制片段');
   }, []);
+
+  const handleExtendSegment = useCallback(
+    (segmentId: string, edge: 'start' | 'end') => {
+      const index = selectedSegments.findIndex((item) => item.id === segmentId);
+      if (index < 0) return;
+
+      const transcriptWords = flattenTranscriptWords(paragraphs);
+      const result = extendSegmentEdge(
+        selectedSegments,
+        index,
+        edge,
+        SEGMENT_EXTEND_STEP_SEC,
+        videoDuration,
+        transcriptWords
+      );
+      if (!result) {
+        toast.notify.warning(
+          edge === 'start' ? '前方没有可扩展的空隙' : '后方没有可扩展的空隙'
+        );
+        return;
+      }
+      setSelectedSegments(result.segments);
+    },
+    [paragraphs, selectedSegments, videoDuration]
+  );
 
   const handleSaveProject = useCallback(
     async (options?: { name?: string; remark?: string }) => {
@@ -764,6 +794,7 @@ const ManualVideoSlicePage = () => {
             activeSegmentId={effectiveActiveCopySegmentId}
             speakerIds={speakerIds}
             maxTotalDuration={MAX_TOTAL_DURATION}
+            videoDuration={videoDuration}
             submitting={submitting}
             onActiveSegmentChange={setActiveSegmentId}
             onSeek={handleSeek}
@@ -771,6 +802,7 @@ const ManualVideoSlicePage = () => {
             onDeleteSegment={handleDeleteSegment}
             onDeleteSelectedRange={handleDeleteSelectedRange}
             onCopySegment={handleCopySegment}
+            onExtendSegment={handleExtendSegment}
             onClearAll={() => {
               setSelectedSegments([]);
               setActiveSegmentId(null);

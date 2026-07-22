@@ -109,6 +109,8 @@ function clipsToUiSegments(
       text: clip.text?.trim() ?? '',
       start,
       end,
+      originStart: start,
+      originEnd: end,
     };
   });
 }
