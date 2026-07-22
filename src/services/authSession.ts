@@ -45,13 +45,14 @@ export function handleSessionExpired(
   notifySessionExpired(options?.message);
 
   if (isLoginPageMode && location.pathname !== '/login') {
+    const navOptions = {
+      replace: true as const,
+      state: { from: location },
+    };
     if (navigate) {
-      navigate('/login', {
-        replace: true,
-        state: { from: location },
-      });
+      navigate('/login', navOptions);
     } else {
-      navigateTo('/login', { from: location });
+      navigateTo('/login', navOptions);
     }
   } else {
     openLogin(location);

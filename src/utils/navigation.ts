@@ -7,11 +7,19 @@ export const setGlobalNavigate = (navigate: NavigateFunction | null) => {
   globalNavigate = navigate;
 };
 
-export const navigateTo = (path: string, state?: any) => {
+export type NavigateToOptions = {
+  replace?: boolean;
+  state?: unknown;
+};
+
+export const navigateTo = (path: string, options?: NavigateToOptions) => {
   if (globalNavigate) {
-    globalNavigate(path, { state });
+    globalNavigate(path, {
+      replace: options?.replace,
+      state: options?.state,
+    });
   } else {
     console.warn('导航函数尚未初始化，使用原生导航');
-    window.location.href = path;
+    window.location.assign(path);
   }
 };

@@ -61,10 +61,12 @@ export function openLogin(from?: LoginFrom) {
 
   const pathnameSafe = isSafeInternalPath(pathname);
   navigateTo('/login', {
-    from: {
-      pathname: pathnameSafe ? pathname : DEFAULT_APP_PATH,
-      search: pathnameSafe ? (from?.search ?? '') : '',
-      hash: pathnameSafe ? (from?.hash ?? '') : '',
+    state: {
+      from: {
+        pathname: pathnameSafe ? pathname : DEFAULT_APP_PATH,
+        search: pathnameSafe ? (from?.search ?? '') : '',
+        hash: pathnameSafe ? (from?.hash ?? '') : '',
+      },
     },
   });
 }

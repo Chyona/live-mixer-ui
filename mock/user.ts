@@ -3,12 +3,12 @@ import { API_PREFIX } from './_config';
 
 export default [
   {
-    url: `${API_PREFIX}/v1/user`,
+    url: `${API_PREFIX}/v1/accounts/:id`,
     method: 'get',
-    response: () => ({
+    response: ({ query }: { query: { id: string } }) => ({
       code: 0,
       message: '',
-      data: { id: '222', name: 'userName', token: 'mock-token' },
+      data: { id: query.id || '222', username: 'userName', token: 'mock-token' },
     }),
   },
   {
