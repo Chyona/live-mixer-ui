@@ -840,30 +840,132 @@
   cursor: text;
 }
 
+/* 选中时不再套虚线框，避免卡片里再套一层盒子 */
 .slice-editor-copy-text_active {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--surface-card);
-  border: 1px dashed var(--surface-item-active-border);
+  margin-top: 2px;
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .slice-editor-copy-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(59, 111, 245, 0.12);
 }
 
-.slice-editor-copy-actions button {
+/* 留白：整组一层轻 chip，内部不再套框 */
+.slice-editor-copy-pad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 3px 8px 3px 6px;
+  border: 1px solid rgba(59, 111, 245, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.slice-editor-copy-pad-label {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(59, 111, 245, 0.1);
+  color: var(--color-primary, #3b6ff5);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.slice-editor-copy-pad-edge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.slice-editor-copy-pad-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(59, 111, 245, 0.18);
+}
+
+.slice-editor-copy-pad-edge-name {
+  margin-right: 2px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.slice-editor-copy-pad-value {
+  min-width: 34px;
+  padding: 0 2px;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+}
+
+.slice-editor-copy-pad-value.is-zero {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.slice-editor-copy-actions .slice-editor-copy-pad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  font-size: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.slice-editor-copy-actions .slice-editor-copy-pad-btn:not(:disabled):hover {
+  background: rgba(59, 111, 245, 0.12);
+  color: var(--color-primary, #3b6ff5);
+}
+
+.slice-editor-copy-actions .slice-editor-copy-pad-btn:disabled {
+  color: #d1d5db;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.slice-editor-copy-actions > button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 28px;
   padding: 4px 8px;
-  border: 1px solid var(--border-color, #eef0f4);
+  border: none;
   border-radius: 6px;
-  background: var(--surface-card);
+  background: transparent;
+  color: #374151;
   font-size: 12px;
   cursor: pointer;
+}
+
+.slice-editor-copy-actions > button:not(:disabled):hover {
+  background: rgba(59, 111, 245, 0.08);
+  color: var(--color-primary, #3b6ff5);
 }
 
 .slice-editor-copy-actions button:disabled {
@@ -871,24 +973,38 @@
   cursor: not-allowed;
 }
 
-.slice-editor-copy-actions button.danger {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
-
-.slice-editor-copy-actions button.danger:not(:disabled):hover {
-  border-color: var(--color-danger-dark);
-  background: var(--color-danger-bg-hover);
-  color: var(--color-danger-dark);
-}
-
 .slice-editor-copy-actions-delete-group {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding-left: 6px;
-  margin-left: 2px;
-  border-left: 1px solid var(--border-color, #eef0f4);
+  gap: 2px;
+  min-height: 28px;
+  padding-left: 8px;
+  margin-left: 0;
+  border-left: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.slice-editor-copy-actions-delete-group button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.slice-editor-copy-actions button.danger {
+  border: none;
+  color: var(--color-danger);
+  background: transparent;
+}
+
+.slice-editor-copy-actions button.danger:not(:disabled):hover {
+  background: var(--color-danger-bg-hover);
+  color: var(--color-danger-dark);
 }
 
 .slice-editor-preview-modal-wrap {
@@ -1359,6 +1475,7 @@
   100% {
     transform: scaleY(0.55);
   }
+
   50% {
     transform: scaleY(1);
   }

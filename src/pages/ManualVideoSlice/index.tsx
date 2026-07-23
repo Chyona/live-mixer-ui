@@ -39,9 +39,8 @@ import SaveDraftModal from './components/SaveDraftModal';
 import type { SelectedCopySegment, TranscriptParagraph } from './types';
 import {
   deleteSelectedRangeFromSegment,
-  extendSegmentEdge,
+  adjustSegmentEdge,
   findActiveSegment,
-  flattenTranscriptWords,
   buildTranscriptHighlight,
   getParagraphText,
   getTextSelectionOffsets,
@@ -49,7 +48,6 @@ import {
   normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
   scrollElementIntoViewPreferUpper,
-  SEGMENT_EXTEND_STEP_SEC,
 } from './utils';
 
 interface ManualSliceLocationState {
@@ -386,29 +384,28 @@ const ManualVideoSlicePage = () => {
     toast.notify.success('已复制片段');
   }, []);
 
-  const handleExtendSegment = useCallback(
-    (segmentId: string, edge: 'start' | 'end') => {
+  const handleAdjustSegment = useCallback(
+    (segmentId: string, edge: 'start' | 'end', deltaSec: number) => {
       const index = selectedSegments.findIndex((item) => item.id === segmentId);
       if (index < 0) return;
 
-      const transcriptWords = flattenTranscriptWords(paragraphs);
-      const result = extendSegmentEdge(
-        selectedSegments,
-        index,
-        edge,
-        SEGMENT_EXTEND_STEP_SEC,
-        videoDuration,
-        transcriptWords
-      );
+      const result = adjustSegmentEdge(selectedSegments, index, edge, deltaSec, videoDuration);
       if (!result) {
+        const expanding = deltaSec > 0;
         toast.notify.warning(
-          edge === 'start' ? '前方没有可扩展的空隙' : '后方没有可扩展的空隙'
+          expanding
+            ? edge === 'start'
+              ? '前方没有可扩展的留白'
+              : '后方没有可扩展的留白'
+            : edge === 'start'
+              ? '前方没有可收回的留白'
+              : '后方没有可收回的留白'
         );
         return;
       }
       setSelectedSegments(result.segments);
     },
-    [paragraphs, selectedSegments, videoDuration]
+    [selectedSegments, videoDuration]
   );
 
   const handleSaveProject = useCallback(
@@ -794,7 +791,7 @@ const ManualVideoSlicePage = () => {
             onDeleteSegment={handleDeleteSegment}
             onDeleteSelectedRange={handleDeleteSelectedRange}
             onCopySegment={handleCopySegment}
-            onExtendSegment={handleExtendSegment}
+            onAdjustSegment={handleAdjustSegment}
             onClearAll={() => {
               setSelectedSegments([]);
               setActiveSegmentId(null);

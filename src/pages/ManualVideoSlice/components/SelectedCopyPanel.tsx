@@ -3,15 +3,20 @@ import {
   LuArrowLeft,
   LuCopy,
   LuGripVertical,
+  LuMinus,
   LuPlay,
+  LuPlus,
   LuScissors,
   LuTextSelect,
   LuTrash2,
 } from 'react-icons/lu';
 import type { SelectedCopySegment } from '../types';
 import {
+  formatPadSeconds,
   formatSliceTime,
-  getSegmentExtendableSeconds,
+  getSegmentAdjustableSeconds,
+  getSegmentBackPadSeconds,
+  getSegmentFrontPadSeconds,
   getSpeakerColor,
   getTextSelectionOffsets,
   getTotalSelectedDuration,
@@ -56,7 +61,7 @@ interface SelectedCopyPanelProps {
     savedSelection?: { start: number; end: number } | null
   ) => void;
   onCopySegment: (segmentId: string) => void;
-  onExtendSegment: (segmentId: string, edge: 'start' | 'end') => void;
+  onAdjustSegment: (segmentId: string, edge: 'start' | 'end', deltaSec: number) => void;
   onClearAll: () => void;
   onPreview: () => void;
   onSave: () => void;
@@ -79,7 +84,7 @@ const SelectedCopyPanel = ({
   onDeleteSegment,
   onDeleteSelectedRange,
   onCopySegment,
-  onExtendSegment,
+  onAdjustSegment,
   onClearAll,
   onPreview,
   onSave,
@@ -258,6 +263,8 @@ const SelectedCopyPanel = ({
           segments.map((segment, index) => {
             const color = getSpeakerColor(segment.speakerId, speakerIds);
             const isActive = activeSegmentId === segment.id;
+            const frontPad = isActive ? getSegmentFrontPadSeconds(segment) : 0;
+            const backPad = isActive ? getSegmentBackPadSeconds(segment) : 0;
             const showInsertBefore =
               dragIndex != null &&
               dropMarker?.index === index &&
@@ -348,43 +355,123 @@ const SelectedCopyPanel = ({
 
                 {isActive && (
                   <div className="slice-editor-copy-actions">
-                    <button
-                      type="button"
-                      disabled={
-                        getSegmentExtendableSeconds(segments, index, 'start', videoDuration) <= 0
-                      }
-                      title={`向前扩展 ${SEGMENT_EXTEND_STEP_SEC} 秒（单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s，且不超过上一片段结尾）`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onExtendSegment(segment.id, 'start');
-                      }}
-                    >
-                      向前+{SEGMENT_EXTEND_STEP_SEC}s
-                    </button>
-                    <button
-                      type="button"
-                      disabled={
-                        getSegmentExtendableSeconds(segments, index, 'end', videoDuration) <= 0
-                      }
-                      title={`向后扩展 ${SEGMENT_EXTEND_STEP_SEC} 秒（单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s，且不超过下一片段开头）`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onExtendSegment(segment.id, 'end');
-                      }}
-                    >
-                      向后+{SEGMENT_EXTEND_STEP_SEC}s
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onCopySegment(segment.id);
-                      }}
-                    >
-                      <LuCopy size={14} />
-                      复制
-                    </button>
+                    <div className="slice-editor-copy-pad" aria-label="调节片段头尾留白">
+                      <span className="slice-editor-copy-pad-label">留白</span>
+                      <div className="slice-editor-copy-pad-edge">
+                        <span className="slice-editor-copy-pad-edge-name">前</span>
+                        <button
+                          type="button"
+                          className="slice-editor-copy-pad-btn"
+                          aria-label={`收回前方留白`}
+                          disabled={
+                            getSegmentAdjustableSeconds(
+                              segments,
+                              index,
+                              'start',
+                              'shrink',
+                              videoDuration
+                            ) <= 0
+                          }
+                          title={`收回前方留白`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onAdjustSegment(segment.id, 'start', -SEGMENT_EXTEND_STEP_SEC);
+                          }}
+                        >
+                          <LuMinus size={14} strokeWidth={2.25} />
+                        </button>
+                        <span
+                          className={`slice-editor-copy-pad-value${frontPad < 0.05 ? ' is-zero' : ''}`}
+                          title={`前方已加留白；只调时间空白，不会带入上一句尾字`}
+                        >
+                          {formatPadSeconds(frontPad)}
+                        </span>
+                        <button
+                          type="button"
+                          className="slice-editor-copy-pad-btn"
+                          aria-label={`前方加留白`}
+                          disabled={
+                            getSegmentAdjustableSeconds(
+                              segments,
+                              index,
+                              'start',
+                              'expand',
+                              videoDuration
+                            ) <= 0
+                          }
+                          title={`前方加留白（仅加空白，不带入上一句尾字；单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s）`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onAdjustSegment(segment.id, 'start', SEGMENT_EXTEND_STEP_SEC);
+                          }}
+                        >
+                          <LuPlus size={14} strokeWidth={2.25} />
+                        </button>
+                      </div>
+                      <span className="slice-editor-copy-pad-sep" aria-hidden="true" />
+                      <div className="slice-editor-copy-pad-edge">
+                        <span className="slice-editor-copy-pad-edge-name">后</span>
+                        <button
+                          type="button"
+                          className="slice-editor-copy-pad-btn"
+                          aria-label={`收回后方留白`}
+                          disabled={
+                            getSegmentAdjustableSeconds(
+                              segments,
+                              index,
+                              'end',
+                              'shrink',
+                              videoDuration
+                            ) <= 0
+                          }
+                          title={`收回后方留白`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onAdjustSegment(segment.id, 'end', -SEGMENT_EXTEND_STEP_SEC);
+                          }}
+                        >
+                          <LuMinus size={14} strokeWidth={2.25} />
+                        </button>
+                        <span
+                          className={`slice-editor-copy-pad-value${backPad < 0.05 ? ' is-zero' : ''}`}
+                          title={`后方已加留白；只调时间空白，不会带入下一句首字`}
+                        >
+                          {formatPadSeconds(backPad)}
+                        </span>
+                        <button
+                          type="button"
+                          className="slice-editor-copy-pad-btn"
+                          aria-label={`后方加留白 ${SEGMENT_EXTEND_STEP_SEC}s`}
+                          disabled={
+                            getSegmentAdjustableSeconds(
+                              segments,
+                              index,
+                              'end',
+                              'expand',
+                              videoDuration
+                            ) <= 0
+                          }
+                          title={`后方加留白（仅加空白，不带入下一句首字；单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s）`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onAdjustSegment(segment.id, 'end', SEGMENT_EXTEND_STEP_SEC);
+                          }}
+                        >
+                          <LuPlus size={14} strokeWidth={2.25} />
+                        </button>
+                      </div>
+                    </div>
                     <div className="slice-editor-copy-actions-delete-group">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onCopySegment(segment.id);
+                        }}
+                      >
+                        <LuCopy size={14} />
+                        复制
+                      </button>
                       <button
                         type="button"
                         className="danger"
