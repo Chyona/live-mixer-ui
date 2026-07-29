@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Descriptions, Drawer, Modal, Typography } from 'antd';
+import { Button, Descriptions, Drawer, Modal, Tooltip, Typography } from 'antd';
 import { LuX } from 'react-icons/lu';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -442,7 +442,11 @@ const SourceVideoSlicePage = () => {
       actions={
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-          <Button className="slice-mode-switch-btn">切换到人工切片</Button>
+          <Tooltip title="切换后未保存的数据将丢失">
+            <Button className="slice-mode-switch-btn" onClick={handleSwitchToManual}>
+              切换到人工切片
+            </Button>
+          </Tooltip>
         </>
       }
       tip={{
