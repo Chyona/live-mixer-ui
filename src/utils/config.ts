@@ -17,6 +17,9 @@ export const appConfig = {
   apiPrefix: env.VITE_API_PREFIX || '/openapi',
   contactQrcodeUrl: env.VITE_CONTACT_QRCODE_URL || '',
   supportTitle: env.VITE_SUPPORT_TITLE || `${env.VITE_APP_TITLE || 'Base UI'} 技术支持`,
+  /** 剪映小助手中转页（外链） */
+  jianyingAssistantUrl:
+    env.VITE_JIANYING_ASSISTANT_URL || 'https://ts.fyshark.com/#/cozeToJianyin',
   loginMode,
 } as const;
 

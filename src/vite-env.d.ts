@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_FLOAT?: string;
   readonly VITE_CONTACT_QRCODE_URL?: string;
   readonly VITE_SUPPORT_TITLE?: string;
+  /** 剪映小助手中转页外链 */
+  readonly VITE_JIANYING_ASSISTANT_URL?: string;
   readonly VITE_MOCK?: string;
   readonly VITE_APP_ENV?: 'test' | 'dev' | 'pre' | 'prod';
 }

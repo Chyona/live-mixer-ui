@@ -1,6 +1,7 @@
 import { lazy, type ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { LuClapperboard, LuListTodo, LuMessageSquareText, LuScissors, LuVideo } from 'react-icons/lu';
+import { LuClapperboard, LuExternalLink, LuListTodo, LuMessageSquareText, LuScissors, LuVideo } from 'react-icons/lu';
+import { appConfig } from '~/utils/config';
 
 export const DEFAULT_APP_PATH = '/source-videos';
 
@@ -86,6 +87,14 @@ export const RoutesCfg: RouteCfgType[] = [
     text: '任务管理',
     icon: LuListTodo,
     element: TasksPage,
+    iconProps: { strokeWidth: 1.75 },
+  },
+  {
+    path: '/jianying-assistant',
+    text: '剪映小助手',
+    icon: LuExternalLink,
+    element: null,
+    href: appConfig.jianyingAssistantUrl,
     iconProps: { strokeWidth: 1.75 },
   },
 ];
