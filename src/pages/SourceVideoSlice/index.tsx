@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Descriptions, Drawer, Modal, Tooltip, Typography } from 'antd';
+import { Button, Descriptions, Drawer, Tooltip, Typography } from 'antd';
 import { LuX } from 'react-icons/lu';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -59,7 +59,6 @@ const SourceVideoSlicePage = () => {
   const entryFrom = useSliceEntryFrom();
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<SourceVideo | null>(null);
-  const [tipVisible, setTipVisible] = useState(false);
   const [sourceModalVisible, setSourceModalVisible] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -449,10 +448,6 @@ const SourceVideoSlicePage = () => {
           </Tooltip>
         </>
       }
-      tip={{
-        text: '请自觉遵守平台链接导入规范',
-        onClick: () => setTipVisible(true),
-      }}
     />
   );
 
@@ -583,22 +578,6 @@ const SourceVideoSlicePage = () => {
           </div>
         </div>
       </Drawer>
-
-      <Modal
-        className="noanimation-modal"
-        title="温馨提示"
-        open={tipVisible}
-        centered
-        width={420}
-        okText="我知道了"
-        cancelButtonProps={{ style: { display: 'none' } }}
-        onOk={() => setTipVisible(false)}
-        onCancel={() => setTipVisible(false)}
-      >
-        <p className="slice-tip-text">
-          坚持创作高质量且充满人文关怀的原创内容，请勿搬运或发布侵权他人、违反国家法律法规、公序良俗的不良内容；因违反上述规定而产生的一切后果，均由用户自行承担。
-        </p>
-      </Modal>
     </div>
   );
 };
