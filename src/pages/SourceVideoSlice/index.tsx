@@ -355,7 +355,8 @@ const SourceVideoSlicePage = () => {
       live_id: video.id,
       name: projectName,
       prompt_id: selectedPrompt.id,
-      project_source: 'timeline' as const,
+      // AI 选片结果在人工切片页编辑
+      project_source: 'manual' as const,
       clips0: toSliceProjectClips(selectedRanges),
       clips1: [] as ReturnType<typeof toSliceProjectClips>,
     };
