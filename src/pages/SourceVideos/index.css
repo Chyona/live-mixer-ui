@@ -115,3 +115,13 @@
 .source-videos-form-date {
   width: 100%;
 }
+
+.source-videos-project-count.ant-btn {
+  padding-inline: 0;
+  height: auto;
+  font-weight: 600;
+}
+
+.source-videos-project-count.is-empty {
+  color: var(--text-gray);
+}

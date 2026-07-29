@@ -16,7 +16,7 @@ import TableColumnSetting, {
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListFilters } from '~/hooks/useListFilters';
 import { useTableColumnVisibility } from '~/hooks/useTableColumnVisibility';
-import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
+import { buildManualVideoSliceLink, buildSlicesListLink, buildSourceVideoSliceLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
   deleteSourceVideo,
@@ -34,7 +34,7 @@ import { showAppError, showScopedError, handleRequestError, toast } from '~/util
 const SOURCE_VIDEOS_LIST_ERROR_SCOPE = 'source-videos-list';
 /** ASR 进行中时列表静默刷新间隔（秒） */
 const ASR_POLL_INTERVAL_MS = 2 * 1000;
-const SOURCE_VIDEOS_COLUMN_STORAGE_KEY = 'source-videos-table-columns-v2';
+const SOURCE_VIDEOS_COLUMN_STORAGE_KEY = 'source-videos-table-columns-v3';
 const SOURCE_VIDEOS_LOCKED_COLUMN_KEYS = ['name', 'actions'];
 /** 默认隐藏：ASR 开始/完成时间 */
 const SOURCE_VIDEOS_DEFAULT_HIDDEN_COLUMN_KEYS = ['asr_started_at', 'asr_updated_at'];
@@ -49,6 +49,7 @@ const SOURCE_VIDEOS_COLUMN_SETTINGS: TableColumnSettingItem[] = [
   { key: 'asr_updated_at', label: 'ASR完成时间' },
   { key: 'created_by', label: '创建者' },
   { key: 'created_at', label: '创建时间' },
+  { key: 'project_count', label: '关联项目' },
   { key: 'actions', label: '操作', locked: true },
 ];
 
@@ -288,6 +289,7 @@ const SourceVideosPage = () => {
       {
         title: '源视频名称',
         dataIndex: 'name',
+        width: 220,
         key: 'name',
         ellipsis: true,
         render: (name: string, record) => (
@@ -315,7 +317,6 @@ const SourceVideosPage = () => {
         title: '视频URL',
         dataIndex: 'live_url',
         key: 'live_url',
-        width: 260,
         ellipsis: true,
         render: (url: string) => {
           const text = url?.trim();
@@ -365,6 +366,7 @@ const SourceVideosPage = () => {
         dataIndex: 'duration',
         key: 'duration',
         width: 100,
+        align: 'right',
         render: (duration: number) => (duration > 0 ? formatVideoDurationMs(duration) : '-'),
       },
       {
@@ -390,6 +392,7 @@ const SourceVideosPage = () => {
         dataIndex: 'asr_started_at',
         key: 'asr_started_at',
         width: 160,
+        align: 'right',
         render: (value: string) => formatToDateTime(value),
       },
       {
@@ -397,6 +400,7 @@ const SourceVideosPage = () => {
         dataIndex: 'asr_updated_at',
         key: 'asr_updated_at',
         width: 160,
+        align: 'right',
         render: (value: string, record) =>
           record.asr_status === 'completed' ? formatToDateTime(value) : '-',
       },
@@ -415,7 +419,35 @@ const SourceVideosPage = () => {
         dataIndex: 'created_at',
         key: 'created_at',
         width: 160,
+        align: 'right',
         render: (created_at: string) => formatToDateTime(created_at),
+      },
+      {
+        title: '关联项目',
+        dataIndex: 'project_count',
+        key: 'project_count',
+        width: 100,
+        align: 'right',
+        render: (count: number, record) => {
+          const projectCount = Number(count) > 0 ? Math.floor(Number(count)) : 0;
+          if (projectCount <= 0) {
+            return <span className="source-videos-project-count is-empty">0</span>;
+          }
+
+          const keyword = record.name?.trim();
+          return (
+            <Button
+              type="link"
+              className="list-page__action-btn source-videos-project-count"
+              title={keyword ? `查看「${keyword}」相关项目` : '查看关联项目'}
+              onClick={() => {
+                navigate(buildSlicesListLink({ keyword: keyword || undefined }));
+              }}
+            >
+              {projectCount}
+            </Button>
+          );
+        },
       },
       {
         title: '操作',

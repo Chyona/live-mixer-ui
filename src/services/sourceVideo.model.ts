@@ -35,6 +35,8 @@ export interface SourceVideo {
   created_at: string;
   updated_at: string;
   created_by: string;
+  /** 关联的剪辑项目数量 */
+  project_count: number;
   /** 详情接口返回的 ASR 文案；列表接口通常不带此字段。时间单位为 ms */
   live_asr?: LiveAsr | null;
 }

@@ -55,3 +55,10 @@ export function parseProjectId(value: string | null | undefined): number | null 
   const id = Number(value.trim());
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
+/** 项目管理列表链接；可带 keyword 作为搜索条件（如源视频名称） */
+export function buildSlicesListLink(options?: { keyword?: string | null }) {
+  const keyword = options?.keyword?.trim();
+  if (!keyword) return '/slices';
+  return `/slices?${new URLSearchParams({ keyword }).toString()}`;
+}

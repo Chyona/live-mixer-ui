@@ -89,21 +89,68 @@ export interface CreateSourceVideoParams {
 
 export type SourceVideoId = number | string;
 
+function normalizeProjectCount(raw: Partial<SourceVideo> & Record<string, unknown>): number {
+  const value = Number(
+    raw.project_count ?? raw.video_project_count ?? raw.projectCount ?? 0
+  );
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+export function normalizeSourceVideo(
+  raw: Partial<SourceVideo> & Record<string, unknown>
+): SourceVideo {
+  return {
+    id: Number(raw.id ?? 0),
+    name: String(raw.name ?? ''),
+    live_url: String(raw.live_url ?? ''),
+    remark: String(raw.remark ?? ''),
+    duration: Number(raw.duration ?? 0),
+    ext: String(raw.ext ?? ''),
+    asr_status: (raw.asr_status as SourceVideo['asr_status']) || 'pending',
+    asr_progress: Number(raw.asr_progress ?? 0),
+    asr_error_msg: String(raw.asr_error_msg ?? ''),
+    asr_started_at: String(raw.asr_started_at ?? ''),
+    asr_updated_at: String(raw.asr_updated_at ?? ''),
+    created_at: String(raw.created_at ?? ''),
+    updated_at: String(raw.updated_at ?? ''),
+    created_by: String(raw.created_by ?? ''),
+    project_count: normalizeProjectCount(raw),
+    live_asr: (raw.live_asr as SourceVideo['live_asr']) ?? null,
+  };
+}
+
 export async function fetchSourceVideoList(
   params: SourceVideoListParams
 ): Promise<BaseResponse<SourceVideoListResult>> {
-  return await request('/v1/live-materials', {
+  const response = await request<BaseResponse<SourceVideoListResult>>('/v1/live-materials', {
     method: 'get',
     params,
   });
+
+  return {
+    ...response,
+    data: {
+      list: (response.data?.list ?? []).map((item) =>
+        normalizeSourceVideo(item as Partial<SourceVideo> & Record<string, unknown>)
+      ),
+      total: Number(response.data?.total ?? 0),
+    },
+  };
 }
 
 export async function fetchSourceVideoDetail(
   id: SourceVideoId
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/live-materials/${id}`, {
+  const response = await request<BaseResponse<SourceVideo>>(`/v1/live-materials/${id}`, {
     method: 'get',
   });
+
+  return {
+    ...response,
+    data: normalizeSourceVideo(
+      (response.data ?? {}) as Partial<SourceVideo> & Record<string, unknown>
+    ),
+  };
 }
 
 /** 修改源视频名称或备注：接口要求 name、remark 两个字段都传 */
@@ -111,10 +158,16 @@ export async function updateSourceVideo(
   id: SourceVideoId,
   params: Partial<CreateSourceVideoParams>
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/live-materials/${id}`, {
+  const response = await request<BaseResponse<SourceVideo>>(`/v1/live-materials/${id}`, {
     method: 'put',
     data: params,
   });
+  return {
+    ...response,
+    data: normalizeSourceVideo(
+      (response.data ?? {}) as Partial<SourceVideo> & Record<string, unknown>
+    ),
+  };
 }
 
 export async function deleteSourceVideo(id: SourceVideoId): Promise<BaseResponse<null>> {
@@ -126,16 +179,28 @@ export async function deleteSourceVideo(id: SourceVideoId): Promise<BaseResponse
 export async function createSourceVideo(
   params: CreateSourceVideoParams
 ): Promise<BaseResponse<SourceVideo>> {
-  return await request('/v1/live-materials', {
+  const response = await request<BaseResponse<SourceVideo>>('/v1/live-materials', {
     method: 'post',
     data: params,
   });
+  return {
+    ...response,
+    data: normalizeSourceVideo(
+      (response.data ?? {}) as Partial<SourceVideo> & Record<string, unknown>
+    ),
+  };
 }
 
 export async function retrySourceVideoAsr(id: SourceVideoId): Promise<BaseResponse<SourceVideo>> {
-  return await request(`/v1/live-materials/${id}/asr/retry`, {
+  const response = await request<BaseResponse<SourceVideo>>(`/v1/live-materials/${id}/asr/retry`, {
     method: 'post',
   });
+  return {
+    ...response,
+    data: normalizeSourceVideo(
+      (response.data ?? {}) as Partial<SourceVideo> & Record<string, unknown>
+    ),
+  };
 }
 
 /**
