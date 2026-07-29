@@ -29,9 +29,9 @@ export interface SelectedCopySegment {
   text: string;
   start: number;
   end: number;
-  /** 选入时的原始起点；用于限制前方最多再扩 SEGMENT_EXTEND_MAX_SEC */
+  /** 选入时的原始起点；用于计算前方留白，并限制收回时不切入原文案 */
   originStart?: number;
-  /** 选入时的原始终点；用于限制后方最多再扩 SEGMENT_EXTEND_MAX_SEC */
+  /** 选入时的原始终点；用于计算后方留白，并限制收回时不切入原文案 */
   originEnd?: number;
 }
 

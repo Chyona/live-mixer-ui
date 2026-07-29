@@ -221,6 +221,65 @@ export function flattenTranscriptWords(paragraphs: TranscriptParagraph[]): Trans
     .sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
+/** 文案分段中的原始文字时间轴：优先字级 words，否则用句段 */
+function flattenTranscriptSpokenRanges(
+  paragraphs: TranscriptParagraph[]
+): Array<{ start: number; end: number }> {
+  const words = flattenTranscriptWords(paragraphs);
+  if (words.length > 0) {
+    return words
+      .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end > word.start)
+      .map((word) => ({ start: word.start, end: word.end }));
+  }
+
+  return paragraphs
+    .flatMap((paragraph) => paragraph.segments)
+    .filter(
+      (segment) =>
+        Number.isFinite(segment.start) && Number.isFinite(segment.end) && segment.end > segment.start
+    )
+    .map((segment) => ({ start: segment.start, end: segment.end }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+}
+
+/**
+ * 按文案分段原始数据，计算当前选段前后可扩留白的边界。
+ * - lowerBound：前方最近一段原始文字的结束时间（无则 0）
+ * - upperBound：后方最近一段原始文字的开始时间（无则视频时长）
+ */
+export function getTranscriptPadBounds(
+  paragraphs: TranscriptParagraph[],
+  originStart: number,
+  originEnd: number,
+  videoDuration: number
+): { lowerBound: number; upperBound: number } {
+  const EPS = 1e-3;
+  const ranges = flattenTranscriptSpokenRanges(paragraphs);
+  let lowerBound = 0;
+  let upperBound =
+    Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : Number.POSITIVE_INFINITY;
+
+  for (const range of ranges) {
+    // 完全落在选段原文之前 → 可作为前方文字终点
+    if (range.end <= originStart + EPS) {
+      lowerBound = Math.max(lowerBound, range.end);
+      continue;
+    }
+    // 完全落在选段原文之后 → 可作为后方文字起点
+    if (range.start >= originEnd - EPS) {
+      upperBound = Math.min(upperBound, range.start);
+    }
+  }
+
+  if (lowerBound > originStart) lowerBound = 0;
+  if (upperBound < originEnd) {
+    upperBound =
+      Number.isFinite(videoDuration) && videoDuration > 0 ? videoDuration : Number.POSITIVE_INFINITY;
+  }
+
+  return { lowerBound, upperBound };
+}
+
 export function findActiveSegment(
   paragraphs: TranscriptParagraph[],
   currentTime: number
@@ -486,8 +545,6 @@ const MIN_SEGMENT_DURATION = 0.5;
 
 /** 每次点击调节步长（秒） */
 export const SEGMENT_EXTEND_STEP_SEC = 0.1;
-/** 单侧相对原始边界最多向外扩展（秒） */
-export const SEGMENT_EXTEND_MAX_SEC = 0.5;
 
 function getSegmentOriginStart(segment: SelectedCopySegment) {
   return Number.isFinite(segment.originStart) ? Number(segment.originStart) : segment.start;
@@ -515,7 +572,7 @@ export function formatPadSeconds(seconds: number) {
 
 /**
  * 某一侧还能调多少秒（仅调时间留白，不改文案）。
- * - expand：向外扩留白（前=起点提前，后=终点延后）
+ * - expand：向外扩留白，上限以文案分段原始文字为准（不覆盖前后文字）
  * - shrink：收回已扩的留白（不超过选入时的原始边界）
  */
 export function getSegmentAdjustableSeconds(
@@ -523,36 +580,38 @@ export function getSegmentAdjustableSeconds(
   index: number,
   edge: 'start' | 'end',
   direction: 'expand' | 'shrink',
-  videoDuration: number
+  videoDuration: number,
+  paragraphs: TranscriptParagraph[] = []
 ): number {
   const segment = segments[index];
   if (!segment) return 0;
 
   if (edge === 'start') {
     if (direction === 'expand') {
-      const prev = index > 0 ? segments[index - 1] : null;
-      const lowerBound = prev ? prev.end : 0;
-      const neighborGap = Math.max(0, segment.start - lowerBound);
-      const already = Math.max(0, getSegmentOriginStart(segment) - segment.start);
-      const budget = Math.max(0, SEGMENT_EXTEND_MAX_SEC - already);
-      return Math.min(neighborGap, budget);
+      const originStart = getSegmentOriginStart(segment);
+      const originEnd = getSegmentOriginEnd(segment);
+      const { lowerBound } = getTranscriptPadBounds(
+        paragraphs,
+        originStart,
+        originEnd,
+        videoDuration
+      );
+      return Math.max(0, segment.start - lowerBound);
     }
     // 仅收回前方已扩留白，不切入原始文案区间
     return Math.max(0, getSegmentOriginStart(segment) - segment.start);
   }
 
   if (direction === 'expand') {
-    const next = index < segments.length - 1 ? segments[index + 1] : null;
-    const upperBound =
-      next != null
-        ? next.start
-        : Number.isFinite(videoDuration) && videoDuration > 0
-          ? videoDuration
-          : Number.POSITIVE_INFINITY;
-    const neighborGap = Math.max(0, upperBound - segment.end);
-    const already = Math.max(0, segment.end - getSegmentOriginEnd(segment));
-    const budget = Math.max(0, SEGMENT_EXTEND_MAX_SEC - already);
-    return Math.min(neighborGap, budget);
+    const originStart = getSegmentOriginStart(segment);
+    const originEnd = getSegmentOriginEnd(segment);
+    const { upperBound } = getTranscriptPadBounds(
+      paragraphs,
+      originStart,
+      originEnd,
+      videoDuration
+    );
+    return Math.max(0, upperBound - segment.end);
   }
   // 仅收回后方已扩留白
   return Math.max(0, segment.end - getSegmentOriginEnd(segment));
@@ -563,21 +622,23 @@ export function getSegmentExtendableSeconds(
   segments: SelectedCopySegment[],
   index: number,
   edge: 'start' | 'end',
-  videoDuration: number
+  videoDuration: number,
+  paragraphs: TranscriptParagraph[] = []
 ): number {
-  return getSegmentAdjustableSeconds(segments, index, edge, 'expand', videoDuration);
+  return getSegmentAdjustableSeconds(segments, index, edge, 'expand', videoDuration, paragraphs);
 }
 
 /**
  * 调节片段前/后时间留白。deltaSec > 0 向外扩，deltaSec < 0 向内收。
- * 只改 start/end，不增删文案。
+ * 只改 start/end，不增删文案。边界以文案分段原始数据为准。
  */
 export function adjustSegmentEdge(
   segments: SelectedCopySegment[],
   index: number,
   edge: 'start' | 'end',
   deltaSec: number,
-  videoDuration: number
+  videoDuration: number,
+  paragraphs: TranscriptParagraph[] = []
 ): { segments: SelectedCopySegment[]; applied: number } | null {
   const segment = segments[index];
   if (!segment || deltaSec === 0) return null;
@@ -589,7 +650,8 @@ export function adjustSegmentEdge(
     index,
     edge,
     direction,
-    videoDuration
+    videoDuration,
+    paragraphs
   );
   const applied = Math.min(step, available);
   if (applied <= 0) return null;
@@ -600,10 +662,16 @@ export function adjustSegmentEdge(
     originEnd: getSegmentOriginEnd(segment),
   };
   const EPS = 1e-3;
+  const { lowerBound, upperBound } = getTranscriptPadBounds(
+    paragraphs,
+    nextSegment.originStart!,
+    nextSegment.originEnd!,
+    videoDuration
+  );
 
   if (edge === 'start') {
     if (direction === 'expand') {
-      const targetStart = Math.max(0, segment.start - applied);
+      const targetStart = Math.max(lowerBound, segment.start - applied);
       nextSegment.start = Math.min(targetStart, segment.end - MIN_SEGMENT_DURATION);
     } else {
       nextSegment.start = Math.min(
@@ -613,10 +681,7 @@ export function adjustSegmentEdge(
       );
     }
   } else if (direction === 'expand') {
-    const targetEnd =
-      Number.isFinite(videoDuration) && videoDuration > 0
-        ? Math.min(videoDuration, segment.end + applied)
-        : segment.end + applied;
+    const targetEnd = Math.min(upperBound, segment.end + applied);
     nextSegment.end = Math.max(targetEnd, segment.start + MIN_SEGMENT_DURATION);
   } else {
     nextSegment.end = Math.max(
@@ -624,22 +689,6 @@ export function adjustSegmentEdge(
       nextSegment.originEnd!,
       segment.start + MIN_SEGMENT_DURATION
     );
-  }
-
-  if (edge === 'start' && direction === 'expand') {
-    const prev = index > 0 ? segments[index - 1] : null;
-    const lowerBound = prev ? prev.end : 0;
-    const minStartByBudget = nextSegment.originStart! - SEGMENT_EXTEND_MAX_SEC;
-    nextSegment.start = Math.max(nextSegment.start, lowerBound, minStartByBudget);
-  } else if (edge === 'end' && direction === 'expand') {
-    const next = index < segments.length - 1 ? segments[index + 1] : null;
-    const maxEndByBudget = nextSegment.originEnd! + SEGMENT_EXTEND_MAX_SEC;
-    let upper = maxEndByBudget;
-    if (next) upper = Math.min(upper, next.start);
-    if (Number.isFinite(videoDuration) && videoDuration > 0) {
-      upper = Math.min(upper, videoDuration);
-    }
-    nextSegment.end = Math.min(nextSegment.end, upper);
   }
 
   if (
@@ -667,9 +716,16 @@ export function extendSegmentEdge(
   edge: 'start' | 'end',
   deltaSec: number,
   videoDuration: number,
-  _transcriptWords: TranscriptWord[] = []
+  paragraphs: TranscriptParagraph[] = []
 ): { segments: SelectedCopySegment[]; applied: number } | null {
-  return adjustSegmentEdge(segments, index, edge, Math.abs(deltaSec), videoDuration);
+  return adjustSegmentEdge(
+    segments,
+    index,
+    edge,
+    Math.abs(deltaSec),
+    videoDuration,
+    paragraphs
+  );
 }
 
 export function getTotalSelectedDuration(segments: SelectedCopySegment[]) {

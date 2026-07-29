@@ -10,7 +10,7 @@ import {
   LuTextSelect,
   LuTrash2,
 } from 'react-icons/lu';
-import type { SelectedCopySegment } from '../types';
+import type { SelectedCopySegment, TranscriptParagraph } from '../types';
 import {
   formatPadSeconds,
   formatSliceTime,
@@ -21,7 +21,6 @@ import {
   getTextSelectionOffsets,
   getTotalSelectedDuration,
   reorderSegments,
-  SEGMENT_EXTEND_MAX_SEC,
   SEGMENT_EXTEND_STEP_SEC,
 } from '../utils';
 import { formatVideoDuration } from '~/utils/duration';
@@ -46,6 +45,8 @@ function wouldReorder(fromIndex: number, target: DropMarker, length: number) {
 
 interface SelectedCopyPanelProps {
   segments: SelectedCopySegment[];
+  /** 文案分段原始数据，用于前后留白边界 */
+  paragraphs: TranscriptParagraph[];
   activeSegmentId: string | null;
   speakerIds: string[];
   maxTotalDuration: number;
@@ -73,6 +74,7 @@ interface SelectedCopyPanelProps {
 
 const SelectedCopyPanel = ({
   segments,
+  paragraphs,
   activeSegmentId,
   speakerIds,
   maxTotalDuration,
@@ -362,50 +364,52 @@ const SelectedCopyPanel = ({
                         <button
                           type="button"
                           className="slice-editor-copy-pad-btn"
-                          aria-label={`收回前方留白`}
-                          disabled={
-                            getSegmentAdjustableSeconds(
-                              segments,
-                              index,
-                              'start',
-                              'shrink',
-                              videoDuration
-                            ) <= 0
-                          }
-                          title={`收回前方留白`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onAdjustSegment(segment.id, 'start', -SEGMENT_EXTEND_STEP_SEC);
-                          }}
-                        >
-                          <LuMinus size={14} strokeWidth={2.25} />
-                        </button>
-                        <span
-                          className={`slice-editor-copy-pad-value${frontPad < 0.05 ? ' is-zero' : ''}`}
-                          title={`前方已加留白；只调时间空白，不会带入上一句尾字`}
-                        >
-                          {formatPadSeconds(frontPad)}
-                        </span>
-                        <button
-                          type="button"
-                          className="slice-editor-copy-pad-btn"
-                          aria-label={`前方加留白`}
+                          aria-label="前方加留白"
                           disabled={
                             getSegmentAdjustableSeconds(
                               segments,
                               index,
                               'start',
                               'expand',
-                              videoDuration
+                              videoDuration,
+                              paragraphs
                             ) <= 0
                           }
-                          title={`前方加留白（仅加空白，不带入上一句尾字；单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s）`}
+                          title="前方加留白（按文案分段原始时间，不覆盖前方文字）"
                           onClick={(event) => {
                             event.stopPropagation();
                             onAdjustSegment(segment.id, 'start', SEGMENT_EXTEND_STEP_SEC);
                           }}
                         >
                           <LuPlus size={14} strokeWidth={2.25} />
+                        </button>
+                        <span
+                          className={`slice-editor-copy-pad-value${frontPad < 0.05 ? ' is-zero' : ''}`}
+                          title="前方已加留白；只调时间空白，不会带入上一句尾字"
+                        >
+                          {formatPadSeconds(frontPad)}
+                        </span>
+                        <button
+                          type="button"
+                          className="slice-editor-copy-pad-btn"
+                          aria-label="收回前方留白"
+                          disabled={
+                            getSegmentAdjustableSeconds(
+                              segments,
+                              index,
+                              'start',
+                              'shrink',
+                              videoDuration,
+                              paragraphs
+                            ) <= 0
+                          }
+                          title="收回前方留白"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onAdjustSegment(segment.id, 'start', -SEGMENT_EXTEND_STEP_SEC);
+                          }}
+                        >
+                          <LuMinus size={14} strokeWidth={2.25} />
                         </button>
                       </div>
                       <span className="slice-editor-copy-pad-sep" aria-hidden="true" />
@@ -421,7 +425,8 @@ const SelectedCopyPanel = ({
                               index,
                               'end',
                               'shrink',
-                              videoDuration
+                              videoDuration,
+                              paragraphs
                             ) <= 0
                           }
                           title={`收回后方留白`}
@@ -448,10 +453,11 @@ const SelectedCopyPanel = ({
                               index,
                               'end',
                               'expand',
-                              videoDuration
+                              videoDuration,
+                              paragraphs
                             ) <= 0
                           }
-                          title={`后方加留白（仅加空白，不带入下一句首字；单侧最多 +${SEGMENT_EXTEND_MAX_SEC}s）`}
+                          title="后方加留白（按文案分段原始时间，不覆盖后方文字）"
                           onClick={(event) => {
                             event.stopPropagation();
                             onAdjustSegment(segment.id, 'end', SEGMENT_EXTEND_STEP_SEC);

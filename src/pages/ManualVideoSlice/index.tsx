@@ -389,7 +389,14 @@ const ManualVideoSlicePage = () => {
       const index = selectedSegments.findIndex((item) => item.id === segmentId);
       if (index < 0) return;
 
-      const result = adjustSegmentEdge(selectedSegments, index, edge, deltaSec, videoDuration);
+      const result = adjustSegmentEdge(
+        selectedSegments,
+        index,
+        edge,
+        deltaSec,
+        videoDuration,
+        paragraphs
+      );
       if (!result) {
         const expanding = deltaSec > 0;
         toast.notify.warning(
@@ -405,7 +412,7 @@ const ManualVideoSlicePage = () => {
       }
       setSelectedSegments(result.segments);
     },
-    [selectedSegments, videoDuration]
+    [paragraphs, selectedSegments, videoDuration]
   );
 
   const handleSaveProject = useCallback(
@@ -776,6 +783,7 @@ const ManualVideoSlicePage = () => {
 
           <SelectedCopyPanel
             segments={selectedSegments}
+            paragraphs={paragraphs}
             activeSegmentId={activeSegmentId}
             speakerIds={speakerIds}
             maxTotalDuration={MAX_TOTAL_DURATION}
