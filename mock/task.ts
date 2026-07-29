@@ -179,7 +179,11 @@ export default [
   {
     url: `${API_PREFIX}/v1/tasks/draft`,
     method: 'post',
-    response: ({ body }: { body: { video_project_id?: string | number } }) => {
+    response: ({
+      body,
+    }: {
+      body: { video_project_id?: string | number; need_subtitle?: boolean };
+    }) => {
       const videoProjectId = body?.video_project_id;
       if (videoProjectId == null || videoProjectId === '') {
         return { code: 400, message: '缺少 video_project_id', data: null };
@@ -203,7 +207,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: { task_id: taskId },
+        data: { task_id: taskId, need_subtitle: Boolean(body?.need_subtitle) },
       };
     },
   },

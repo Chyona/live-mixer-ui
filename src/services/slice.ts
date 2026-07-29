@@ -57,6 +57,8 @@ export interface ClipRange {
 
 export interface SubmitClipParams {
   video_project_id: string | number;
+  /** 是否生成字幕（可选） */
+  need_subtitle?: boolean;
 }
 
 export interface ClipSubmitResult {

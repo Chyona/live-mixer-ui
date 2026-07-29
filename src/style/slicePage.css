@@ -1911,6 +1911,13 @@
   cursor: not-allowed;
 }
 
+.slice-need-subtitle-checkbox.ant-checkbox-wrapper {
+  color: var(--text-secondary);
+  font-size: 14px;
+  white-space: nowrap;
+  user-select: none;
+}
+
 .slice-submit-btn {
   padding: 8px 24px;
   font-size: 13px;

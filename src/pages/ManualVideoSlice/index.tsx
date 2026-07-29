@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Space, Tooltip } from 'antd';
+import { Button, Checkbox, Space, Tooltip } from 'antd';
 import { LuDownload } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -97,6 +97,7 @@ const ManualVideoSlicePage = () => {
   const [saveModalMode, setSaveModalMode] = useState<'create' | 'saveAs' | 'export'>('saveAs');
   const [savingProject, setSavingProject] = useState(false);
   const [downloadingSubtitle, setDownloadingSubtitle] = useState(false);
+  const [needSubtitle, setNeedSubtitle] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
   const [projectRemark, setProjectRemark] = useState('');
 
@@ -570,6 +571,7 @@ const ManualVideoSlicePage = () => {
     try {
       const response = await submitDraft({
         video_project_id: projectId,
+        need_subtitle: needSubtitle,
       });
 
       if (response.code !== 0) {
@@ -588,7 +590,7 @@ const ManualVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, projectId, selectedSegments.length, video]);
+  }, [navigate, needSubtitle, projectId, selectedSegments.length, video]);
 
   const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);
@@ -690,7 +692,14 @@ const ManualVideoSlicePage = () => {
         title={`${video.name} - 视频人工切片`}
         // description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
-          <Space size={12}>
+          <Space size={12} align="center">
+            <Checkbox
+              className="slice-need-subtitle-checkbox"
+              checked={needSubtitle}
+              onChange={(event) => setNeedSubtitle(event.target.checked)}
+            >
+              是否需要生成字幕
+            </Checkbox>
             <Button
               icon={<LuDownload size={16} />}
               loading={downloadingSubtitle}
