@@ -9,6 +9,7 @@ export type GenerationTaskType = 'ai_slice' | 'draft' | 'ai_slice_draft' | (stri
 /** ext 字段解析结果 */
 export interface ClipTaskExt {
   live_id?: number;
+  live_name?: string;
   video_project_id?: number;
   sys_prompt_id?: number;
   target_duration_ms?: number;
@@ -31,6 +32,8 @@ export interface ClipTaskItem {
   usr_prompt: string;
   /** 项目名称 */
   video_project_name: string;
+  /** 源视频名称 */
+  live_name: string;
   /** 直播素材 URL */
   live_url: string;
   /** 草稿地址（一键成片 / 生成草稿） */
@@ -119,6 +122,21 @@ function resolveDraftUrl(
   return '';
 }
 
+function resolveLiveName(
+  raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined,
+  ext: ClipTaskExt
+): string {
+  const topLevel = String(
+    raw?.live_name ??
+      (raw as { source_video_name?: string })?.source_video_name ??
+      (raw as { liveName?: string })?.liveName ??
+      ''
+  ).trim();
+  if (topLevel) return topLevel;
+  if (ext.live_name?.trim()) return ext.live_name.trim();
+  return '';
+}
+
 export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefined): ClipTaskItem {
   const type = String(raw?.type ?? '');
   const normalizedType: GenerationTaskType =
@@ -138,6 +156,7 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
   const ext =
     typeof raw?.ext === 'string' ? raw.ext : raw?.ext != null ? JSON.stringify(raw.ext) : '';
   const parsedExt = parseClipTaskExt(ext);
+  const rawRecord = raw as Partial<ClipTaskItem> & Record<string, unknown>;
 
   return {
     id: String(raw?.id ?? '').trim(),
@@ -151,8 +170,9 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
         (raw as { project_name?: string })?.project_name ??
         ''
     ),
-    live_url: resolveLiveUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>, parsedExt),
-    draft_url: resolveDraftUrl(raw as Partial<ClipTaskItem> & Record<string, unknown>),
+    live_name: resolveLiveName(rawRecord, parsedExt),
+    live_url: resolveLiveUrl(rawRecord, parsedExt),
+    draft_url: resolveDraftUrl(rawRecord),
     width: Number(raw?.width) > 0 ? Number(raw?.width) : undefined,
     height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     created_by: String(raw?.created_by ?? ''),

@@ -1,45 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Popconfirm, Space } from 'antd';
+import { Button, Space } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { LuCopy, LuFileText, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuFileText } from 'react-icons/lu';
 
-import AiPromptPreviewDrawer from '~/components/AiPromptPreviewDrawer';
-import PromptContentCell from '~/components/AiPromptPreviewDrawer/PromptContentCell';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
 import ListPageTable from '~/components/ListPageTable';
 import type { ListTableEmptyProps } from '~/components/ListTableEmpty';
-import type { AiPrompt } from '~/services/aiPrompt';
-import { AppError } from '~/services/http';
-import {
-  deleteClipTask,
-  type ClipTaskItem,
-  type ClipTaskItemStatus,
-  type GenerationTaskType,
-} from '~/services/task';
+import type { ClipTaskItem, GenerationTaskType } from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
-import { showAppError, toast } from '~/utils/toast';
+import { toast } from '~/utils/toast';
 
 import ClipTaskDetailModal from './ClipTaskDetailModal';
 import TaskProgressCell from './TaskProgressCell';
 import {
   copyTextToClipboard,
   getClipTaskDisplayName,
-  getClipTaskStatusLabel,
+  getClipTaskLiveName,
   getGenerationTaskTypeLabel,
 } from './utils';
-
-function buildPromptPreview(name: string, content: string): AiPrompt {
-  return {
-    id: 0,
-    name,
-    content,
-    remark: '',
-    created_by: '',
-    created_at: '',
-    updated_at: '',
-    is_editable: 0,
-  };
-}
 
 interface ClipTaskListProps {
   tasks: ClipTaskItem[];
@@ -64,56 +42,14 @@ function renderTaskTypeLabel(taskType: GenerationTaskType) {
   );
 }
 
-function renderStatusLabel(status: ClipTaskItemStatus) {
-  return (
-    <span className={`tasks-status tasks-status_${status}`}>
-      <span className="tasks-status-dot" aria-hidden />
-      {getClipTaskStatusLabel(status)}
-    </span>
-  );
-}
-
 function ClipTaskList({
   tasks,
   loading = false,
   pagination,
   onTableChange,
-  onChanged,
   empty,
 }: ClipTaskListProps) {
   const [detailTask, setDetailTask] = useState<ClipTaskItem | null>(null);
-  const [previewPrompt, setPreviewPrompt] = useState<AiPrompt | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const openPromptPreview = useCallback((name: string, content: string) => {
-    const text = content.trim();
-    if (!text) return;
-    setPreviewPrompt(buildPromptPreview(name, text));
-  }, []);
-
-  const handleDelete = useCallback(
-    async (taskId: string) => {
-      setDeletingId(taskId);
-      try {
-        const response = await deleteClipTask(taskId);
-        if (response.code !== 0) {
-          toast.notify.error(response.message || '删除失败');
-          return;
-        }
-        await onChanged();
-        toast.notify.success('任务已删除');
-      } catch (error) {
-        if (error instanceof AppError) {
-          showAppError(error);
-        } else {
-          toast.notify.error('删除失败');
-        }
-      } finally {
-        setDeletingId(null);
-      }
-    },
-    [onChanged]
-  );
 
   const handleCopyDraft = useCallback(async (url: string) => {
     const draftUrl = url.trim();
@@ -142,42 +78,20 @@ function ClipTaskList({
         title: '项目名称',
         dataIndex: 'video_project_name',
         key: 'video_project_name',
-        width: 230,
         ellipsis: true,
         render: (_, record) => (
           <EllipsisTooltip text={getClipTaskDisplayName(record)} className="tasks-cell-ellipsis" />
         ),
       },
       {
-        title: '系统提示词',
-        dataIndex: 'sys_prompt',
-        key: 'sys_prompt',
+        title: '源视频名称',
+        dataIndex: 'live_name',
+        key: 'live_name',
         ellipsis: true,
-        render: (value: string) => {
-          const text = value?.trim() || '';
-          if (!text) return <span className="tasks-error-empty">-</span>;
-          return (
-            <PromptContentCell
-              content={text}
-              onView={() => openPromptPreview('系统提示词', text)}
-            />
-          );
-        },
-      },
-      {
-        title: '用户提示词',
-        dataIndex: 'usr_prompt',
-        key: 'usr_prompt',
-        ellipsis: true,
-        render: (value: string) => {
-          const text = value?.trim() || '';
-          if (!text) return <span className="tasks-error-empty">-</span>;
-          return (
-            <PromptContentCell
-              content={text}
-              onView={() => openPromptPreview('用户提示词', text)}
-            />
-          );
+        render: (_, record) => {
+          const name = getClipTaskLiveName(record);
+          if (!name) return <span className="tasks-error-empty">-</span>;
+          return <EllipsisTooltip text={name} className="tasks-cell-ellipsis" />;
         },
       },
       {
@@ -192,6 +106,18 @@ function ClipTaskList({
             errorMessage={record.error_message}
           />
         ),
+      },
+      {
+        title: '创建者',
+        dataIndex: 'created_by',
+        key: 'created_by',
+        width: 120,
+        ellipsis: true,
+        render: (value: string) => {
+          const name = value?.trim() || '';
+          if (!name) return <span className="tasks-error-empty">-</span>;
+          return <EllipsisTooltip text={name} className="tasks-cell-ellipsis" />;
+        },
       },
       {
         title: '创建时间',
@@ -219,24 +145,6 @@ function ClipTaskList({
               >
                 详情
               </Button>
-              {/* <Popconfirm
-                title="确定删除该任务吗？"
-                okText="删除"
-                cancelText="取消"
-                okButtonProps={{ danger: true, loading: deletingId === record.id }}
-                onConfirm={() => void handleDelete(record.id)}
-              >
-                <Button
-                  type="link"
-                  size="small"
-                  danger
-                  className="list-page__action-btn"
-                  icon={<LuTrash2 size={14} />}
-                  loading={deletingId === record.id}
-                >
-                  删除
-                </Button>
-              </Popconfirm> */}
               {showCopyDraft ? (
                 <Button
                   type="link"
@@ -254,7 +162,7 @@ function ClipTaskList({
         },
       },
     ],
-    [deletingId, handleCopyDraft, handleDelete, openPromptPreview]
+    [handleCopyDraft]
   );
 
   return (
@@ -265,20 +173,13 @@ function ClipTaskList({
         loading={loading}
         columns={columns}
         dataSource={tasks}
-        scrollX={1600}
+        scrollX={1220}
         empty={empty}
         pagination={pagination}
         onChange={(nextPagination) => onTableChange(nextPagination)}
       />
 
       <ClipTaskDetailModal open={Boolean(detailTask)} task={detailTask} onClose={() => setDetailTask(null)} />
-
-      <AiPromptPreviewDrawer
-        open={Boolean(previewPrompt)}
-        prompt={previewPrompt}
-        onClose={() => setPreviewPrompt(null)}
-        showFooter={false}
-      />
     </>
   );
 }

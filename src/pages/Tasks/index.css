@@ -271,7 +271,7 @@
 }
 
 .tasks-detail-descriptions .ant-descriptions-item-label {
-  width: 148px;
+  width: 120px;
   color: var(--text-gray);
   white-space: normal;
 }
@@ -312,6 +312,60 @@
   margin-bottom: 0 !important;
   word-break: break-all;
   color: var(--primary-color);
+}
+
+.tasks-detail-prompt {
+  margin-bottom: 0 !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-color);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.tasks-detail-prompt-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.tasks-detail-prompt-more {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.tasks-detail-prompt-more:hover {
+  color: var(--primary-dark, var(--primary-color));
+  text-decoration: underline;
+}
+
+.tasks-prompt-drawer .ant-drawer-body {
+  padding: 0;
+  height: 100%;
+}
+
+.tasks-prompt-drawer__body {
+  padding-bottom: 24px;
+}
+
+.tasks-prompt-drawer__content {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-color);
 }
 
 .tasks-preview-modal .ant-modal-body {

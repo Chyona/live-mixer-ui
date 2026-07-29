@@ -54,6 +54,14 @@ export function getClipTaskDisplayName(task: ClipTaskItem): string {
   return `任务 #${task.id}`;
 }
 
+/** 任务关联的源视频名称 */
+export function getClipTaskLiveName(task: ClipTaskItem): string {
+  if (task.live_name?.trim()) return task.live_name.trim();
+  const ext = parseClipTaskExt(task.ext);
+  if (ext.live_name?.trim()) return ext.live_name.trim();
+  return '';
+}
+
 /** 根据宽高推导展示比例：竖屏 9:16，横屏 16:9 */
 export function getClipTaskAspectRatio(
   task: Pick<ClipTaskItem, 'width' | 'height'>
