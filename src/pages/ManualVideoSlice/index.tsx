@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Popconfirm, Space } from 'antd';
+import { Button, Space } from 'antd';
 import { LuDownload } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -691,15 +691,7 @@ const ManualVideoSlicePage = () => {
             >
               字幕下载
             </Button>
-            <Popconfirm
-              title="切换到时间轴切片？"
-              description="未保存的改动切换后将丢失，确定要继续吗？"
-              okText="确定切换"
-              cancelText="取消"
-              onConfirm={handleSwitchToTimeline}
-            >
-              <Button className="slice-mode-switch-btn">切换到时间轴切片</Button>
-            </Popconfirm>
+            <Button className="slice-mode-switch-btn">切换到时间轴切片</Button>
           </Space>
         }
       />

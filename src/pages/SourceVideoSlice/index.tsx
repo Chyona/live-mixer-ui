@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Descriptions, Drawer, Modal, Popconfirm, Typography } from 'antd';
+import { Button, Descriptions, Drawer, Modal, Typography } from 'antd';
 import { LuX } from 'react-icons/lu';
 import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
@@ -442,15 +442,7 @@ const SourceVideoSlicePage = () => {
       actions={
         <>
           <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
-          <Popconfirm
-            title="切换到人工切片？"
-            description="未保存的改动切换后将丢失，确定要继续吗？"
-            okText="确定切换"
-            cancelText="取消"
-            onConfirm={handleSwitchToManual}
-          >
-            <Button className="slice-mode-switch-btn">切换到人工切片</Button>
-          </Popconfirm>
+          <Button className="slice-mode-switch-btn">切换到人工切片</Button>
         </>
       }
       tip={{
