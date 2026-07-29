@@ -732,6 +732,34 @@ export function getTotalSelectedDuration(segments: SelectedCopySegment[]) {
   return segments.reduce((sum, item) => sum + (item.end - item.start), 0);
 }
 
+/** 已选文案的原文时间区间（不含前后留白），用于在文案分段中标色 */
+export function getSelectedCopyOriginRanges(
+  segments: SelectedCopySegment[]
+): Array<{ start: number; end: number }> {
+  return segments
+    .map((segment) => {
+      const start = Number.isFinite(segment.originStart)
+        ? Number(segment.originStart)
+        : segment.start;
+      const end = Number.isFinite(segment.originEnd) ? Number(segment.originEnd) : segment.end;
+      return { start, end };
+    })
+    .filter((range) => Number.isFinite(range.start) && Number.isFinite(range.end) && range.end > range.start);
+}
+
+/** 文案分段时间轴是否与已选原文区间重叠 */
+export function isTranscriptRangeSelected(
+  start: number,
+  end: number,
+  selectedRanges: Array<{ start: number; end: number }>
+): boolean {
+  if (!selectedRanges.length || !(end > start)) return false;
+  const EPS = 1e-3;
+  return selectedRanges.some(
+    (range) => start < range.end - EPS && range.start < end - EPS
+  );
+}
+
 export function reorderSegments(
   segments: SelectedCopySegment[],
   fromIndex: number,

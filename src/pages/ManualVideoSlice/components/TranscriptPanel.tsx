@@ -1,12 +1,13 @@
 import { Switch, Tooltip } from 'antd';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { TranscriptParagraph } from '../types';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { SelectedCopySegment, TranscriptParagraph } from '../types';
 import KeywordSearchBar from './KeywordSearchBar';
 import {
   getParagraphRange,
-  getParagraphText,
+  getSelectedCopyOriginRanges,
   getSpeakerColor,
   highlightKeyword,
+  isTranscriptRangeSelected,
   paragraphSelectionToCopySegment,
   paragraphToCopySegment,
   scrollFollowElement,
@@ -15,6 +16,8 @@ import {
 
 interface TranscriptPanelProps {
   paragraphs: TranscriptParagraph[];
+  /** 文案预览中已选片段，用于在左侧标色 */
+  selectedCopySegments?: SelectedCopySegment[];
   keyword: string;
   onKeywordChange: (value: string) => void;
   onPrevMatch: () => void;
@@ -33,6 +36,7 @@ const TRANSCRIPT_AUTO_SCROLL_KEY = 'manual-slice-transcript-auto-scroll';
 
 const TranscriptPanel = ({
   paragraphs,
+  selectedCopySegments = [],
   keyword,
   onKeywordChange,
   onPrevMatch,
@@ -59,6 +63,11 @@ const TranscriptPanel = ({
   const speakerIds = useMemo(
     () => [...new Set(paragraphs.map((item) => item.speakerId))],
     [paragraphs]
+  );
+
+  const selectedOriginRanges = useMemo(
+    () => getSelectedCopyOriginRanges(selectedCopySegments),
+    [selectedCopySegments]
   );
 
   const pauseAutoScroll = useCallback(() => {
@@ -243,21 +252,46 @@ const TranscriptPanel = ({
           const keywordMatchIndex = matchParagraphIds.indexOf(paragraph.id);
           const isCurrentKeywordMatch =
             keyword.trim() && isKeywordMatch && keywordMatchIndex === activeMatchIndex;
-          const paragraphText = getParagraphText(paragraph);
 
           const renderParagraphText = () => {
-            if (keyword.trim()) {
-              return (
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: highlightKeyword(paragraphText, keyword),
-                  }}
-                />
-              );
-            }
-
             return paragraph.segments.map((segment) => {
               const isPlaybackActive = highlightSegmentIds.has(segment.id);
+              const segmentSelected = isTranscriptRangeSelected(
+                segment.start,
+                segment.end,
+                selectedOriginRanges
+              );
+              const words = segment.words ?? [];
+              const useWordHighlight = words.length > 0 && selectedOriginRanges.length > 0;
+
+              let inner: ReactNode;
+              if (keyword.trim()) {
+                inner = (
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: highlightKeyword(segment.text, keyword),
+                    }}
+                  />
+                );
+              } else if (useWordHighlight) {
+                inner = words.map((word, wordIndex) => {
+                  const wordSelected = isTranscriptRangeSelected(
+                    word.start,
+                    word.end,
+                    selectedOriginRanges
+                  );
+                  return (
+                    <span
+                      key={`${segment.id}-w-${wordIndex}`}
+                      className={wordSelected ? 'segment-selected' : undefined}
+                    >
+                      {word.text}
+                    </span>
+                  );
+                });
+              } else {
+                inner = segment.text;
+              }
 
               return (
                 <span
@@ -268,12 +302,15 @@ const TranscriptPanel = ({
                   className={[
                     'slice-editor-segment-clause',
                     isPlaybackActive ? 'segment-active' : '',
+                    segmentSelected && (Boolean(keyword.trim()) || !useWordHighlight)
+                      ? 'segment-selected'
+                      : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   onClick={(event) => handleSegmentClick(event, segment.start)}
                 >
-                  {segment.text}
+                  {inner}
                 </span>
               );
             });

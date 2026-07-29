@@ -777,6 +777,7 @@ const ManualVideoSlicePage = () => {
                 matchParagraphIds={matchParagraphIds}
                 onSeek={handleSeek}
                 onSelectSegment={handleSelectSegment}
+                selectedCopySegments={selectedSegments}
               />
             </div>
           </div>
