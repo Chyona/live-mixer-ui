@@ -7,7 +7,7 @@ const loginMode = (env.VITE_LOGIN_MODE as LoginMode) || 'modal';
 
 export const appConfig = {
   title: env.VITE_APP_TITLE || 'Base UI',
-  description: env.VITE_APP_DESCRIPTION || '基于 React + Vite + Ant Design 的前端项目模板',
+  description: env.VITE_APP_DESCRIPTION || '面向直播内容的 AI 智能切片与剪辑管理平台',
   siteUrl: env.VITE_SITE_URL || 'http://localhost:8008',
   companyName: env.VITE_COMPANY_NAME || env.VITE_APP_TITLE || 'Base UI',
   gtmId: env.VITE_GTM_ID || '',
