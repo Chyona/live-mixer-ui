@@ -7,18 +7,12 @@ type SlicePageKind = 'timeline' | 'manual';
 export function buildSliceBreadcrumbItems(options: {
   entryFrom: SliceEditorEntryFrom;
   sourceVideoId: string;
+  /** @deprecated 统一为「切片」，保留参数避免调用方改动 */
   pageKind: SlicePageKind;
   videoName?: string;
 }): BreadcrumbProps['items'] {
-  const { entryFrom, sourceVideoId, pageKind, videoName } = options;
-  const currentTitle =
-    pageKind === 'manual'
-      ? videoName
-        ? `${videoName} - 人工切片`
-        : '人工切片'
-      : videoName
-        ? `${videoName} - 切片`
-        : '视频切片';
+  const { entryFrom, videoName } = options;
+  const currentTitle = videoName ? `${videoName} - 切片` : '切片';
 
   if (entryFrom === 'slices') {
     return [{ title: <Link to="/slices">项目管理</Link> }, { title: currentTitle }];

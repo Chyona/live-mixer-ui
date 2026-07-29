@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Input, Popconfirm, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { LuCopy, LuPlus, LuScissors, LuSparkles, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuPlus, LuScissors, LuTrash2 } from 'react-icons/lu';
 
 import DisabledActionWrap from '~/components/DisabledActionWrap';
 import EllipsisTooltip from '~/components/EllipsisTooltip';
@@ -16,7 +16,7 @@ import TableColumnSetting, {
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListFilters } from '~/hooks/useListFilters';
 import { useTableColumnVisibility } from '~/hooks/useTableColumnVisibility';
-import { buildManualVideoSliceLink, buildSourceVideoSliceLink } from '~/routes/links';
+import { buildVideoSliceLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
   deleteSourceVideo,
@@ -420,7 +420,7 @@ const SourceVideosPage = () => {
       {
         title: '操作',
         key: 'actions',
-        width: 245,
+        width: 180,
         fixed: 'right',
         render: (_, record) => {
           const asrDisabledReason = getAsrActionDisabledReason(
@@ -431,16 +431,9 @@ const SourceVideosPage = () => {
           return (
             <Space size={8}>
               {renderSliceAction({
-                to: buildSourceVideoSliceLink(String(record.id)),
-                icon: <LuSparkles size={14} />,
-                label: '智能切片',
-                disabledReason: asrDisabledReason,
-                onNavigate: navigate,
-              })}
-              {renderSliceAction({
-                to: buildManualVideoSliceLink(String(record.id)),
+                to: buildVideoSliceLink(String(record.id)),
                 icon: <LuScissors size={14} />,
-                label: '人工切片',
+                label: '切片',
                 disabledReason: asrDisabledReason,
                 onNavigate: navigate,
               })}

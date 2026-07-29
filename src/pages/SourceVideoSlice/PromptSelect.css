@@ -1,0 +1,24 @@
+.slice-prompt-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.slice-prompt-select__label {
+  flex-shrink: 0;
+  color: var(--text-secondary, #595959);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.slice-prompt-select__control {
+  width: 180px;
+  min-width: 140px;
+}
+
+.slice-prompt-select__footer {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 8px 4px;
+}

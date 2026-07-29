@@ -36,8 +36,8 @@ export function isAppRoute(route: RouteCfgType): route is AppRouteCfg {
 export const LoginRoute = lazy(() => import('~/pages/Login'));
 export const SourceVideosPage = lazy(() => import('~/pages/SourceVideos'));
 export const AiPromptsPage = lazy(() => import('~/pages/AiPrompts'));
-export const SourceVideoSlicePage = lazy(() => import('~/pages/SourceVideoSlice'));
-export const ManualVideoSlicePage = lazy(() => import('~/pages/ManualVideoSlice'));
+export const VideoSlicePage = lazy(() => import('~/pages/VideoSlice'));
+export const ManualVideoSliceRedirect = lazy(() => import('~/pages/VideoSlice/ManualRedirect'));
 export const SlicesPage = lazy(() => import('~/pages/Slices'));
 export const TasksPage = lazy(() => import('~/pages/Tasks'));
 export const ErrorPage = lazy(() => import('~/pages/Error'));
@@ -62,7 +62,7 @@ export const RoutesCfg: RouteCfgType[] = [
     path: '/videos-slice/:id',
     text: '视频切片',
     icon: LuScissors,
-    element: SourceVideoSlicePage,
+    element: VideoSlicePage,
     hideInMenu: true,
     iconProps: { strokeWidth: 1.75 },
   },
@@ -70,7 +70,7 @@ export const RoutesCfg: RouteCfgType[] = [
     path: '/videos-manual-slice/:id',
     text: '人工切片',
     icon: LuScissors,
-    element: ManualVideoSlicePage,
+    element: ManualVideoSliceRedirect,
     hideInMenu: true,
     iconProps: { strokeWidth: 1.75 },
   },

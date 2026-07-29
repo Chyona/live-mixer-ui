@@ -12,6 +12,379 @@
   overflow: hidden;
 }
 
+/* 统一切片页：上方文案精修，下方时间轴选片 */
+.slice-page_unified {
+  --slice-editor-inner-padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.slice-page_unified > .slice-page-header {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.slice-page_unified > .slice-page-empty-shell {
+  flex: 1;
+  min-height: 0;
+}
+
+.slice-unified-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slice-unified-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slice-page_unified .slice-unified-editor > * {
+  min-height: 0;
+}
+
+.slice-page_unified .slice-editor-panel_left,
+.slice-page_unified .slice-editor-panel_copy {
+  padding: var(--slice-editor-inner-padding);
+}
+
+.slice-page_unified .slice-editor-video-block {
+  margin-inline: calc(-1 * var(--slice-editor-inner-padding));
+  padding-bottom: 12px;
+}
+
+.slice-page_unified .slice-editor-main {
+  gap: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 视频下方：可折叠时间轴选片（默认收起弱化） */
+.slice-timeline-fold {
+  flex-shrink: 0;
+  margin-block: 8px 12px;
+  margin-inline: calc(-1 * var(--slice-editor-inner-padding));
+  border-top: 1px solid var(--surface-divider, #eef0f4);
+  border-bottom: 1px solid var(--surface-divider, #eef0f4);
+  background: var(--surface-card-muted, #f7f8fa);
+}
+
+.slice-timeline-fold__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #595959);
+  cursor: pointer;
+  text-align: left;
+}
+
+.slice-timeline-fold__toggle:hover {
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--text-primary, #1f1f1f);
+}
+
+.slice-timeline-fold__toggle-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.slice-timeline-fold__chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+}
+
+.slice-timeline-fold_expanded .slice-timeline-fold__chevron {
+  transform: rotate(0deg);
+}
+
+.slice-timeline-fold__title {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1f1f1f);
+}
+
+.slice-timeline-fold__meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-gray, #8c8c8c);
+}
+
+.slice-timeline-fold__hint {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-gray, #8c8c8c);
+}
+
+.slice-timeline-fold__body {
+  max-height: min(32vh, 260px);
+  overflow: auto;
+  background: var(--surface-card, #fff);
+  border-top: 1px solid var(--surface-divider, #eef0f4);
+}
+
+.slice-timeline-section_fold {
+  min-height: 0;
+}
+
+.slice-timeline-section_fold .slice-selected-panel {
+  padding: 6px 12px 4px;
+}
+
+.slice-timeline-section_fold .slice-selected-header {
+  align-items: center;
+  gap: 8px;
+}
+
+.slice-timeline-section_fold .slice-selected-header-right {
+  gap: 6px 8px;
+}
+
+.slice-timeline-section_fold .slice-prompt-select__label {
+  display: none;
+}
+
+.slice-timeline-section_fold .slice-prompt-select__control {
+  width: 128px;
+  min-width: 110px;
+}
+
+.slice-timeline-section_fold .slice-selected-header-left_compact {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.slice-selected-ranges-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color, #d9d9d9);
+  border-radius: 6px;
+  background: var(--surface-card, #fff);
+  color: var(--text-secondary, #595959);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.slice-selected-ranges-trigger:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.slice-selected-ranges-trigger.has-ranges {
+  border-color: rgba(var(--primary-color-rgb), 0.35);
+  background: rgba(var(--primary-color-rgb), 0.06);
+  color: var(--primary-dark, var(--primary-color));
+}
+
+.slice-selected-ranges-trigger.has-warning {
+  border-color: var(--color-warning, #d48806);
+  color: var(--color-warning, #d48806);
+}
+
+.slice-selected-ranges-trigger__dur {
+  color: var(--text-gray, #8c8c8c);
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-selected-ranges-dropdown {
+  min-width: 280px;
+  max-width: min(420px, 90vw);
+  max-height: min(320px, 50vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card, #fff);
+  border-radius: 8px;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.08),
+    0 3px 6px -4px rgba(0, 0, 0, 0.12);
+}
+
+.slice-selected-ranges-dropdown__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--surface-divider, #f0f0f0);
+}
+
+.slice-selected-ranges-dropdown__sum {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-gray, #8c8c8c);
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-selected-ranges-dropdown__empty {
+  margin: 0;
+  padding: 16px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.slice-selected-ranges-dropdown__list {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.slice-selected-ranges-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 0;
+}
+
+.slice-selected-ranges-dropdown__item.is-active .slice-selected-ranges-dropdown__main {
+  background: rgba(var(--primary-color-rgb), 0.1);
+  color: var(--primary-dark, var(--primary-color));
+}
+
+.slice-selected-ranges-dropdown__main {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 8px 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slice-selected-ranges-dropdown__main:hover {
+  background: var(--surface-card-muted, #f5f6f8);
+}
+
+.slice-selected-ranges-dropdown__index {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.slice-selected-ranges-dropdown__time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-selected-ranges-dropdown__dur {
+  color: var(--text-gray, #8c8c8c);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.slice-selected-ranges-dropdown__remove {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-gray, #8c8c8c);
+  cursor: pointer;
+}
+
+.slice-selected-ranges-dropdown__remove:hover {
+  background: var(--color-danger-bg, #fff1f0);
+  color: var(--color-danger-dark, #cf1322);
+}
+
+.slice-timeline-section_fold .slice-prompt-select__label {
+  display: none;
+}
+
+.slice-timeline-section_fold .slice-prompt-select__control {
+  width: 128px;
+  min-width: 110px;
+}
+
+.slice-timeline-section_fold .slice-submit-btn,
+.slice-timeline-section_fold .slice-ai-select-btn,
+.slice-timeline-section_fold .slice-secondary-btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.slice-timeline-section_fold .slice-selected-zoom {
+  padding: 2px 8px;
+}
+
+.slice-timeline-section_fold .slice-selected-zoom .timeline-zoom-slider {
+  width: 56px;
+}
+
+/* 折叠区内时间轴压低轨道高度 */
+.slice-timeline-section_fold .video-timeline {
+  padding: 0 8px 6px;
+}
+
+.slice-timeline-section_fold .timeline-wrapper {
+  padding: 4px 8px 2px;
+}
+
+.slice-timeline-section_fold .timeline-content {
+  height: 72px;
+}
+
+.slice-timeline-section_fold .timeline-ruler {
+  height: 20px;
+  margin-bottom: 0;
+}
+
+.slice-timeline-section_fold .timeline-ruler .timeline-tick-label {
+  bottom: 6px;
+  font-size: 10px;
+}
+
+.slice-timeline-section_fold .timeline-track {
+  height: 40px;
+}
+
 .slice-page_manual .slice-editor-panel_left,
 .slice-page_manual .slice-editor-panel_copy {
   padding: var(--slice-editor-inner-padding);
@@ -81,7 +454,8 @@
 
 .slice-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
+  /* 左侧视频+文案更吃空间，右侧预览约 40% */
+  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
   gap: 16px;
   align-items: stretch;
 }

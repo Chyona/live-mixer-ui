@@ -14,6 +14,23 @@
   padding-bottom: 8px;
 }
 
+.slice-page-header-main_toolbar {
+  align-items: center;
+  padding-bottom: 0;
+}
+
+.slice-page-header-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.slice-page-header-main_toolbar .slice-page-header-left {
+  flex-direction: row;
+  align-items: center;
+}
+
 .slice-page-header-right {
   display: flex;
   flex-wrap: wrap;
@@ -68,6 +85,7 @@
 @media (max-width: 768px) {
   .slice-page-header-main {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .slice-page-header-right {

@@ -12,9 +12,9 @@ const ManualVideoSlicePageSkeleton = ({ breadcrumbItems }: ManualVideoSlicePageS
     <div
       className="slice-page slice-page_manual"
       aria-busy="true"
-      aria-label="人工切片页面加载中"
+      aria-label="切片页面加载中"
     >
-      <SlicePageHeader breadcrumbItems={breadcrumbItems} title="视频人工切片" />
+      <SlicePageHeader breadcrumbItems={breadcrumbItems} />
 
       <div className="slice-editor-layout manual-slice-loading">
         <div className="slice-editor-main">

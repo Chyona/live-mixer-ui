@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Popconfirm, Space } from 'antd';
-import { LuDownload } from 'react-icons/lu';
+import { Button, Descriptions, Drawer, Modal, Space, Typography } from 'antd';
+import { LuChevronDown, LuDownload, LuX } from 'react-icons/lu';
+import VideoTimeline, { type TimeRange } from '~/components/VideoTimeline';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
 import SlicePageEmptyState from '~/components/SlicePageEmptyState';
@@ -18,24 +19,27 @@ import {
   saveSliceProject,
   toSliceProjectClips,
   updateSliceProject,
+  type SliceProjectClip,
 } from '~/services/sliceProject';
-import { submitDraft } from '~/services/slice';
+import { submitClip, submitDraft } from '~/services/slice';
+import { submitAiSliceSelection } from '~/services/aiSlice';
+import { type AiPrompt } from '~/services/aiPrompt';
 import { formatToDateTime } from '~/utils/date';
+import { formatVideoDuration, formatVideoDurationMs } from '~/utils/duration';
 import { showAppError, toast } from '~/utils/toast';
-import { isPlayableVideoUrl } from '~/utils/videoUrl';
+import { getVideoFormatLabel, isPlayableVideoUrl } from '~/utils/videoUrl';
 import { useSliceEntryFrom } from '~/hooks/useSliceEntryFrom';
 import type { SliceEditorEntryFrom } from '~/routes/links';
-import {
-  buildManualVideoSliceLink,
-  buildSourceVideoSliceLink,
-  parseProjectId,
-} from '~/routes/links';
+import { buildVideoSliceLink, parseProjectId } from '~/routes/links';
 import { buildSliceBreadcrumbItems } from '~/utils/sliceBreadcrumbs';
 import TranscriptPanel from './components/TranscriptPanel';
 import VideoTranscriptResizeHandle from './components/VideoTranscriptResizeHandle';
 import SelectedCopyPanel from './components/SelectedCopyPanel';
 import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
+import SelectedSegmentsPanel from '~/pages/SourceVideoSlice/SelectedSegmentsPanel';
+import TimelineLoadingSkeleton from '~/pages/SourceVideoSlice/TimelineLoadingSkeleton';
+import PromptSelect from '~/pages/SourceVideoSlice/PromptSelect';
 import type { SelectedCopySegment, TranscriptParagraph } from './types';
 import {
   deleteSelectedRangeFromSegment,
@@ -56,11 +60,25 @@ interface ManualSliceLocationState {
 }
 
 const MAX_TOTAL_DURATION = 30 * 60;
+const MIN_TOTAL_DURATION = 5 * 60;
 const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
 
 /** 人工切片项目自动命名：人工切片_时间 */
 function buildManualProjectAutoName() {
   return `人工切片_${formatToDateTime(Date.now(), 'YYYY-MM-DD_HH:mm:ss')}`;
+}
+
+function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] {
+  if (!clips?.length) return [];
+  return clips.map((clip, index) => {
+    const start = (clip.start_time ?? 0) / 1000;
+    const end = (clip.end_time ?? 0) / 1000;
+    return {
+      id: `timeline-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
+      start,
+      end,
+    };
+  });
 }
 
 const ManualVideoSlicePage = () => {
@@ -99,21 +117,40 @@ const ManualVideoSlicePage = () => {
   const [downloadingSubtitle, setDownloadingSubtitle] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
   const [projectRemark, setProjectRemark] = useState('');
+  const [tipVisible, setTipVisible] = useState(false);
+  const [sourceModalVisible, setSourceModalVisible] = useState(false);
+  const [selectedRanges, setSelectedRanges] = useState<TimeRange[]>([]);
+  const [timelineSubmitting, setTimelineSubmitting] = useState(false);
+  const [aiSelecting, setAiSelecting] = useState(false);
+  const autoPlayOnSelect = true;
+  const [timelineZoomLevel, setTimelineZoomLevel] = useState(1);
+  const [activeRangeId, setActiveRangeId] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [selectedPrompt, setSelectedPrompt] = useState<AiPrompt | null>(null);
+  const [preferredPromptId, setPreferredPromptId] = useState<number | null>(null);
+  /** 时间轴选片默认折叠，弱化展示 */
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
+  const pendingRangesRef = useRef<TimeRange[] | null>(null);
+  const streamUrlRef = useRef('');
 
   useEffect(() => {
     setProjectId(projectIdFromQuery);
   }, [projectIdFromQuery]);
 
   useAppSEO({
-    title: video ? `${video.name} - 人工切片` : '人工切片',
+    title: video ? `${video.name} - 切片` : '切片',
     path: sourceVideoId
-      ? buildManualVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })
+      ? buildVideoSliceLink(sourceVideoId, { projectId: projectId || undefined })
       : '/source-videos',
     robots: 'noindex, nofollow',
   });
 
   const streamUrl = video?.live_url?.trim() ?? '';
+  streamUrlRef.current = streamUrl;
   const canPreview = Boolean(streamUrl) && isPlayableVideoUrl(streamUrl);
+  const videoFormatLabel = useMemo(() => getVideoFormatLabel(streamUrl), [streamUrl]);
+  const isTimelineReady = videoDuration > 0 && !videoError;
+  const isTimelineLoading = canPreview && !videoError && videoDuration === 0;
 
   const speakerIds = useMemo(
     () => [...new Set(paragraphs.map((item) => item.speakerId))],
@@ -166,9 +203,13 @@ const ManualVideoSlicePage = () => {
     const hasAiSegments = Boolean(locationState?.aiSelectedSegments?.length);
 
     setLoading(true);
+    pendingRangesRef.current = null;
+    setPreferredPromptId(null);
+    setSelectedPrompt(null);
+
     try {
       // 无 projectId：源视频入口，只拉源视频详情（干净页）
-      // 有 projectId：项目管理入口，再拉项目详情并回填片段
+      // 有 projectId：项目管理入口，再拉项目详情并回填 clips0 / clips1
       const [videoRes, projectSettled] = await Promise.all([
         fetchSourceVideoDetail(sourceVideoId),
         projectIdFromQuery
@@ -183,6 +224,9 @@ const ManualVideoSlicePage = () => {
         return;
       }
 
+      const nextStreamUrl = videoRes.data.live_url?.trim() ?? '';
+      const sameStream = streamUrlRef.current === nextStreamUrl;
+
       setVideo(videoRes.data);
       setParagraphs(
         normalizeTranscriptParagraphs(liveAsrToTranscriptParagraphs(videoRes.data.live_asr))
@@ -195,6 +239,9 @@ const ManualVideoSlicePage = () => {
         if (!hasAiSegments) {
           setSelectedSegments([]);
         }
+        if (sameStream) {
+          setSelectedRanges([]);
+        }
         return;
       }
 
@@ -206,6 +253,15 @@ const ManualVideoSlicePage = () => {
           setSelectedSegments(projectRes.data.segments);
           setDraftName(projectRes.data.name);
         }
+        const ranges = clips0ToTimeRanges(projectRes.data.clips0);
+        if (sameStream) {
+          setSelectedRanges(ranges);
+          pendingRangesRef.current = null;
+        } else {
+          pendingRangesRef.current = ranges;
+        }
+        const promptId = Number(projectRes.data.prompt_id ?? 0);
+        setPreferredPromptId(promptId > 0 ? promptId : null);
       } else {
         toast.notify.warning(projectRes?.message || '剪辑项目加载失败');
       }
@@ -245,12 +301,23 @@ const ManualVideoSlicePage = () => {
     setCurrentTime(0);
     setIsVideoPlaying(false);
     setActiveSegmentId(null);
+    setActiveRangeId(null);
+    setVideoError(null);
+
+    if (pendingRangesRef.current) {
+      setSelectedRanges(pendingRangesRef.current);
+      pendingRangesRef.current = null;
+    } else {
+      setSelectedRanges([]);
+    }
   }, [streamUrl]);
 
   useEffect(() => {
     // 切换源视频时清空文案预览；同视频加载播放地址时不要清，避免盖掉项目回填
     setSelectedSegments([]);
     setActiveSegmentId(null);
+    setSelectedRanges([]);
+    setActiveRangeId(null);
   }, [sourceVideoId]);
 
   useEffect(() => {
@@ -258,6 +325,8 @@ const ManualVideoSlicePage = () => {
   }, [keyword, matchParagraphIds.length]);
 
   useEffect(() => {
+    if (videoDuration <= 0) return;
+
     const updateTime = () => {
       const videoEl = playerRef.current?.video;
       if (videoEl) {
@@ -266,9 +335,7 @@ const ManualVideoSlicePage = () => {
       rafRef.current = requestAnimationFrame(updateTime);
     };
 
-    if (videoDuration > 0) {
-      rafRef.current = requestAnimationFrame(updateTime);
-    }
+    rafRef.current = requestAnimationFrame(updateTime);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -308,6 +375,72 @@ const ManualVideoSlicePage = () => {
     }
     setCurrentTime(time);
   }, []);
+
+  const handlePlaybackError = useCallback((message: string) => {
+    setVideoError(message);
+  }, []);
+
+  useEffect(() => {
+    if (!activeRangeId) return;
+
+    const activeRange = selectedRanges.find((range) => range.id === activeRangeId);
+    if (!activeRange) return;
+
+    const videoEl = playerRef.current?.video;
+    if (!videoEl || videoEl.paused) return;
+
+    if (currentTime >= activeRange.end - 0.05) {
+      videoEl.pause();
+      videoEl.currentTime = Math.min(activeRange.end, videoEl.duration || activeRange.end);
+      setCurrentTime(videoEl.currentTime);
+      setActiveRangeId(null);
+    }
+  }, [activeRangeId, currentTime, selectedRanges]);
+
+  const handleRangeSelect = useCallback(
+    (range: TimeRange) => {
+      setSelectedRanges((prev) => [...prev, range]);
+      if (autoPlayOnSelect) {
+        handleSeek(range.start);
+      }
+    },
+    [autoPlayOnSelect, handleSeek]
+  );
+
+  const handleRangeDelete = useCallback((rangeId: string) => {
+    setActiveRangeId((current) => (current === rangeId ? null : current));
+    setSelectedRanges((prev) => prev.filter((item) => item.id !== rangeId));
+  }, []);
+
+  const handleActiveRangeSelect = useCallback(
+    (rangeId: string, start: number) => {
+      setActiveRangeId(rangeId);
+      handleSeek(start);
+    },
+    [handleSeek]
+  );
+
+  const handleClearAllRanges = useCallback(() => {
+    setSelectedRanges([]);
+    setActiveRangeId(null);
+  }, []);
+
+  const handleRangeUpdate = useCallback((updated: TimeRange) => {
+    setSelectedRanges((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+  }, []);
+
+  const totalSelectedRangeDuration = useMemo(
+    () => selectedRanges.reduce((sum, range) => sum + (range.end - range.start), 0),
+    [selectedRanges]
+  );
+
+  const buildProjectClipsPayload = useCallback(
+    () => ({
+      clips0: toSliceProjectClips(selectedRanges),
+      clips1: toSliceProjectClips(selectedSegments),
+    }),
+    [selectedRanges, selectedSegments]
+  );
 
   const handleSelectSegment = useCallback((segment: SelectedCopySegment | null) => {
     if (!segment) return;
@@ -424,8 +557,8 @@ const ManualVideoSlicePage = () => {
         name: nextName,
         remark: nextRemark,
         project_source: 'manual' as const,
-        clips0: [] as ReturnType<typeof toSliceProjectClips>,
-        clips1: toSliceProjectClips(selectedSegments),
+        prompt_id: selectedPrompt?.id,
+        ...buildProjectClipsPayload(),
       };
 
       setSavingProject(true);
@@ -458,7 +591,7 @@ const ManualVideoSlicePage = () => {
         setSavingProject(false);
       }
     },
-    [draftName, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
+    [buildProjectClipsPayload, draftName, projectId, projectRemark, selectedPrompt?.id, selectedSegments, syncProjectIdInUrl, video]
   );
 
   const handleSaveDraft = useCallback(
@@ -513,8 +646,8 @@ const ManualVideoSlicePage = () => {
           name,
           remark,
           project_source: 'manual',
-          clips0: [],
-          clips1: toSliceProjectClips(selectedSegments),
+          prompt_id: selectedPrompt?.id,
+          ...buildProjectClipsPayload(),
         });
 
         if (response.code !== 0) {
@@ -541,9 +674,11 @@ const ManualVideoSlicePage = () => {
       }
     },
     [
+      buildProjectClipsPayload,
       handleSaveProject,
       projectId,
       saveModalMode,
+      selectedPrompt?.id,
       selectedSegments,
       sourceVideoId,
       syncProjectIdInUrl,
@@ -582,6 +717,160 @@ const ManualVideoSlicePage = () => {
       setSubmitting(false);
     }
   }, [navigate, projectId, selectedSegments.length, video]);
+
+  const handleTimelineSubmit = useCallback(async () => {
+    if (!video) return;
+
+    if (selectedRanges.length === 0) {
+      toast.notify.warning('请先选择至少一个时间段');
+      return;
+    }
+
+    if (totalSelectedRangeDuration < MIN_TOTAL_DURATION) {
+      toast.notify.warning(`已选时长需不少于 ${MIN_TOTAL_DURATION / 60} 分钟`);
+      return;
+    }
+
+    if (!selectedPrompt) {
+      toast.notify.warning('请先选择一个 AI 提示词');
+      return;
+    }
+
+    const projectName = `一键成片_${formatToDateTime(Date.now(), 'YYYY-MM-DD_HH:mm:ss')}`;
+    const projectPayload = {
+      live_id: video.id,
+      name: projectName,
+      prompt_id: selectedPrompt.id,
+      project_source: 'timeline' as const,
+      ...buildProjectClipsPayload(),
+    };
+
+    setTimelineSubmitting(true);
+    try {
+      const { code, message, data } = projectId
+        ? await updateSliceProject(projectId, projectPayload)
+        : await saveSliceProject(projectPayload);
+
+      if (code !== 0) {
+        toast.notify.error(message || '保存项目失败');
+        return;
+      }
+
+      const savedProjectId = data?.id || projectId;
+      if (!savedProjectId) {
+        toast.notify.error('保存成功但未返回项目 ID');
+        return;
+      }
+
+      if (!projectId) {
+        syncProjectIdInUrl(savedProjectId, { reload: false });
+      }
+
+      const response = await submitClip({
+        video_project_id: savedProjectId,
+      });
+
+      if (response.code !== 0) {
+        toast.notify.error(response.message || '提交失败');
+        return;
+      }
+
+      toast.notify.success('创建成功', '可前往任务管理查看');
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('提交失败');
+      }
+    } finally {
+      setTimelineSubmitting(false);
+    }
+  }, [
+    buildProjectClipsPayload,
+    projectId,
+    selectedPrompt,
+    selectedRanges.length,
+    syncProjectIdInUrl,
+    totalSelectedRangeDuration,
+    video,
+  ]);
+
+  const handleAiSelect = useCallback(async () => {
+    if (!video) return;
+
+    if (selectedRanges.length === 0) {
+      toast.notify.warning('请先选择至少一个时间段');
+      return;
+    }
+
+    if (totalSelectedRangeDuration < MIN_TOTAL_DURATION) {
+      toast.notify.warning(`已选时长需不少于 ${MIN_TOTAL_DURATION / 60} 分钟`);
+      return;
+    }
+
+    if (!selectedPrompt) {
+      toast.notify.warning('请先选择一个 AI 提示词');
+      return;
+    }
+
+    const projectName = `AI选片_${formatToDateTime(Date.now(), 'YYYY-MM-DD_HH:mm:ss')}`;
+    const projectPayload = {
+      live_id: video.id,
+      name: projectName,
+      prompt_id: selectedPrompt.id,
+      project_source: 'timeline' as const,
+      ...buildProjectClipsPayload(),
+    };
+
+    setAiSelecting(true);
+    try {
+      const { code, message, data } = projectId
+        ? await updateSliceProject(projectId, projectPayload)
+        : await saveSliceProject(projectPayload);
+
+      if (code !== 0) {
+        toast.notify.error(message || '保存项目失败');
+        return;
+      }
+
+      const savedProjectId = data?.id || projectId;
+      if (!savedProjectId) {
+        toast.notify.error('保存成功但未返回项目 ID');
+        return;
+      }
+
+      if (!projectId) {
+        syncProjectIdInUrl(savedProjectId, { reload: false });
+      }
+
+      const response = await submitAiSliceSelection({
+        video_project_id: savedProjectId,
+      });
+
+      if (response.code !== 0) {
+        toast.notify.error(response.message || 'AI 选片任务提交失败');
+        return;
+      }
+
+      toast.notify.success('创建成功', '可前往任务管理查看');
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error('AI 选片失败');
+      }
+    } finally {
+      setAiSelecting(false);
+    }
+  }, [
+    buildProjectClipsPayload,
+    projectId,
+    selectedPrompt,
+    selectedRanges.length,
+    syncProjectIdInUrl,
+    totalSelectedRangeDuration,
+    video,
+  ]);
 
   const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);
@@ -622,16 +911,6 @@ const ManualVideoSlicePage = () => {
     }
   }, [sourceVideoId, video?.name]);
 
-  const handleSwitchToTimeline = useCallback(() => {
-    if (projectId) {
-      updateSliceProject(projectId, { project_source: 'timeline' });
-    }
-
-    navigate(buildSourceVideoSliceLink(sourceVideoId, { projectId: projectId || undefined }), {
-      state: { from: entryFrom },
-    });
-  }, [entryFrom, navigate, projectId, sourceVideoId]);
-
   const scrollToMatch = (index: number) => {
     const paragraphId = matchParagraphIds[index];
     if (!paragraphId) return;
@@ -667,8 +946,8 @@ const ManualVideoSlicePage = () => {
 
   if (!video) {
     return (
-      <div className="slice-page slice-page_manual">
-        <SlicePageHeader breadcrumbItems={breadcrumbItems} title="视频人工切片" />
+      <div className="slice-page slice-page_unified">
+        <SlicePageHeader breadcrumbItems={breadcrumbItems} />
         <div className="slice-page-empty-shell">
           <SlicePageEmptyState variant="video-unavailable" entryFrom={entryFrom} />
         </div>
@@ -677,13 +956,12 @@ const ManualVideoSlicePage = () => {
   }
 
   return (
-    <div className="slice-page slice-page_manual">
+    <div className="slice-page slice-page_unified">
       <SlicePageHeader
         breadcrumbItems={breadcrumbItems}
-        title={`${video.name} - 视频人工切片`}
-        // description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
           <Space size={12}>
+            <Button onClick={() => setSourceModalVisible(true)}>查看播放源</Button>
             <Button
               icon={<LuDownload size={16} />}
               loading={downloadingSubtitle}
@@ -691,17 +969,12 @@ const ManualVideoSlicePage = () => {
             >
               字幕下载
             </Button>
-            <Popconfirm
-              title="切换到时间轴切片？"
-              description="未保存的改动切换后将丢失，确定要继续吗？"
-              okText="确定切换"
-              cancelText="取消"
-              onConfirm={handleSwitchToTimeline}
-            >
-              <Button className="slice-mode-switch-btn">切换到时间轴切片</Button>
-            </Popconfirm>
           </Space>
         }
+        tip={{
+          text: '请自觉遵守平台链接导入规范',
+          onClick: () => setTipVisible(true),
+        }}
       />
 
       {!canPreview ? (
@@ -712,107 +985,192 @@ const ManualVideoSlicePage = () => {
           />
         </div>
       ) : (
-        <div className="slice-editor-layout">
-          <div className="slice-editor-main">
-            <div ref={panelLeftRef} className="slice-editor-panel  slice-editor-panel_left">
-              <div
-                ref={videoBlockRef}
-                className={[
-                  'slice-editor-video-block',
-                  videoPanelHeight != null ? 'slice-editor-video-block_customized' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                style={
-                  videoPanelHeight != null
-                    ? { height: videoPanelHeight, flex: `0 0 ${videoPanelHeight}px` }
-                    : undefined
-                }
-              >
-                {/* <div className="slice-editor-panel-title">视频预览</div> */}
-                <StreamVideoPlayer
-                  ref={playerRef}
-                  url={streamUrl}
-                  className="slice-editor-video"
-                  onDurationChange={setVideoDuration}
+        <div className="slice-unified-body">
+          <div className="slice-editor-layout slice-unified-editor">
+            <div className="slice-editor-main">
+              <div ref={panelLeftRef} className="slice-editor-panel slice-editor-panel_left">
+                <div
+                  ref={videoBlockRef}
+                  className={[
+                    'slice-editor-video-block',
+                    videoPanelHeight != null ? 'slice-editor-video-block_customized' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={
+                    videoPanelHeight != null
+                      ? { height: videoPanelHeight, flex: `0 0 ${videoPanelHeight}px` }
+                      : undefined
+                  }
+                >
+                  <StreamVideoPlayer
+                    ref={playerRef}
+                    url={streamUrl}
+                    className="slice-editor-video"
+                    onDurationChange={setVideoDuration}
+                    onPlaybackError={handlePlaybackError}
+                  />
+                </div>
+
+                <VideoTranscriptResizeHandle
+                  isCustomized={videoPanelHeight != null}
+                  onResize={setVideoPanelHeight}
+                  onMeasureStart={() => videoBlockRef.current?.getBoundingClientRect().height ?? 0}
+                  onMeasurePanel={() => panelLeftRef.current?.getBoundingClientRect().height ?? 0}
+                  onReset={() => setVideoPanelHeight(null)}
+                />
+
+                <div
+                  className={[
+                    'slice-timeline-fold',
+                    timelineExpanded ? 'slice-timeline-fold_expanded' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <button
+                    type="button"
+                    className="slice-timeline-fold__toggle"
+                    aria-expanded={timelineExpanded}
+                    onClick={() => setTimelineExpanded((open) => !open)}
+                  >
+                    <span className="slice-timeline-fold__toggle-main">
+                      <LuChevronDown
+                        size={16}
+                        className="slice-timeline-fold__chevron"
+                        aria-hidden
+                      />
+                      <span className="slice-timeline-fold__title">时间轴选片</span>
+                      <span className="slice-timeline-fold__meta">
+                        {selectedRanges.length > 0
+                          ? `已选 ${selectedRanges.length} 段 · ${formatVideoDuration(totalSelectedRangeDuration)}`
+                          : '点击展开，拖拽时间轴标记片段'}
+                      </span>
+                    </span>
+                    <span className="slice-timeline-fold__hint">
+                      {timelineExpanded ? '收起' : '展开'}
+                    </span>
+                  </button>
+
+                  {timelineExpanded ? (
+                    <div className="slice-timeline-fold__body">
+                      {isTimelineLoading && <TimelineLoadingSkeleton />}
+                      {isTimelineReady && (
+                        <div className="slice-timeline-section slice-timeline-section_fold">
+                          <SelectedSegmentsPanel
+                            videoDuration={videoDuration}
+                            selectedRanges={selectedRanges}
+                            totalSelectedDuration={totalSelectedRangeDuration}
+                            minTotalDuration={MIN_TOTAL_DURATION}
+                            maxTotalDuration={MAX_TOTAL_DURATION}
+                            submitting={timelineSubmitting}
+                            aiSelecting={aiSelecting}
+                            zoomLevel={timelineZoomLevel}
+                            onZoomLevelChange={setTimelineZoomLevel}
+                            activeRangeId={activeRangeId}
+                            onActiveRangeSelect={handleActiveRangeSelect}
+                            onSubmit={() => void handleTimelineSubmit()}
+                            onAiSelect={() => void handleAiSelect()}
+                            onClearAll={handleClearAllRanges}
+                            onRangeDelete={handleRangeDelete}
+                            hasSelectedPrompt={selectedPrompt != null}
+                            compact
+                            headerExtra={
+                              <PromptSelect
+                                selectedId={selectedPrompt?.id ?? null}
+                                preferredId={preferredPromptId}
+                                onSelect={setSelectedPrompt}
+                              />
+                            }
+                          />
+                          <VideoTimeline
+                            duration={videoDuration}
+                            currentTime={currentTime}
+                            selectedRanges={selectedRanges}
+                            maxTotalDuration={MAX_TOTAL_DURATION}
+                            zoomLevel={timelineZoomLevel}
+                            onZoomLevelChange={setTimelineZoomLevel}
+                            activeRangeId={activeRangeId}
+                            onActiveRangeChange={setActiveRangeId}
+                            onTimeChange={handleSeek}
+                            onRangeSelect={handleRangeSelect}
+                            onRangeDelete={handleRangeDelete}
+                            onRangeUpdate={handleRangeUpdate}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+
+                <TranscriptPanel
+                  embedded
+                  paragraphs={paragraphs.map((paragraph) => ({
+                    ...paragraph,
+                    id: paragraph.id,
+                  }))}
+                  keyword={keyword}
+                  onKeywordChange={setKeyword}
+                  onPrevMatch={() => {
+                    if (!matchParagraphIds.length) return;
+                    const nextIndex =
+                      (activeMatchIndex - 1 + matchParagraphIds.length) % matchParagraphIds.length;
+                    setActiveMatchIndex(nextIndex);
+                    scrollToMatch(nextIndex);
+                  }}
+                  onNextMatch={() => {
+                    if (!matchParagraphIds.length) return;
+                    const nextIndex = (activeMatchIndex + 1) % matchParagraphIds.length;
+                    setActiveMatchIndex(nextIndex);
+                    scrollToMatch(nextIndex);
+                  }}
+                  activeParagraphId={transcriptHighlight?.paragraphId ?? null}
+                  transcriptHighlight={transcriptHighlight}
+                  isVideoPlaying={isVideoPlaying}
+                  activeMatchIndex={activeMatchIndex}
+                  matchParagraphIds={matchParagraphIds}
+                  onSeek={handleSeek}
+                  onSelectSegment={handleSelectSegment}
                 />
               </div>
-
-              <VideoTranscriptResizeHandle
-                isCustomized={videoPanelHeight != null}
-                onResize={setVideoPanelHeight}
-                onMeasureStart={() => videoBlockRef.current?.getBoundingClientRect().height ?? 0}
-                onMeasurePanel={() => panelLeftRef.current?.getBoundingClientRect().height ?? 0}
-                onReset={() => setVideoPanelHeight(null)}
-              />
-
-              <TranscriptPanel
-                embedded
-                paragraphs={paragraphs.map((paragraph) => ({
-                  ...paragraph,
-                  id: paragraph.id,
-                }))}
-                keyword={keyword}
-                onKeywordChange={setKeyword}
-                onPrevMatch={() => {
-                  if (!matchParagraphIds.length) return;
-                  const nextIndex =
-                    (activeMatchIndex - 1 + matchParagraphIds.length) % matchParagraphIds.length;
-                  setActiveMatchIndex(nextIndex);
-                  scrollToMatch(nextIndex);
-                }}
-                onNextMatch={() => {
-                  if (!matchParagraphIds.length) return;
-                  const nextIndex = (activeMatchIndex + 1) % matchParagraphIds.length;
-                  setActiveMatchIndex(nextIndex);
-                  scrollToMatch(nextIndex);
-                }}
-                activeParagraphId={transcriptHighlight?.paragraphId ?? null}
-                transcriptHighlight={transcriptHighlight}
-                isVideoPlaying={isVideoPlaying}
-                activeMatchIndex={activeMatchIndex}
-                matchParagraphIds={matchParagraphIds}
-                onSeek={handleSeek}
-                onSelectSegment={handleSelectSegment}
-              />
             </div>
-          </div>
 
-          <SelectedCopyPanel
-            segments={selectedSegments}
-            activeSegmentId={activeSegmentId}
-            speakerIds={speakerIds}
-            maxTotalDuration={MAX_TOTAL_DURATION}
-            videoDuration={videoDuration}
-            submitting={submitting}
-            onActiveSegmentChange={setActiveSegmentId}
-            onSeek={handleSeek}
-            onReorder={setSelectedSegments}
-            onDeleteSegment={handleDeleteSegment}
-            onDeleteSelectedRange={handleDeleteSelectedRange}
-            onCopySegment={handleCopySegment}
-            onAdjustSegment={handleAdjustSegment}
-            onClearAll={() => {
-              setSelectedSegments([]);
-              setActiveSegmentId(null);
-            }}
-            onPreview={() => {
-              if (!streamUrl) {
-                toast.notify.warning('暂无可用视频，无法预览');
-                return;
-              }
-              if (selectedSegments.length === 0) {
-                toast.notify.warning('请先选择至少一个片段');
-                return;
-              }
-              setPreviewOpen(true);
-            }}
-            onSave={handleSaveClick}
-            savingProject={savingProject}
-            onSaveAs={() => openSaveModal('saveAs')}
-            onExportDraft={() => openSaveModal('export')}
-            onSubmit={() => void handleSubmit()}
-          />
+            <SelectedCopyPanel
+              segments={selectedSegments}
+              activeSegmentId={activeSegmentId}
+              speakerIds={speakerIds}
+              maxTotalDuration={MAX_TOTAL_DURATION}
+              videoDuration={videoDuration}
+              submitting={submitting}
+              onActiveSegmentChange={setActiveSegmentId}
+              onSeek={handleSeek}
+              onReorder={setSelectedSegments}
+              onDeleteSegment={handleDeleteSegment}
+              onDeleteSelectedRange={handleDeleteSelectedRange}
+              onCopySegment={handleCopySegment}
+              onAdjustSegment={handleAdjustSegment}
+              onClearAll={() => {
+                setSelectedSegments([]);
+                setActiveSegmentId(null);
+              }}
+              onPreview={() => {
+                if (!streamUrl) {
+                  toast.notify.warning('暂无可用视频，无法预览');
+                  return;
+                }
+                if (selectedSegments.length === 0) {
+                  toast.notify.warning('请先选择至少一个片段');
+                  return;
+                }
+                setPreviewOpen(true);
+              }}
+              onSave={handleSaveClick}
+              savingProject={savingProject}
+              onSaveAs={() => openSaveModal('saveAs')}
+              onExportDraft={() => openSaveModal('export')}
+              onSubmit={() => void handleSubmit()}
+            />
+          </div>
         </div>
       )}
 
@@ -845,6 +1203,76 @@ const ManualVideoSlicePage = () => {
         onCancel={() => setSaveModalOpen(false)}
         onSubmit={(values) => void handleSaveDraft(values)}
       />
+
+      <Drawer
+        open={sourceModalVisible}
+        placement="right"
+        width="min(520px, 100vw)"
+        title={null}
+        closable={false}
+        destroyOnClose
+        className="slice-source-drawer"
+        onClose={() => setSourceModalVisible(false)}
+      >
+        <div className="slice-source-drawer__layout">
+          <header className="slice-source-drawer__header">
+            <div className="slice-source-drawer__header-main">
+              <h3 className="slice-source-drawer__title">播放源信息</h3>
+              <p className="slice-source-drawer__meta">{video.name}</p>
+            </div>
+            <button
+              type="button"
+              className="slice-source-drawer__close"
+              aria-label="关闭"
+              onClick={() => setSourceModalVisible(false)}
+            >
+              <LuX size={18} />
+            </button>
+          </header>
+
+          <div className="slice-source-drawer__body">
+            <Descriptions column={1} size="small" className="slice-source-descriptions">
+              <Descriptions.Item label="源视频名称">{video.name}</Descriptions.Item>
+              <Descriptions.Item label="备注">{video.remark || '-'}</Descriptions.Item>
+              <Descriptions.Item label="直播地址">
+                <Typography.Paragraph
+                  className="slice-source-url"
+                  copyable={{ text: video.live_url }}
+                >
+                  {video.live_url}
+                </Typography.Paragraph>
+              </Descriptions.Item>
+              <Descriptions.Item label="时长">
+                {video.duration > 0 ? formatVideoDurationMs(video.duration) : '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="创建时间">{formatToDateTime(video.created_at)}</Descriptions.Item>
+              <Descriptions.Item label="预览状态">
+                {canPreview
+                  ? `支持浏览器预览（${videoFormatLabel}）`
+                  : streamUrl
+                    ? '格式不受支持'
+                    : '暂无播放地址'}
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
+        </div>
+      </Drawer>
+
+      <Modal
+        className="noanimation-modal"
+        title="温馨提示"
+        open={tipVisible}
+        centered
+        width={420}
+        okText="我知道了"
+        cancelButtonProps={{ style: { display: 'none' } }}
+        onOk={() => setTipVisible(false)}
+        onCancel={() => setTipVisible(false)}
+      >
+        <p className="slice-tip-text">
+          坚持创作高质量且充满人文关怀的原创内容，请勿搬运或发布侵权他人、违反国家法律法规、公序良俗的不良内容；因违反上述规定而产生的一切后果，均由用户自行承担。
+        </p>
+      </Modal>
     </div>
   );
 };

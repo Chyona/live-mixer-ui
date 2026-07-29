@@ -11,8 +11,8 @@ interface SourceVideoSlicePageSkeletonProps {
 
 const SourceVideoSlicePageSkeleton = ({ breadcrumbItems }: SourceVideoSlicePageSkeletonProps) => {
   return (
-    <div className="slice-page slice-page_timeline" aria-busy="true" aria-label="视频切片页面加载中">
-      <SlicePageHeader breadcrumbItems={breadcrumbItems} title="视频切片" />
+    <div className="slice-page slice-page_timeline" aria-busy="true" aria-label="切片页面加载中">
+      <SlicePageHeader breadcrumbItems={breadcrumbItems} />
 
       <div className="slice-workspace-card">
         <div className="slice-main-section">

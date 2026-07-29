@@ -1,4 +1,6 @@
-import { LuX } from 'react-icons/lu';
+import { Dropdown } from 'antd';
+import { LuChevronDown, LuX } from 'react-icons/lu';
+import type { ReactNode } from 'react';
 import DisabledActionWrap from '~/components/DisabledActionWrap';
 import TimelineZoomControls from '~/components/VideoTimeline/TimelineZoomControls';
 import type { TimeRange } from '~/components/VideoTimeline';
@@ -33,7 +35,7 @@ function buildActionDisabledReason(options: {
     missing.push('请选中至少一个时间片段');
   }
   if (!hasSelectedPrompt) {
-    missing.push('请在上方提示词列表中选择合适的提示词');
+    missing.push('请选择 AI 提示词');
   }
   if (isUnderMin) {
     missing.push(`已选时长需不少于 ${minTotalDuration / 60} 分钟`);
@@ -62,6 +64,10 @@ interface SelectedSegmentsPanelProps {
   onClearAll: () => void;
   onRangeDelete: (rangeId: string) => void;
   hasSelectedPrompt: boolean;
+  /** 右侧操作区前置内容（如 AI 提示词下拉） */
+  headerExtra?: ReactNode;
+  /** 折叠区等窄空间下的紧凑布局 */
+  compact?: boolean;
 }
 
 const SelectedSegmentsPanel = ({
@@ -81,6 +87,8 @@ const SelectedSegmentsPanel = ({
   onClearAll,
   onRangeDelete,
   hasSelectedPrompt,
+  headerExtra,
+  compact = false,
 }: SelectedSegmentsPanelProps) => {
   const isUnderMin =
     selectedRanges.length > 0 && totalSelectedDuration < minTotalDuration;
@@ -122,32 +130,139 @@ const SelectedSegmentsPanel = ({
     </button>
   );
 
-  return (
-    <div className="slice-selected-panel">
-      <div className="slice-selected-header">
-        <div className="slice-selected-header-left">
-          <div className="slice-selected-title-row">
-            <h3 className="slice-selected-title">
-              已选中片段
-              <span className="slice-selected-subtitle">（左键拖拽可继续新增片段）</span>
-            </h3>
-            {selectedRanges.length > 0 && (
-              <p className="slice-selected-stats">
-                已选时长 {formatVideoDuration(totalSelectedDuration)}
-                {isUnderMin && (
-                  <span className="slice-under-min">
-                    （需不少于 {minTotalDuration / 60} 分钟）
-                  </span>
-                )}
-                {isOverLimit && (
-                  <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
-                )}
-              </p>
-            )}
+  const rangesDropdown = (
+    <Dropdown
+      trigger={['click']}
+      placement="bottomLeft"
+      dropdownRender={() => (
+        <div className="slice-selected-ranges-dropdown">
+          <div className="slice-selected-ranges-dropdown__head">
+            <span>已选片段</span>
+            {selectedRanges.length > 0 ? (
+              <span className="slice-selected-ranges-dropdown__sum">
+                共 {selectedRanges.length} 段 · {formatVideoDuration(totalSelectedDuration)}
+              </span>
+            ) : null}
           </div>
+          {selectedRanges.length === 0 ? (
+            <p className="slice-selected-ranges-dropdown__empty">
+              暂无选中片段，请在下方时间轴左键拖拽标记
+            </p>
+          ) : (
+            <ul className="slice-selected-ranges-dropdown__list">
+              {selectedRanges.map((range, index) => {
+                const active = activeRangeId === range.id;
+                return (
+                  <li
+                    key={range.id}
+                    className={[
+                      'slice-selected-ranges-dropdown__item',
+                      active ? 'is-active' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <button
+                      type="button"
+                      className="slice-selected-ranges-dropdown__main"
+                      onClick={() => onActiveRangeSelect(range.id, range.start)}
+                    >
+                      <span className="slice-selected-ranges-dropdown__index">
+                        片段 {index + 1}
+                      </span>
+                      <span className="slice-selected-ranges-dropdown__time">
+                        {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
+                      </span>
+                      <span className="slice-selected-ranges-dropdown__dur">
+                        {formatVideoDuration(range.end - range.start)}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="slice-selected-ranges-dropdown__remove"
+                      aria-label={`删除片段 ${index + 1}`}
+                      onClick={() => onRangeDelete(range.id)}
+                    >
+                      <LuX size={14} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
+      )}
+    >
+      <button
+        type="button"
+        className={[
+          'slice-selected-ranges-trigger',
+          selectedRanges.length > 0 ? 'has-ranges' : '',
+          isUnderMin || isOverLimit ? 'has-warning' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <span>
+          {selectedRanges.length === 0
+            ? '未选片段'
+            : `已选 ${selectedRanges.length} 段`}
+        </span>
+        {selectedRanges.length > 0 ? (
+          <span className="slice-selected-ranges-trigger__dur">
+            {formatVideoDuration(totalSelectedDuration)}
+          </span>
+        ) : null}
+        <LuChevronDown size={14} aria-hidden />
+      </button>
+    </Dropdown>
+  );
+
+  return (
+    <div
+      className={['slice-selected-panel', compact ? 'slice-selected-panel_compact' : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="slice-selected-header">
+        {!compact ? (
+          <div className="slice-selected-header-left">
+            <div className="slice-selected-title-row">
+              <h3 className="slice-selected-title">
+                已选中片段
+                <span className="slice-selected-subtitle">（左键拖拽可继续新增片段）</span>
+              </h3>
+              {selectedRanges.length > 0 && (
+                <p className="slice-selected-stats">
+                  已选时长 {formatVideoDuration(totalSelectedDuration)}
+                  {isUnderMin && (
+                    <span className="slice-under-min">
+                      （需不少于 {minTotalDuration / 60} 分钟）
+                    </span>
+                  )}
+                  {isOverLimit && (
+                    <span className="slice-over-limit">（超出 {maxTotalDuration / 60} 分钟限制）</span>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="slice-selected-header-left slice-selected-header-left_compact">
+            {rangesDropdown}
+            {videoDuration > 0 ? (
+              <span className="slice-timeline-duration">
+                视频总时长 {formatVideoDuration(videoDuration)}
+              </span>
+            ) : null}
+            <div className="slice-selected-zoom">
+              <TimelineZoomControls zoomLevel={zoomLevel} onChange={onZoomLevelChange} />
+            </div>
+          </div>
+        )}
 
         <div className="slice-selected-header-right">
+          {headerExtra}
           <DisabledActionWrap disabledReason={disabledReason}>{submitButton}</DisabledActionWrap>
           <DisabledActionWrap disabledReason={disabledReason}>{aiSelectButton}</DisabledActionWrap>
           <button
@@ -161,59 +276,62 @@ const SelectedSegmentsPanel = ({
         </div>
       </div>
 
-      <div className="slice-selected-toolbar">
-        <div
-          className={`slice-selected-tags${selectedRanges.length === 0 ? ' slice-selected-tags_empty' : ''}`}
-        >
-          {selectedRanges.length === 0 ? (
-            <span className="slice-selected-empty">暂无选中片段，请在下方时间轴左键拖拽标记</span>
-          ) : (
-            selectedRanges.map((range, index) => (
-              <button
-                key={range.id}
-                type="button"
-                className={`slice-segment-tag${activeRangeId === range.id ? ' active' : ''}`}
-                onClick={() => onActiveRangeSelect(range.id, range.start)}
-              >
-                <span>
-                  片段 {index + 1}: {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
-                </span>
-                <span
-                  className="slice-segment-tag-remove"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`删除片段 ${index + 1}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRangeDelete(range.id);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
+      {!compact ? (
+        <div className="slice-selected-toolbar">
+          <div
+            className={`slice-selected-tags${selectedRanges.length === 0 ? ' slice-selected-tags_empty' : ''}`}
+          >
+            {selectedRanges.length === 0 ? (
+              <span className="slice-selected-empty">暂无选中片段，请在下方时间轴左键拖拽标记</span>
+            ) : (
+              selectedRanges.map((range, index) => (
+                <button
+                  key={range.id}
+                  type="button"
+                  className={`slice-segment-tag${activeRangeId === range.id ? ' active' : ''}`}
+                  onClick={() => onActiveRangeSelect(range.id, range.start)}
+                >
+                  <span>
+                    片段 {index + 1}: {formatVideoDuration(range.start)} -{' '}
+                    {formatVideoDuration(range.end)}
+                  </span>
+                  <span
+                    className="slice-segment-tag-remove"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`删除片段 ${index + 1}`}
+                    onClick={(event) => {
                       event.stopPropagation();
                       onRangeDelete(range.id);
-                    }
-                  }}
-                >
-                  <LuX size={12} />
-                </span>
-              </button>
-            ))
-          )}
-        </div>
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onRangeDelete(range.id);
+                      }
+                    }}
+                  >
+                    <LuX size={12} />
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
 
-        <div className="slice-selected-meta">
-          {videoDuration > 0 && (
-            <span className="slice-timeline-duration">
-              视频总时长 {formatVideoDuration(videoDuration)}
-            </span>
-          )}
-          <div className="slice-selected-zoom">
-            <span className="slice-selected-zoom-label">时间轴缩放</span>
-            <TimelineZoomControls zoomLevel={zoomLevel} onChange={onZoomLevelChange} />
+          <div className="slice-selected-meta">
+            {videoDuration > 0 && (
+              <span className="slice-timeline-duration">
+                视频总时长 {formatVideoDuration(videoDuration)}
+              </span>
+            )}
+            <div className="slice-selected-zoom">
+              <span className="slice-selected-zoom-label">时间轴缩放</span>
+              <TimelineZoomControls zoomLevel={zoomLevel} onChange={onZoomLevelChange} />
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 };

@@ -1,34 +1,55 @@
 import type { SliceProjectSource } from '~/services/sliceProject';
 
 export type SliceEditorEntryFrom = 'source-videos' | 'slices' | 'tasks';
+/** @deprecated 统一切片页后不再区分工作区模式，保留类型供旧链接兼容 */
+export type SliceEditorMode = 'timeline' | 'manual';
 
 export const LIVE_SLICE_PATH = '/videos-slice';
+/** @deprecated 已并入 /videos-slice，保留常量供旧链接兼容 */
 export const VIDEOS_MANUAL_SLICE_PATH = '/videos-manual-slice';
 
 export type SliceEditorLinkOptions = {
   /** 切片项目 id；从项目管理进入编辑时必传 */
   projectId?: string | number | null;
+  /** @deprecated 统一页后忽略 */
+  mode?: SliceEditorMode | null;
 };
 
-function appendProjectId(path: string, options?: SliceEditorLinkOptions) {
+/** @deprecated 统一页后恒为 timeline 占位，仅兼容旧调用 */
+export function parseSliceEditorMode(value: string | null | undefined): SliceEditorMode {
+  return value === 'manual' ? 'manual' : 'timeline';
+}
+
+function appendSliceSearch(path: string, options?: SliceEditorLinkOptions) {
+  const search = new URLSearchParams();
   const projectId = options?.projectId;
-  if (projectId == null || projectId === '') return path;
-  const search = new URLSearchParams({ projectId: String(projectId) });
-  return `${path}?${search.toString()}`;
+  if (projectId != null && projectId !== '') {
+    search.set('projectId', String(projectId));
+  }
+  const qs = search.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
+/** 统一切片页链接 */
+export function buildVideoSliceLink(
+  sourceVideoId: string,
+  options?: SliceEditorLinkOptions
+) {
+  return appendSliceSearch(`${LIVE_SLICE_PATH}/${sourceVideoId}`, options);
 }
 
 export function buildSourceVideoSliceLink(
   sourceVideoId: string,
   options?: SliceEditorLinkOptions
 ) {
-  return appendProjectId(`${LIVE_SLICE_PATH}/${sourceVideoId}`, options);
+  return buildVideoSliceLink(sourceVideoId, options);
 }
 
 export function buildManualVideoSliceLink(
   sourceVideoId: string,
   options?: SliceEditorLinkOptions
 ) {
-  return appendProjectId(`${VIDEOS_MANUAL_SLICE_PATH}/${sourceVideoId}`, options);
+  return buildVideoSliceLink(sourceVideoId, options);
 }
 
 export function buildSliceProjectEditLink(params: {
@@ -38,11 +59,8 @@ export function buildSliceProjectEditLink(params: {
   id: string | number;
   projectSource?: SliceProjectSource;
 }) {
-  const { liveId, id, projectSource = 'manual' } = params;
-  const options = { projectId: id };
-  return projectSource === 'timeline'
-    ? buildSourceVideoSliceLink(String(liveId), options)
-    : buildManualVideoSliceLink(String(liveId), options);
+  const { liveId, id } = params;
+  return buildVideoSliceLink(String(liveId), { projectId: id });
 }
 
 export function getSliceEditorEntryFrom(state: unknown): SliceEditorEntryFrom | undefined {
