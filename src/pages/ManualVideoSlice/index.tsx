@@ -55,7 +55,7 @@ interface ManualSliceLocationState {
   aiSelectedSegments?: SelectedCopySegment[];
 }
 
-const MAX_TOTAL_DURATION = 30 * 60;
+const MAX_TOTAL_DURATION = 2 * 60 * 60;
 const DRAFT_STORAGE_KEY = 'manual-slice-draft-name';
 
 /** 人工切片项目自动命名：人工切片_时间 */

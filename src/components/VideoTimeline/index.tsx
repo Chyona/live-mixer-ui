@@ -528,13 +528,6 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     [selectedRanges]
   );
 
-  const checkOverlap = useCallback(
-    (start: number, end: number): boolean => {
-      return selectedRanges.some((r) => start < r.end && end > r.start);
-    },
-    [selectedRanges]
-  );
-
   const getTotalSelectedDuration = useCallback((): number => {
     return selectedRanges.reduce((sum, r) => sum + (r.end - r.start), 0);
   }, [selectedRanges]);
@@ -551,19 +544,12 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   const handleMouseUp = useCallback(() => {
     // 处理 resize 结束
     if (resizingId && resizePreview && resizeEdge && onRangeUpdate) {
-      const otherRanges = selectedRanges.filter((r) => r.id !== resizingId);
-      const hasOverlap = otherRanges.some(
-        (r) => resizePreview.start < r.end && resizePreview.end > r.start
-      );
-
       const originalRange = selectedRanges.find((r) => r.id === resizingId);
       const originalDuration = originalRange ? originalRange.end - originalRange.start : 0;
       const newDuration = resizePreview.end - resizePreview.start;
       const additionalDuration = newDuration - originalDuration;
 
-      if (hasOverlap) {
-        toast.notify.warning('调整后时间段与已选区域重叠，已恢复原始位置');
-      } else if (!checkMaxDuration(additionalDuration)) {
+      if (!checkMaxDuration(additionalDuration)) {
         toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
       } else if (resizePreview.end - resizePreview.start >= MIN_RANGE_DURATION) {
         onRangeUpdate({
@@ -590,9 +576,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       const rangeDuration = end - start;
 
       if (rangeDuration >= MIN_RANGE_DURATION) {
-        if (checkOverlap(start, end)) {
-          toast.notify.warning('该时间段与已选区域重叠，请重新选择');
-        } else if (!checkMaxDuration(rangeDuration)) {
+        if (!checkMaxDuration(rangeDuration)) {
           toast.notify.warning(`选中总时长不能超过 ${formatTime(maxTotalDuration || 0)}`);
         } else {
           const newRangeId = `range-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -621,7 +605,6 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
     hasDragged,
     dragStart,
     dragEnd,
-    checkOverlap,
     checkMaxDuration,
     maxTotalDuration,
     onRangeSelect,

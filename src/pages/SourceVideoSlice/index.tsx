@@ -35,7 +35,7 @@ import SourceVideoSlicePageSkeleton from './SourceVideoSlicePageSkeleton';
 import TimelineLoadingSkeleton from './TimelineLoadingSkeleton';
 import PromptPickerPanel from './PromptPickerPanel';
 
-const MAX_TOTAL_DURATION = 30 * 60;
+const MAX_TOTAL_DURATION = 2 * 60 * 60;
 const MIN_TOTAL_DURATION = 5 * 60;
 
 function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] {
