@@ -486,7 +486,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-right: 2px;
+  /* 上下留白，避免首/末项插入标线被 overflow 裁切 */
+  padding: 8px 2px 8px 0;
 }
 
 .slice-editor-paragraph {
