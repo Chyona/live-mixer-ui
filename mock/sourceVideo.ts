@@ -7,8 +7,9 @@ import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords'
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 import { getTranscript } from './transcript';
+import { countSliceProjectsBySourceVideoId } from './sliceProjectStore';
 
-type MockSourceVideo = SourceVideo & {
+type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'live_asr'> & {
   ownerId: string;
   /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
   _lastAsrTickMs?: number;
@@ -157,7 +158,11 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
     _pendingTicks: _pending,
     ...rest
   } = item;
-  return { ...rest, live_asr: null };
+  return {
+    ...rest,
+    project_count: countSliceProjectsBySourceVideoId(item.id),
+    live_asr: null,
+  };
 }
 
 function toPublicDetail(item: MockSourceVideo): SourceVideo {

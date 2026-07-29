@@ -174,6 +174,12 @@ export function listSliceProjects() {
   );
 }
 
+/** 统计某源视频关联的剪辑项目数 */
+export function countSliceProjectsBySourceVideoId(sourceVideoId: string | number) {
+  const id = String(sourceVideoId);
+  return listSliceProjects().filter((item) => item.sourceVideoId === id).length;
+}
+
 export function updateSliceProjectName(projectIdOrSourceVideoId: string, projectName: string) {
   const project = getSliceProject(projectIdOrSourceVideoId);
   if (!project) return null;
