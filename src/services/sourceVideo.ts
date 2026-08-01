@@ -96,6 +96,25 @@ function normalizeProjectCount(raw: Partial<SourceVideo> & Record<string, unknow
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 }
 
+function normalizeAsrSummaries(raw: unknown): SourceVideo['asr_summaries'] {
+  if (!Array.isArray(raw)) return null;
+  const list = raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const start = Number(row.start_time);
+      const end = Number(row.end_time);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+      return {
+        title: String(row.title ?? '').trim(),
+        start_time: start,
+        end_time: end,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item != null);
+  return list.length ? list : [];
+}
+
 export function normalizeSourceVideo(
   raw: Partial<SourceVideo> & Record<string, unknown>
 ): SourceVideo {
@@ -116,6 +135,7 @@ export function normalizeSourceVideo(
     created_by: String(raw.created_by ?? ''),
     project_count: normalizeProjectCount(raw),
     asr_paragraphs: (raw.asr_paragraphs as SourceVideo['asr_paragraphs']) ?? null,
+    asr_summaries: normalizeAsrSummaries(raw.asr_summaries),
   };
 }
 

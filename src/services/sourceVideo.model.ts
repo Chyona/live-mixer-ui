@@ -19,6 +19,13 @@ export interface LiveAsrSegment {
 /** 详情接口 `asr_paragraphs` 字段 */
 export type AsrParagraphs = LiveAsrSegment[];
 
+/** ASR 摘要段落（时间轴默认选区），时间单位为毫秒 */
+export interface AsrSummary {
+  title: string;
+  start_time: number;
+  end_time: number;
+}
+
 export interface SourceVideo {
   id: number;
   name: string;
@@ -39,6 +46,8 @@ export interface SourceVideo {
   project_count: number;
   /** 详情接口返回的 ASR 文案分段；列表接口通常不带此字段。时间单位为 ms */
   asr_paragraphs?: AsrParagraphs | null;
+  /** 详情接口返回的 ASR 摘要选区；无 clips0 时用于填充时间轴 */
+  asr_summaries?: AsrSummary[] | null;
 }
 
 export type SourceVideoAsrFields = Pick<

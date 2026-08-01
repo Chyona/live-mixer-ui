@@ -2,7 +2,7 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
 import { createAiSliceTask } from './clipTaskStore';
 import { upsertSliceProject } from './sliceProjectStore';
-import type { AsrParagraphs, LiveAsrSegment } from '../src/services/sourceVideo.model';
+import type { AsrParagraphs, AsrSummary, LiveAsrSegment } from '../src/services/sourceVideo.model';
 import type {
   ManualSliceDraft,
   SelectedCopySegment,
@@ -89,6 +89,29 @@ export function getTranscript(sourceVideoId: string): AsrParagraphs {
     asrParagraphsCache.set(sourceVideoId, buildAsrParagraphs());
   }
   return asrParagraphsCache.get(sourceVideoId)!;
+}
+
+/** mock：按文案分段拼几段摘要，供时间轴无 clips0 时回填 */
+export function getAsrSummaries(sourceVideoId: string): AsrSummary[] {
+  const paragraphs = getTranscript(sourceVideoId);
+  if (!paragraphs.length) return [];
+
+  const chunkSize = Math.max(3, Math.ceil(paragraphs.length / 4));
+  const summaries: AsrSummary[] = [];
+
+  for (let i = 0; i < paragraphs.length; i += chunkSize) {
+    const chunk = paragraphs.slice(i, i + chunkSize);
+    const start = chunk[0]?.start_time ?? 0;
+    const end = chunk[chunk.length - 1]?.end_time ?? start;
+    if (end <= start) continue;
+    summaries.push({
+      title: `摘要 ${summaries.length + 1}`,
+      start_time: start,
+      end_time: end,
+    });
+  }
+
+  return summaries;
 }
 
 function overlapsRange(start: number, end: number, clipStart: number, clipEnd: number) {

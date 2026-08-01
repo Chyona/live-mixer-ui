@@ -6,6 +6,8 @@ export interface TimeRange {
   id: string;
   start: number;
   end: number;
+  /** 片段展示名，来自 asr_summaries.title 等 */
+  title?: string;
 }
 
 export interface VideoTimelineProps {
@@ -822,6 +824,8 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
               const isActive = activeRangeId === range.id;
               const isNarrowRange = previewWidth < NARROW_RANGE_DELETE_WIDTH;
+              const rangeLabel =
+                range.title?.trim() || `片段${rangeIndexMap.get(range.id) ?? ''}`;
 
               return (
                 <div
@@ -831,7 +835,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
                     left: toTimelineX(containerStart, safeScale),
                     width: containerWidth,
                   }}
-                  title={`片段${rangeIndexMap.get(range.id) ?? ''} · ${formatTime(previewStart)} - ${formatTime(previewEnd)} · 点击从该区域开始播放`}
+                  title={`${rangeLabel} · ${formatTime(previewStart)} - ${formatTime(previewEnd)} · 点击从该区域开始播放`}
                   onClick={() => handleRangeClick(range)}
                 >
                   <div className="timeline-range-segments" aria-hidden="true">
@@ -860,7 +864,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
                       title="拖动调整起始时间"
                     />
                     <span className="timeline-range-label" aria-hidden="true">
-                      片段{rangeIndexMap.get(range.id) ?? ''}
+                      {rangeLabel}
                     </span>
                     <div
                       className="timeline-range-handle right"

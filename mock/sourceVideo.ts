@@ -6,10 +6,10 @@ import {
 import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
-import { getTranscript } from './transcript';
+import { getAsrSummaries, getTranscript } from './transcript';
 import { countSliceProjectsBySourceVideoId } from './sliceProjectStore';
 
-type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'asr_paragraphs'> & {
+type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'asr_paragraphs' | 'asr_summaries'> & {
   ownerId: string;
   /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
   _lastAsrTickMs?: number;
@@ -162,17 +162,19 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
     ...rest,
     project_count: countSliceProjectsBySourceVideoId(item.id),
     asr_paragraphs: null,
+    asr_summaries: null,
   };
 }
 
 function toPublicDetail(item: MockSourceVideo): SourceVideo {
   const base = toPublicItem(item);
   if (item.asr_status !== 'completed') {
-    return { ...base, asr_paragraphs: null };
+    return { ...base, asr_paragraphs: null, asr_summaries: null };
   }
   return {
     ...base,
     asr_paragraphs: getTranscript(String(item.id)),
+    asr_summaries: getAsrSummaries(String(item.id)),
   };
 }
 

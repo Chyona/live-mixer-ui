@@ -168,7 +168,9 @@ const SelectedSegmentsPanel = ({
           {selectedRanges.length === 0 ? (
             <span className="slice-selected-empty">暂无选中片段，请在下方时间轴左键拖拽标记</span>
           ) : (
-            selectedRanges.map((range, index) => (
+            selectedRanges.map((range, index) => {
+              const label = range.title?.trim() || `片段 ${index + 1}`;
+              return (
               <button
                 key={range.id}
                 type="button"
@@ -176,13 +178,13 @@ const SelectedSegmentsPanel = ({
                 onClick={() => onActiveRangeSelect(range.id, range.start)}
               >
                 <span>
-                  片段 {index + 1}: {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
+                  {label}: {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
                 </span>
                 <span
                   className="slice-segment-tag-remove"
                   role="button"
                   tabIndex={0}
-                  aria-label={`删除片段 ${index + 1}`}
+                  aria-label={`删除${label}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     onRangeDelete(range.id);
@@ -198,7 +200,8 @@ const SelectedSegmentsPanel = ({
                   <LuX size={12} />
                 </span>
               </button>
-            ))
+              );
+            })
           )}
         </div>
 

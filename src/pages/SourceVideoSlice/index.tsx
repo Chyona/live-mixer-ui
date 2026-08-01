@@ -43,10 +43,51 @@ function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] 
   return clips.map((clip, index) => {
     const start = (clip.start_time ?? 0) / 1000;
     const end = (clip.end_time ?? 0) / 1000;
+    const title = clip.title?.trim() || undefined;
     return {
       id: `timeline-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
       start,
       end,
+      title,
+    };
+  });
+}
+
+function asrSummariesToTimeRanges(
+  summaries: SourceVideo['asr_summaries'] | undefined
+): TimeRange[] {
+  if (!summaries?.length) return [];
+  return summaries.map((item, index) => {
+    const start = (item.start_time ?? 0) / 1000;
+    const end = (item.end_time ?? 0) / 1000;
+    const title = item.title?.trim() || undefined;
+    return {
+      id: `summary-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
+      start,
+      end,
+      title,
+    };
+  });
+}
+
+/** 优先 clips0；无则用 asr_summaries 填充时间轴 */
+function resolveTimelineRanges(
+  clips0: SliceProjectClip[] | undefined,
+  summaries: SourceVideo['asr_summaries'] | undefined
+): TimeRange[] {
+  const fromClips = clips0ToTimeRanges(clips0);
+  if (fromClips.length > 0) return fromClips;
+  return asrSummariesToTimeRanges(summaries);
+}
+
+/** 时间轴选区 → 接口 clips0（直接传 title） */
+function selectedRangesToClips0(ranges: TimeRange[]): SliceProjectClip[] {
+  return ranges.map((range) => {
+    const title = range.title?.trim();
+    return {
+      start_time: Math.round(range.start * 1000),
+      end_time: Math.round(range.end * 1000),
+      ...(title ? { title } : {}),
     };
   });
 }
@@ -117,26 +158,23 @@ const SourceVideoSlicePage = () => {
 
       setVideo(videoRes.data);
 
-      if (!projectId) {
-        if (sameStream) {
-          setSelectedRanges([]);
-        }
-        return;
+      const projectRes = projectId ? projectSettled : null;
+      const clips0 =
+        projectRes?.code === 0 && projectRes.data ? projectRes.data.clips0 : undefined;
+      const ranges = resolveTimelineRanges(clips0, videoRes.data.asr_summaries);
+
+      // streamUrl 不变时不会触发清理 effect，需直接回填
+      if (sameStream) {
+        setSelectedRanges(ranges);
+        pendingRangesRef.current = null;
+      } else {
+        pendingRangesRef.current = ranges;
       }
 
-      const projectRes = projectSettled;
       if (projectRes?.code === 0 && projectRes.data) {
-        const ranges = clips0ToTimeRanges(projectRes.data.clips0);
-        // streamUrl 不变时不会触发清理 effect，需直接回填
-        if (sameStream) {
-          setSelectedRanges(ranges);
-          pendingRangesRef.current = null;
-        } else {
-          pendingRangesRef.current = ranges;
-        }
         const promptId = Number(projectRes.data.prompt_id ?? 0);
         setPreferredPromptId(promptId > 0 ? promptId : null);
-      } else {
+      } else if (projectId) {
         toast.notify.warning(projectRes?.message || '剪辑项目加载失败');
       }
     } catch (error) {
@@ -258,7 +296,9 @@ const SourceVideoSlicePage = () => {
   }, []);
 
   const handleRangeUpdate = useCallback((updated: TimeRange) => {
-    setSelectedRanges((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedRanges((prev) =>
+      prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+    );
   }, []);
 
   const totalSelectedDuration = useMemo(
@@ -290,7 +330,7 @@ const SourceVideoSlicePage = () => {
       name: projectName,
       prompt_id: selectedPrompt.id,
       project_source: 'timeline' as const,
-      clips0: toSliceProjectClips(selectedRanges),
+      clips0: selectedRangesToClips0(selectedRanges),
       clips1: [] as ReturnType<typeof toSliceProjectClips>,
     };
 
@@ -357,7 +397,7 @@ const SourceVideoSlicePage = () => {
       prompt_id: selectedPrompt.id,
       // AI 选片结果在人工切片页编辑
       project_source: 'manual' as const,
-      clips0: toSliceProjectClips(selectedRanges),
+      clips0: selectedRangesToClips0(selectedRanges),
       clips1: [] as ReturnType<typeof toSliceProjectClips>,
     };
 
