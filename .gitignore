@@ -11,6 +11,8 @@ sitemap.xml
 .env.local
 .env.*.local
 
+/mock/_Live_URL.ts
+
 # misc
 /coverage
 .idea
