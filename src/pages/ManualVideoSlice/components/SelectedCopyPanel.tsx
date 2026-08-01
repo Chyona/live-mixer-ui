@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { Checkbox } from 'antd';
 import {
   LuArrowLeft,
   LuCopy,
@@ -52,6 +53,8 @@ interface SelectedCopyPanelProps {
   maxTotalDuration: number;
   videoDuration: number;
   submitting: boolean;
+  needSubtitle: boolean;
+  onNeedSubtitleChange: (checked: boolean) => void;
   onActiveSegmentChange: (segmentId: string | null) => void;
   onSeek: (time: number) => void;
   onReorder: (segments: SelectedCopySegment[]) => void;
@@ -80,6 +83,8 @@ const SelectedCopyPanel = ({
   maxTotalDuration,
   videoDuration,
   submitting,
+  needSubtitle,
+  onNeedSubtitleChange,
   onActiveSegmentChange,
   onSeek,
   onReorder,
@@ -223,6 +228,13 @@ const SelectedCopyPanel = ({
             </button>
           </div>
           <div className="slice-editor-copy-toolbar-group slice-editor-copy-toolbar-group_primary">
+            <Checkbox
+              className="slice-need-subtitle-checkbox"
+              checked={needSubtitle}
+              onChange={(event) => onNeedSubtitleChange(event.target.checked)}
+            >
+              生成字幕
+            </Checkbox>
             <button type="button" className="danger" onClick={onClearAll} disabled={!hasSegments}>
               清空
             </button>

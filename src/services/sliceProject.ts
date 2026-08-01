@@ -8,7 +8,10 @@ export type SliceProjectSource = 'timeline' | 'manual';
 export interface SliceProjectClip {
   start_time: number;
   end_time: number;
+  /** 人工切片文案（clips1） */
   text?: string;
+  /** 时间轴片段标题（clips0，来自 asr_summaries.title） */
+  title?: string;
 }
 
 
@@ -24,6 +27,8 @@ export interface CreateSliceProjectParams {
    * - manual：人工切片保存
    */
   project_source: SliceProjectSource;
+  /** 是否生成字幕（成片选项） */
+  need_subtitle?: boolean;
   clips0?: SliceProjectClip[];
   clips1?: SliceProjectClip[];
 }
@@ -140,7 +145,7 @@ export function getSliceProjectSegmentCount(
 export function clipsToSliceSegments(
   project: Pick<SliceProject, 'clips0' | 'clips1'>
 ): SelectedCopySegment[] {
-  // 文案预览 / 人工切片只使用 clips1；clips0 为时间轴选段，通常无 text
+  // 文案预览 / 人工切片只使用 clips1；clips0 为时间轴选段，标题用 title
   return clipsToUiSegments(project.clips1, 'manual');
 }
 
@@ -163,6 +168,7 @@ export function normalizeSliceProject(raw: Partial<SliceProject> | null | undefi
     height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],
     clips1: Array.isArray(raw?.clips1) ? raw.clips1 : [],
+    need_subtitle: Boolean(raw?.need_subtitle),
     project_source: getSliceProjectSource({
       project_source: raw?.project_source,
       clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],

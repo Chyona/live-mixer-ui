@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button, Checkbox, Space, Tooltip } from 'antd';
+import { Button, Space, Tooltip } from 'antd';
 import { LuDownload } from 'react-icons/lu';
 import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/StreamVideoPlayer';
 import SlicePageHeader from '~/components/SlicePageHeader';
@@ -203,6 +203,7 @@ const ManualVideoSlicePage = () => {
       if (projectRes?.code === 0 && projectRes.data) {
         setProjectId(projectRes.data.id || projectIdFromQuery);
         setProjectRemark(projectRes.data.remark || '');
+        setNeedSubtitle(Boolean(projectRes.data.need_subtitle));
         if (!hasAiSegments && projectRes.data.segments.length > 0) {
           setSelectedSegments(projectRes.data.segments);
           setDraftName(projectRes.data.name);
@@ -432,6 +433,7 @@ const ManualVideoSlicePage = () => {
         name: nextName,
         remark: nextRemark,
         project_source: 'manual' as const,
+        need_subtitle: needSubtitle,
         clips0: [] as ReturnType<typeof toSliceProjectClips>,
         clips1: toSliceProjectClips(selectedSegments),
       };
@@ -466,7 +468,7 @@ const ManualVideoSlicePage = () => {
         setSavingProject(false);
       }
     },
-    [draftName, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
+    [draftName, needSubtitle, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
   );
 
   const handleSaveDraft = useCallback(
@@ -521,6 +523,7 @@ const ManualVideoSlicePage = () => {
           name,
           remark,
           project_source: 'manual',
+          need_subtitle: needSubtitle,
           clips0: [],
           clips1: toSliceProjectClips(selectedSegments),
         });
@@ -550,6 +553,7 @@ const ManualVideoSlicePage = () => {
     },
     [
       handleSaveProject,
+      needSubtitle,
       projectId,
       saveModalMode,
       selectedSegments,
@@ -693,13 +697,6 @@ const ManualVideoSlicePage = () => {
         // description="通过文案选择片段，支持关键词定位、音视频同步、拖拽排序与连续预览。"
         actions={
           <Space size={12} align="center">
-            <Checkbox
-              className="slice-need-subtitle-checkbox"
-              checked={needSubtitle}
-              onChange={(event) => setNeedSubtitle(event.target.checked)}
-            >
-              是否需要生成字幕
-            </Checkbox>
             <Button
               icon={<LuDownload size={16} />}
               loading={downloadingSubtitle}
@@ -799,6 +796,8 @@ const ManualVideoSlicePage = () => {
             maxTotalDuration={MAX_TOTAL_DURATION}
             videoDuration={videoDuration}
             submitting={submitting}
+            needSubtitle={needSubtitle}
+            onNeedSubtitleChange={setNeedSubtitle}
             onActiveSegmentChange={setActiveSegmentId}
             onSeek={handleSeek}
             onReorder={setSelectedSegments}
