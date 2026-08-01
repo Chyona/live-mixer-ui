@@ -1810,8 +1810,8 @@
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  min-height: 32px;
+  gap: 6px;
+  min-height: 24px;
 }
 
 .slice-selected-tags_empty {
@@ -1828,28 +1828,37 @@
 }
 
 .slice-selected-empty {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: 32px;
+  line-height: 24px;
   text-align: center;
 }
 
 .slice-segment-tag {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px 6px 14px;
+  gap: 4px;
+  max-width: 220px;
+  padding: 2px 8px 2px 10px;
   border: none;
   border-radius: 999px;
   background: rgba(var(--primary-color-rgb), 0.08);
   box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.16);
   color: var(--primary-dark);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 18px;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease,
     color 0.2s ease;
+}
+
+.slice-segment-tag > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slice-segment-tag:hover {
@@ -1867,10 +1876,11 @@
 
 .slice-segment-tag-remove {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   color: rgba(var(--primary-color-rgb), 0.55);
   transition:
