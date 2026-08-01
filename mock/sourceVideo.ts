@@ -9,7 +9,7 @@ import { LIVE_URL } from './_Live_URL';
 import { getTranscript } from './transcript';
 import { countSliceProjectsBySourceVideoId } from './sliceProjectStore';
 
-type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'live_asr'> & {
+type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'asr_paragraphs'> & {
   ownerId: string;
   /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
   _lastAsrTickMs?: number;
@@ -161,18 +161,18 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
   return {
     ...rest,
     project_count: countSliceProjectsBySourceVideoId(item.id),
-    live_asr: null,
+    asr_paragraphs: null,
   };
 }
 
 function toPublicDetail(item: MockSourceVideo): SourceVideo {
   const base = toPublicItem(item);
   if (item.asr_status !== 'completed') {
-    return { ...base, live_asr: null };
+    return { ...base, asr_paragraphs: null };
   }
   return {
     ...base,
-    live_asr: getTranscript(String(item.id)),
+    asr_paragraphs: getTranscript(String(item.id)),
   };
 }
 

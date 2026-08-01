@@ -44,7 +44,7 @@ import {
   buildTranscriptHighlight,
   getParagraphText,
   getTextSelectionOffsets,
-  liveAsrToTranscriptParagraphs,
+  asrParagraphsToTranscriptParagraphs,
   normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
   scrollElementIntoViewPreferUpper,
@@ -186,7 +186,7 @@ const ManualVideoSlicePage = () => {
 
       setVideo(videoRes.data);
       setParagraphs(
-        normalizeTranscriptParagraphs(liveAsrToTranscriptParagraphs(videoRes.data.live_asr))
+        normalizeTranscriptParagraphs(asrParagraphsToTranscriptParagraphs(videoRes.data.asr_paragraphs))
       );
       setDraftName((current) => current || buildManualProjectAutoName());
 

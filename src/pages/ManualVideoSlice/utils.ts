@@ -1,4 +1,4 @@
-import type { LiveAsr, LiveAsrSegment } from '~/services/sourceVideo.model';
+import type { AsrParagraphs, LiveAsrSegment } from '~/services/sourceVideo.model';
 import type {
   SelectedCopySegment,
   TranscriptParagraph,
@@ -178,7 +178,7 @@ function formatSpeakerName(speaker: string) {
   return trimmed;
 }
 
-function liveAsrItemToParagraph(item: LiveAsrSegment, index: number): TranscriptParagraph {
+function asrParagraphToTranscript(item: LiveAsrSegment, index: number): TranscriptParagraph {
   const speakerId = String(item.speaker ?? '').trim() || '0';
   const words: TranscriptWord[] = (item.words ?? [])
     .map((word) => ({
@@ -207,10 +207,12 @@ function liveAsrItemToParagraph(item: LiveAsrSegment, index: number): Transcript
   };
 }
 
-/** 将详情接口 `live_asr`（ms）转为剪辑页内部段落结构（秒） */
-export function liveAsrToTranscriptParagraphs(liveAsr: LiveAsr | null | undefined): TranscriptParagraph[] {
-  if (!liveAsr?.length) return [];
-  return liveAsr.map(liveAsrItemToParagraph);
+/** 将详情接口 `asr_paragraphs`（ms）转为剪辑页内部段落结构（秒） */
+export function asrParagraphsToTranscriptParagraphs(
+  paragraphs: AsrParagraphs | null | undefined
+): TranscriptParagraph[] {
+  if (!paragraphs?.length) return [];
+  return paragraphs.map(asrParagraphToTranscript);
 }
 
 /** 扁平化全部字级时间轴（按开始时间排序） */

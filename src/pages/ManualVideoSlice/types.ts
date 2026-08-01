@@ -11,7 +11,7 @@ export interface TranscriptSegment {
   start: number;
   end: number;
   text: string;
-  /** 字级时间轴（来自 live_asr.words），可选 */
+  /** 字级时间轴（来自 asr_paragraphs.words），可选 */
   words?: TranscriptWord[];
 }
 

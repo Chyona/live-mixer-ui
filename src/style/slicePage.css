@@ -81,7 +81,7 @@
 
 .slice-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(400px, 1fr);
+  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -547,6 +547,7 @@
   font-size: 14px;
   line-height: 1.9;
   user-select: text;
+  text-indent: 2em;
 }
 
 .slice-editor-paragraph-text .segment-active {

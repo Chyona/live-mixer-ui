@@ -7,7 +7,7 @@ export interface LiveAsrWord {
   text: string;
 }
 
-/** ASR 句段，时间单位为毫秒 */
+/** ASR 段落/句段，时间单位为毫秒 */
 export interface LiveAsrSegment {
   speaker: string;
   start_time: number;
@@ -16,8 +16,8 @@ export interface LiveAsrSegment {
   words?: LiveAsrWord[];
 }
 
-/** 详情接口 `live_asr` 字段 */
-export type LiveAsr = LiveAsrSegment[];
+/** 详情接口 `asr_paragraphs` 字段 */
+export type AsrParagraphs = LiveAsrSegment[];
 
 export interface SourceVideo {
   id: number;
@@ -37,8 +37,8 @@ export interface SourceVideo {
   created_by: string;
   /** 关联的剪辑项目数量 */
   project_count: number;
-  /** 详情接口返回的 ASR 文案；列表接口通常不带此字段。时间单位为 ms */
-  live_asr?: LiveAsr | null;
+  /** 详情接口返回的 ASR 文案分段；列表接口通常不带此字段。时间单位为 ms */
+  asr_paragraphs?: AsrParagraphs | null;
 }
 
 export type SourceVideoAsrFields = Pick<

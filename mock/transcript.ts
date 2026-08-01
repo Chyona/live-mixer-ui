@@ -2,14 +2,14 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { API_PREFIX } from './_config';
 import { createAiSliceTask } from './clipTaskStore';
 import { upsertSliceProject } from './sliceProjectStore';
-import type { LiveAsr, LiveAsrSegment } from '../src/services/sourceVideo.model';
+import type { AsrParagraphs, LiveAsrSegment } from '../src/services/sourceVideo.model';
 import type {
   ManualSliceDraft,
   SelectedCopySegment,
   TranscriptParagraph,
 } from '../src/pages/ManualVideoSlice/types';
 import {
-  liveAsrToTranscriptParagraphs,
+  asrParagraphsToTranscriptParagraphs,
   normalizeTranscriptParagraphs,
 } from '../src/pages/ManualVideoSlice/utils';
 
@@ -54,7 +54,7 @@ function textToWords(text: string, startMs: number, endMs: number) {
   });
 }
 
-function buildLiveAsr(durationSec = 600): LiveAsr {
+function buildAsrParagraphs(durationSec = 600): AsrParagraphs {
   const segments: LiveAsrSegment[] = [];
   let cursorSec = 0.82;
   let lineIndex = 0;
@@ -81,14 +81,14 @@ function buildLiveAsr(durationSec = 600): LiveAsr {
   return segments;
 }
 
-const liveAsrCache = new Map<string, LiveAsr>();
+const asrParagraphsCache = new Map<string, AsrParagraphs>();
 const draftStore = new Map<string, ManualSliceDraft[]>();
 
-export function getTranscript(sourceVideoId: string): LiveAsr {
-  if (!liveAsrCache.has(sourceVideoId)) {
-    liveAsrCache.set(sourceVideoId, buildLiveAsr());
+export function getTranscript(sourceVideoId: string): AsrParagraphs {
+  if (!asrParagraphsCache.has(sourceVideoId)) {
+    asrParagraphsCache.set(sourceVideoId, buildAsrParagraphs());
   }
-  return liveAsrCache.get(sourceVideoId)!;
+  return asrParagraphsCache.get(sourceVideoId)!;
 }
 
 function overlapsRange(start: number, end: number, clipStart: number, clipEnd: number) {
@@ -207,7 +207,7 @@ export default [
       }
 
       const paragraphs = normalizeTranscriptParagraphs(
-        liveAsrToTranscriptParagraphs(getTranscript(query.id))
+        asrParagraphsToTranscriptParagraphs(getTranscript(query.id))
       );
       const segments = buildAiSelectedSegments(paragraphs, clips);
 

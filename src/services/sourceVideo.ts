@@ -115,7 +115,7 @@ export function normalizeSourceVideo(
     updated_at: String(raw.updated_at ?? ''),
     created_by: String(raw.created_by ?? ''),
     project_count: normalizeProjectCount(raw),
-    live_asr: (raw.live_asr as SourceVideo['live_asr']) ?? null,
+    asr_paragraphs: (raw.asr_paragraphs as SourceVideo['asr_paragraphs']) ?? null,
   };
 }
 
@@ -204,7 +204,7 @@ export async function retrySourceVideoAsr(id: SourceVideoId): Promise<BaseRespon
 }
 
 /**
- * 下载 ASR 字幕（原始 live_asr JSON）。
+ * 下载 ASR 字幕（原始 asr JSON）。
  * 仅 asr_status=completed 且内容非空时可下载。
  */
 export async function downloadSourceVideoAsrSubtitle(
