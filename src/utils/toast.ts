@@ -1,6 +1,7 @@
 import { message as staticMessage, notification as staticNotification } from 'antd';
 import type { MessageInstance } from 'antd/es/message/interface';
 import type { NotificationInstance } from 'antd/es/notification/interface';
+import type { ReactNode } from 'react';
 import { AppError, isUnauthorizedError } from '~/services/http';
 
 type ToastApis = {
@@ -35,10 +36,12 @@ export interface ToastNotifyOptions {
   pauseOnHover?: boolean;
   key?: string;
   type?: 'success' | 'error' | 'info' | 'warning';
+  /** 通知底部操作区（如「查看」按钮）；antd 5.22 使用 btn */
+  btn?: ReactNode;
 }
 
 type NotifyExtra = Partial<
-  Pick<ToastNotifyOptions, 'duration' | 'showProgress' | 'pauseOnHover' | 'key'>
+  Pick<ToastNotifyOptions, 'duration' | 'showProgress' | 'pauseOnHover' | 'key' | 'btn'>
 >;
 
 function openNotify(
@@ -52,6 +55,7 @@ function openNotify(
     showProgress = true,
     pauseOnHover = true,
     key,
+    btn,
   } = options;
 
   // antd 原生 progress 固定主色，难以按类型改色；改用自绘底部进度条
@@ -61,6 +65,7 @@ function openNotify(
     key,
     message: title,
     description,
+    btn,
     placement: NOTIFY_PLACEMENT,
     duration,
     showProgress: false,
@@ -110,6 +115,10 @@ export const toast = {
     open(options: ToastNotifyOptions) {
       const { type = 'info', ...rest } = options;
       openNotify(type, rest);
+    },
+
+    destroy(key?: string) {
+      notify().destroy(key);
     },
   },
 };

@@ -164,4 +164,34 @@ describe('toast', () => {
 
     expect(error).not.toHaveBeenCalled();
   });
+
+  it('supports notify btn and destroy', () => {
+    const warning = vi.fn();
+    const destroy = vi.fn();
+    registerToast({
+      message: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() } as never,
+      notification: {
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning,
+        open: vi.fn(),
+        destroy,
+      } as never,
+    });
+
+    const btn = '查看';
+    toast.notify.warning('源视频已存在', '可点击查看', { key: 'dup', btn });
+    expect(warning).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '源视频已存在',
+        description: '可点击查看',
+        key: 'dup',
+        btn,
+      })
+    );
+
+    toast.notify.destroy('dup');
+    expect(destroy).toHaveBeenCalledWith('dup');
+  });
 });

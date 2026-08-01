@@ -622,6 +622,13 @@ const SourceVideosPage = () => {
             void loadList();
           }
         }}
+        onViewExisting={(liveUrl) => {
+          setAddOpen(false);
+          clearKeywordSearch();
+          setGlobalKeyword(liveUrl);
+          setAppliedGlobalKeyword(liveUrl);
+          setPage(1);
+        }}
       />
     </ListPageLayout>
   );

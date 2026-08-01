@@ -1,6 +1,7 @@
 import type { MockMethod } from 'vite-plugin-mock';
 import {
   createInitialAsrState,
+  SOURCE_VIDEO_URL_DUPLICATE_CODE,
   type SourceVideo,
 } from '../src/services/sourceVideo.model';
 import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
@@ -307,6 +308,17 @@ export default [
 
       if (!name || !live_url) {
         return { code: 400, message: '请填写完整信息', data: null };
+      }
+
+      const duplicatedByUrl = sourceVideos.find(
+        (video) => video.ownerId === CURRENT_USER_ID && video.live_url === live_url
+      );
+      if (duplicatedByUrl) {
+        return {
+          code: SOURCE_VIDEO_URL_DUPLICATE_CODE,
+          message: '直播地址已存在',
+          data: toPublicItem(duplicatedByUrl),
+        };
       }
 
       const now = nowIso();

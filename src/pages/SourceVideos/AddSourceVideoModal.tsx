@@ -1,8 +1,11 @@
-import { Form, Input, Modal } from 'antd';
+import { Button, Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 
 import { AppError } from '~/services/http';
-import { createSourceVideo } from '~/services/sourceVideo';
+import {
+  createSourceVideo,
+  isSourceVideoUrlDuplicateError,
+} from '~/services/sourceVideo';
 import { showAppError, toast } from '~/utils/toast';
 
 type FormValues = {
@@ -15,9 +18,16 @@ interface AddSourceVideoModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** URL 已存在时，点击 toast「查看」回调 */
+  onViewExisting?: (liveUrl: string) => void;
 }
 
-const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalProps) => {
+const AddSourceVideoModal = ({
+  open,
+  onClose,
+  onSuccess,
+  onViewExisting,
+}: AddSourceVideoModalProps) => {
   const [form] = Form.useForm<FormValues>();
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,17 +36,42 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
     onClose();
   };
 
+  const showUrlDuplicateToast = (liveUrl: string) => {
+    const key = `source-video-url-exists:${liveUrl}`;
+    toast.notify.warning('直播地址已存在', '该直播地址已添加过，可点击查看', {
+      key,
+      duration: 8,
+      btn: (
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => {
+            toast.notify.destroy(key);
+            onViewExisting?.(liveUrl);
+          }}
+        >
+          查看
+        </Button>
+      ),
+    });
+  };
+
   const handleSubmit = async (values: FormValues) => {
     setSubmitting(true);
+    const liveUrl = values.liveUrl.trim();
 
     try {
       const response = await createSourceVideo({
         name: values.name.trim(),
-        live_url: values.liveUrl.trim(),
+        live_url: liveUrl,
         remark: values.remark?.trim(),
       });
 
       if (response.code !== 0) {
+        if (isSourceVideoUrlDuplicateError(response)) {
+          showUrlDuplicateToast(liveUrl);
+          return;
+        }
         toast.notify.error(response.message || '添加失败');
         return;
       }
@@ -46,6 +81,10 @@ const AddSourceVideoModal = ({ open, onClose, onSuccess }: AddSourceVideoModalPr
       onSuccess();
     } catch (error) {
       if (error instanceof AppError) {
+        if (isSourceVideoUrlDuplicateError({ code: error.errorCode })) {
+          showUrlDuplicateToast(liveUrl);
+          return;
+        }
         showAppError(error);
       } else {
         toast.notify.error('添加失败');

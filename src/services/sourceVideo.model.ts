@@ -64,3 +64,10 @@ export function createInitialAsrState(): SourceVideoAsrFields {
     asr_updated_at: '',
   };
 }
+
+/** 添加源视频时 URL 已存在的业务码（勿放进带 http/路由依赖的 service，避免 mock 打包拉进整棵 UI） */
+export const SOURCE_VIDEO_URL_DUPLICATE_CODE = 40901;
+
+export function isSourceVideoUrlDuplicateError(payload: { code?: number }): boolean {
+  return Number(payload.code) === SOURCE_VIDEO_URL_DUPLICATE_CODE;
+}

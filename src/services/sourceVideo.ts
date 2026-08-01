@@ -10,7 +10,11 @@ export type {
   SourceVideo,
   SourceVideoAsrFields,
 } from './sourceVideo.model';
-export { createInitialAsrState } from './sourceVideo.model';
+export {
+  createInitialAsrState,
+  isSourceVideoUrlDuplicateError,
+  SOURCE_VIDEO_URL_DUPLICATE_CODE,
+} from './sourceVideo.model';
 
 import type { SourceVideo } from './sourceVideo.model';
 
