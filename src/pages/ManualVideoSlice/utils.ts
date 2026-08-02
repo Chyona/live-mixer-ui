@@ -1,5 +1,6 @@
-import type { AsrParagraphs, LiveAsrSegment } from '~/services/sourceVideo.model';
+import type { AsrParagraphs, AsrSummary, LiveAsrSegment } from '~/services/sourceVideo.model';
 import type {
+  AiSegment,
   SelectedCopySegment,
   TranscriptParagraph,
   TranscriptSegment,
@@ -297,6 +298,72 @@ export function asrParagraphsToTranscriptParagraphs(
 ): TranscriptParagraph[] {
   if (!paragraphs?.length) return [];
   return paragraphs.map(asrParagraphToTranscript);
+}
+
+/** 将详情接口 `asr_summaries`（ms）转为 AI 分段（秒），与智能选片时间轴一致 */
+export function asrSummariesToAiSegments(
+  summaries: AsrSummary[] | null | undefined
+): AiSegment[] {
+  if (!summaries?.length) return [];
+  return summaries.map((item, index) => {
+    const start = (item.start_time ?? 0) / 1000;
+    const end = (item.end_time ?? 0) / 1000;
+    return {
+      id: `ai-seg-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
+      title: item.title?.trim() || `片段 ${index + 1}`,
+      start,
+      end,
+    };
+  });
+}
+
+/**
+ * 按 AI 分段时间范围从文案分段抽取文案，生成可加入「文案预览」的片段。
+ * 取与 [start, end] 有重叠的句段，合并为一段。
+ */
+export function buildCopySegmentFromAiSegment(
+  paragraphs: TranscriptParagraph[],
+  aiSegment: AiSegment
+): SelectedCopySegment | null {
+  const overlapped: Array<{
+    text: string;
+    start: number;
+    end: number;
+    speakerId: string;
+    speakerName: string;
+  }> = [];
+
+  for (const paragraph of paragraphs) {
+    for (const segment of paragraph.segments) {
+      if (segment.end <= aiSegment.start || segment.start >= aiSegment.end) continue;
+      const text = segment.text.trim();
+      if (!text) continue;
+      overlapped.push({
+        text,
+        start: segment.start,
+        end: segment.end,
+        speakerId: paragraph.speakerId,
+        speakerName: paragraph.speakerName,
+      });
+    }
+  }
+
+  if (!overlapped.length) return null;
+
+  const start = Math.min(...overlapped.map((item) => item.start));
+  const end = Math.max(...overlapped.map((item) => item.end));
+  const first = overlapped[0]!;
+
+  return {
+    id: `copy-ai-${aiSegment.id}-${Date.now()}`,
+    speakerId: first.speakerId,
+    speakerName: first.speakerName,
+    text: overlapped.map((item) => item.text).join(''),
+    start,
+    end,
+    originStart: start,
+    originEnd: end,
+  };
 }
 
 /** 扁平化全部字级时间轴（按开始时间排序） */

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Checkbox } from 'antd';
 import {
   LuArrowLeft,
@@ -11,7 +11,7 @@ import {
   LuTextSelect,
   LuTrash2,
 } from 'react-icons/lu';
-import type { SelectedCopySegment, TranscriptParagraph } from '../types';
+import type { AiSegment, SelectedCopySegment, TranscriptParagraph } from '../types';
 import {
   formatPadSeconds,
   formatSliceTime,
@@ -48,6 +48,9 @@ interface SelectedCopyPanelProps {
   segments: SelectedCopySegment[];
   /** 文案分段原始数据，用于前后留白边界 */
   paragraphs: TranscriptParagraph[];
+  /** AI 分段（asr_summaries），展示在文案预览上方 */
+  aiSegments?: AiSegment[];
+  currentTime?: number;
   activeSegmentId: string | null;
   speakerIds: string[];
   maxTotalDuration: number;
@@ -66,6 +69,7 @@ interface SelectedCopyPanelProps {
   ) => void;
   onCopySegment: (segmentId: string) => void;
   onAdjustSegment: (segmentId: string, edge: 'start' | 'end', deltaSec: number) => void;
+  onAddAiSegment?: (segment: AiSegment) => void;
   onClearAll: () => void;
   onPreview: () => void;
   onSave: () => void;
@@ -78,6 +82,8 @@ interface SelectedCopyPanelProps {
 const SelectedCopyPanel = ({
   segments,
   paragraphs,
+  aiSegments = [],
+  currentTime = 0,
   activeSegmentId,
   speakerIds,
   maxTotalDuration,
@@ -92,6 +98,7 @@ const SelectedCopyPanel = ({
   onDeleteSelectedRange,
   onCopySegment,
   onAdjustSegment,
+  onAddAiSegment,
   onClearAll,
   onPreview,
   onSave,
@@ -111,6 +118,12 @@ const SelectedCopyPanel = ({
   const isOverLimit = totalDuration > maxTotalDuration;
   const canDragSort = segments.length > 1;
   const hasSegments = segments.length > 0;
+  const activeAiSegmentId = useMemo(() => {
+    if (!aiSegments.length) return null;
+    return (
+      aiSegments.find((item) => currentTime >= item.start && currentTime < item.end)?.id ?? null
+    );
+  }, [aiSegments, currentTime]);
 
   const resetDragState = () => {
     pointerDraggingRef.current = false;
@@ -198,6 +211,49 @@ const SelectedCopyPanel = ({
 
   return (
     <div className="slice-editor-panel slice-editor-panel_copy">
+      {aiSegments.length > 0 ? (
+        <div className="slice-editor-ai-block">
+          <div className="slice-editor-ai-block-head">
+            <div className="slice-editor-panel-title">AI分段</div>
+            <span className="slice-editor-copy-stats">共 {aiSegments.length} 段</span>
+          </div>
+          <div className="slice-editor-ai-block-list">
+            {aiSegments.map((aiSegment, index) => {
+              const label = aiSegment.title?.trim() || `片段 ${index + 1}`;
+              const timeLabel = `${formatVideoDuration(aiSegment.start)} - ${formatVideoDuration(aiSegment.end)}`;
+              const isActive = activeAiSegmentId === aiSegment.id;
+              return (
+                <div
+                  key={aiSegment.id}
+                  className={`slice-editor-ai-item${isActive ? ' is-active' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="slice-editor-ai-item-main"
+                    onClick={() => onSeek(aiSegment.start)}
+                    title={`${label} · ${timeLabel}`}
+                  >
+                    <span className="slice-editor-ai-item-title">{label}</span>
+                    <span className="slice-editor-ai-item-time">{timeLabel}</span>
+                  </button>
+                  {onAddAiSegment ? (
+                    <button
+                      type="button"
+                      className="slice-editor-ai-item-add"
+                      onClick={() => onAddAiSegment(aiSegment)}
+                      title="整段加入文案预览"
+                      aria-label={`将「${label}」加入文案预览`}
+                    >
+                      <LuPlus size={14} />
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="slice-editor-copy-top">
         <div className="slice-editor-copy-head">
           <div className="slice-editor-panel-title">文案预览</div>

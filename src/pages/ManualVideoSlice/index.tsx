@@ -36,7 +36,7 @@ import VideoTranscriptResizeHandle from './components/VideoTranscriptResizeHandl
 import SelectedCopyPanel from './components/SelectedCopyPanel';
 import SegmentPreviewModal from './components/SegmentPreviewModal';
 import SaveDraftModal from './components/SaveDraftModal';
-import type { SelectedCopySegment, TranscriptParagraph } from './types';
+import type { AiSegment, SelectedCopySegment, TranscriptParagraph } from './types';
 import {
   deleteSelectedRangeFromSegment,
   adjustSegmentEdge,
@@ -45,6 +45,8 @@ import {
   getParagraphText,
   getTextSelectionOffsets,
   asrParagraphsToTranscriptParagraphs,
+  asrSummariesToAiSegments,
+  buildCopySegmentFromAiSegment,
   normalizeTranscriptParagraphs,
   sanitizeDownloadFilename,
   scrollElementIntoViewPreferUpper,
@@ -319,6 +321,23 @@ const ManualVideoSlicePage = () => {
     // 选片只加入预览，不打断当前播放进度
     toast.notify.success('已添加到文案预览');
   }, []);
+
+  const aiSegments = useMemo(
+    () => asrSummariesToAiSegments(video?.asr_summaries),
+    [video?.asr_summaries]
+  );
+
+  const handleAddAiSegment = useCallback(
+    (aiSegment: AiSegment) => {
+      const segment = buildCopySegmentFromAiSegment(paragraphs, aiSegment);
+      if (!segment) {
+        toast.notify.warning('该 AI 分段暂无可用文案，请先从左侧文案分段中选择');
+        return;
+      }
+      handleSelectSegment(segment);
+    },
+    [handleSelectSegment, paragraphs]
+  );
 
   const handleDeleteSegment = useCallback((segmentId: string) => {
     setSelectedSegments((prev) => prev.filter((item) => item.id !== segmentId));
@@ -791,6 +810,8 @@ const ManualVideoSlicePage = () => {
           <SelectedCopyPanel
             segments={selectedSegments}
             paragraphs={paragraphs}
+            aiSegments={aiSegments}
+            currentTime={currentTime}
             activeSegmentId={activeSegmentId}
             speakerIds={speakerIds}
             maxTotalDuration={MAX_TOTAL_DURATION}
@@ -805,6 +826,7 @@ const ManualVideoSlicePage = () => {
             onDeleteSelectedRange={handleDeleteSelectedRange}
             onCopySegment={handleCopySegment}
             onAdjustSegment={handleAdjustSegment}
+            onAddAiSegment={handleAddAiSegment}
             onClearAll={() => {
               setSelectedSegments([]);
               setActiveSegmentId(null);

@@ -336,6 +336,10 @@
   padding: 0;
 }
 
+.slice-editor-transcript-top {
+  flex-shrink: 0;
+}
+
 .slice-editor-transcript-head {
   display: flex;
   flex-direction: column;
@@ -602,6 +606,12 @@
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
+/* AI 分段在上方时取消上拉负边距，避免盖住 AI 区底部 */
+.slice-editor-ai-block + .slice-editor-copy-top {
+  margin-top: 0;
+  border-radius: 0;
+}
+
 .slice-editor-copy-head {
   display: flex;
   align-items: center;
@@ -612,6 +622,120 @@
 
 .slice-editor-copy-head .slice-editor-panel-title {
   margin-bottom: 0;
+}
+
+/* 文案预览上方：AI 分段（grid 多列；整块限高，列表内滚动） */
+.slice-editor-panel_copy > .slice-editor-ai-block {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  max-height: 146px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slice-editor-ai-block {
+  padding: 8px 10px 10px;
+  border-radius: 10px;
+  background: rgba(var(--primary-color-rgb), 0.04);
+  box-shadow: inset 0 0 0 1px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.slice-editor-ai-block-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.slice-editor-ai-block-head .slice-editor-panel-title {
+  margin-bottom: 0;
+}
+
+.slice-editor-ai-block-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 6px;
+  align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.slice-editor-ai-item {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-radius: 8px;
+  background: var(--surface-card);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.15s ease;
+}
+
+.slice-editor-ai-item.is-active {
+  box-shadow: inset 0 0 0 1.5px var(--primary-color);
+}
+
+.slice-editor-ai-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slice-editor-ai-item-main:hover .slice-editor-ai-item-title {
+  color: var(--primary-color);
+}
+
+.slice-editor-ai-item-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-color);
+}
+
+.slice-editor-ai-item-time {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+.slice-editor-ai-item-add {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  border: none;
+  border-left: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 0 8px 8px 0;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.slice-editor-ai-item-add:hover {
+  background: var(--color-primary-bg-subtle);
 }
 
 .slice-editor-copy-stats {

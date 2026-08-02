@@ -35,6 +35,14 @@ export interface SelectedCopySegment {
   originEnd?: number;
 }
 
+/** AI 分段（来自 asr_summaries），时间单位为秒 */
+export interface AiSegment {
+  id: string;
+  title: string;
+  start: number;
+  end: number;
+}
+
 export interface ManualSliceDraft {
   id: string;
   name: string;
