@@ -4,13 +4,20 @@ import {
   SOURCE_VIDEO_URL_DUPLICATE_CODE,
   type SourceVideo,
 } from '../src/services/sourceVideo.model';
-import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
+import {
+  matchAnyListKeyword,
+  matchListKeywords,
+  parseListKeywords,
+} from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import { LIVE_URL } from './_Live_URL';
 import { getAsrSummaries, getTranscript } from './transcript';
 import { countSliceProjectsBySourceVideoId } from './sliceProjectStore';
 
-type MockSourceVideo = Omit<SourceVideo, 'project_count' | 'asr_paragraphs' | 'asr_summaries'> & {
+type MockSourceVideo = Omit<
+  SourceVideo,
+  'project_count' | 'asr_hits' | 'asr_paragraphs' | 'asr_summaries'
+> & {
   ownerId: string;
   /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
   _lastAsrTickMs?: number;
@@ -162,9 +169,28 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
   return {
     ...rest,
     project_count: countSliceProjectsBySourceVideoId(item.id),
+    asr_hits: null,
     asr_paragraphs: null,
     asr_summaries: null,
   };
+}
+
+/** 收集含任一 asr 关键词的原文句，供列表命中展示 */
+function collectAsrHits(sourceVideoId: string | number, asrKeywords: string[], max = 12): string[] {
+  if (!asrKeywords.length) return [];
+  const hits: string[] = [];
+  const seen = new Set<string>();
+
+  for (const segment of getTranscript(String(sourceVideoId))) {
+    const text = segment.text.trim();
+    if (!text || seen.has(text)) continue;
+    if (!matchAnyListKeyword(text, asrKeywords)) continue;
+    seen.add(text);
+    hits.push(text);
+    if (hits.length >= max) break;
+  }
+
+  return hits;
 }
 
 function toPublicDetail(item: MockSourceVideo): SourceVideo {
@@ -288,12 +314,28 @@ export default [
       const pageSize = Number(query.page_size || query.pageSize || 10);
       const filtered = filterList(query);
       const start = (page - 1) * pageSize;
+      const asrKeywords = parseListKeywords(
+        typeof query.asr_keyword === 'string'
+          ? query.asr_keyword
+          : typeof query.global_keyword === 'string'
+            ? query.global_keyword
+            : undefined
+      );
 
       return {
         code: 0,
         message: '',
         data: {
-          list: filtered.slice(start, start + pageSize).map(toPublicItem),
+          list: filtered.slice(start, start + pageSize).map((item) => {
+            const publicItem = toPublicItem(item);
+            if (!asrKeywords.length || item.asr_status !== 'completed') {
+              return publicItem;
+            }
+            return {
+              ...publicItem,
+              asr_hits: collectAsrHits(item.id, asrKeywords),
+            };
+          }),
           total: filtered.length,
         },
       };

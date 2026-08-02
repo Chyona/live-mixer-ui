@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { SelectedCopySegment, TranscriptParagraph } from '../types';
 import KeywordSearchBar from './KeywordSearchBar';
 import {
+  alignWordsToTranscriptText,
   getParagraphRange,
   getSelectedCopyOriginRanges,
   getSpeakerColor,
@@ -274,18 +275,20 @@ const TranscriptPanel = ({
                   />
                 );
               } else if (useWordHighlight) {
-                inner = words.map((word, wordIndex) => {
-                  const wordSelected = isTranscriptRangeSelected(
-                    word.start,
-                    word.end,
+                // 以完整句段文本为准对齐 words，避免 ASR 未给标点时「，。」等消失
+                const tokens = alignWordsToTranscriptText(segment.text, words);
+                inner = tokens.map((token, tokenIndex) => {
+                  const tokenSelected = isTranscriptRangeSelected(
+                    token.start,
+                    token.end,
                     selectedOriginRanges
                   );
                   return (
                     <span
-                      key={`${segment.id}-w-${wordIndex}`}
-                      className={wordSelected ? 'segment-selected' : undefined}
+                      key={`${segment.id}-t-${tokenIndex}`}
+                      className={tokenSelected ? 'segment-selected' : undefined}
                     >
-                      {word.text}
+                      {token.text}
                     </span>
                   );
                 });

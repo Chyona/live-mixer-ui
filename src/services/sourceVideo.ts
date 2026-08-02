@@ -119,6 +119,21 @@ function normalizeAsrSummaries(raw: unknown): SourceVideo['asr_summaries'] {
   return list.length ? list : [];
 }
 
+function normalizeAsrHits(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  const hits = raw
+    .map((item) => {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object') {
+        const text = String((item as { text?: unknown }).text ?? '').trim();
+        return text;
+      }
+      return '';
+    })
+    .filter(Boolean);
+  return hits.length ? hits : [];
+}
+
 export function normalizeSourceVideo(
   raw: Partial<SourceVideo> & Record<string, unknown>
 ): SourceVideo {
@@ -138,6 +153,7 @@ export function normalizeSourceVideo(
     updated_at: String(raw.updated_at ?? ''),
     created_by: String(raw.created_by ?? ''),
     project_count: normalizeProjectCount(raw),
+    asr_hits: normalizeAsrHits(raw.asr_hits ?? raw.asrHits),
     asr_paragraphs: (raw.asr_paragraphs as SourceVideo['asr_paragraphs']) ?? null,
     asr_summaries: normalizeAsrSummaries(raw.asr_summaries),
   };

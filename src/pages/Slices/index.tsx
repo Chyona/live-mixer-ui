@@ -243,7 +243,7 @@ const SlicesPage = () => {
       {
         title: '片段数',
         key: 'segment_count',
-        width: 100,
+        width: 90,
         align: 'center',
         render: (_, record) => getSliceProjectSegmentCount(record),
       },
@@ -251,7 +251,7 @@ const SlicesPage = () => {
         title: '关联任务',
         dataIndex: 'task_count',
         key: 'task_count',
-        width: 100,
+        width: 90,
         align: 'right',
         render: (count: number, record) => {
           const taskCount = Number(count) > 0 ? Math.floor(Number(count)) : 0;

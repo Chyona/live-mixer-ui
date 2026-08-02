@@ -27,7 +27,7 @@ import {
 } from '~/services/sourceVideo';
 import { formatToDateTime } from '~/utils/date';
 import { formatVideoDurationMs } from '~/utils/duration';
-import { toApiKeywords } from '~/utils/listKeywords';
+import { parseListKeywords, toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
 
@@ -54,6 +54,7 @@ const SOURCE_VIDEOS_COLUMN_SETTINGS: TableColumnSettingItem[] = [
 ];
 
 import AddSourceVideoModal from './AddSourceVideoModal';
+import AsrHitsPanel from './AsrHitsPanel';
 import AsrProgressCell from './AsrProgressCell';
 import { getAsrActionDisabledReason } from './asrUtils';
 import './index.css';
@@ -290,7 +291,7 @@ const SourceVideosPage = () => {
       {
         title: '源视频名称',
         dataIndex: 'name',
-        width: 220,
+        width: 240,
         key: 'name',
         ellipsis: true,
         render: (name: string, record) => (
@@ -366,7 +367,7 @@ const SourceVideosPage = () => {
         title: '时长',
         dataIndex: 'duration',
         key: 'duration',
-        width: 100,
+        width: 80,
         align: 'right',
         render: (duration: number) => (duration > 0 ? formatVideoDurationMs(duration) : '-'),
       },
@@ -420,14 +421,13 @@ const SourceVideosPage = () => {
         dataIndex: 'created_at',
         key: 'created_at',
         width: 160,
-        align: 'right',
         render: (created_at: string) => formatToDateTime(created_at),
       },
       {
         title: '关联项目',
         dataIndex: 'project_count',
         key: 'project_count',
-        width: 100,
+        width: 90,
         align: 'right',
         render: (count: number, record) => {
           const projectCount = Number(count) > 0 ? Math.floor(Number(count)) : 0;
@@ -529,6 +529,17 @@ const SourceVideosPage = () => {
 
   const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedAsrKeyword);
   const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
+  const asrHitKeywords = useMemo(
+    () => parseListKeywords(appliedAsrKeyword),
+    [appliedAsrKeyword]
+  );
+  const asrHitExpandedRowKeys = useMemo(
+    () =>
+      list
+        .filter((item) => (item.asr_hits?.length ?? 0) > 0)
+        .map((item) => item.id),
+    [list]
+  );
 
   const handleTableChange = (pagination: Parameters<typeof handleTablePaginationChange>[0]) => {
     handleTablePaginationChange(pagination, setPage, setPageSize, pageSize);
@@ -587,11 +598,19 @@ const SourceVideosPage = () => {
         columns={columns}
         dataSource={list}
         scrollX={1600}
+        expandable={{
+          showExpandColumn: false,
+          expandedRowKeys: asrHitExpandedRowKeys,
+          rowExpandable: (record) => (record.asr_hits?.length ?? 0) > 0,
+          expandedRowRender: (record) => (
+            <AsrHitsPanel hits={record.asr_hits ?? []} keywords={asrHitKeywords} />
+          ),
+        }}
         empty={
           hasActiveFilters
             ? {
               title: '未找到匹配的源视频',
-              description: '试试更换关键词，或调整日期范围与 ASR 文案条件',
+              description: '试试更换关键词，或调整日期范围与视频文案条件',
             }
             : {
               title: '暂无源视频',

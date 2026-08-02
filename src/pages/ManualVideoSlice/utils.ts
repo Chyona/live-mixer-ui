@@ -52,15 +52,36 @@ export function getParagraphRange(paragraph: TranscriptParagraph) {
   };
 }
 
-/** 按字符区间切出对应 words（words 与 text 按顺序对齐） */
+/**
+ * 按字符区间切出对应 words。
+ * 传入 sourceText 时按完整原文对齐（words 常不含标点）；否则退回「words 顺序拼接」假设。
+ */
 export function sliceWordsByCharRange(
   words: TranscriptWord[],
   charStart: number,
-  charEnd: number
+  charEnd: number,
+  sourceText?: string
 ): TranscriptWord[] {
   if (!words.length || charEnd <= charStart) return [];
 
   const picked: TranscriptWord[] = [];
+
+  if (sourceText) {
+    let textIndex = 0;
+    for (const word of words) {
+      const wordText = word.text;
+      if (!wordText) continue;
+      const found = sourceText.indexOf(wordText, textIndex);
+      if (found === -1) continue;
+      const wStart = found;
+      const wEnd = found + wordText.length;
+      textIndex = wEnd;
+      if (wEnd <= charStart || wStart >= charEnd) continue;
+      picked.push(word);
+    }
+    return picked;
+  }
+
   let cursor = 0;
   for (const word of words) {
     const len = Math.max(word.text.length, 1);
@@ -73,6 +94,65 @@ export function sliceWordsByCharRange(
   return picked;
 }
 
+export type TranscriptTextToken = {
+  text: string;
+  start: number;
+  end: number;
+};
+
+/**
+ * 将 words 对齐回完整句段文本：ASR words 常不含标点，选片高亮时若只渲染 words 会丢「，。」等。
+ * 以 segment.text 为准，把 words 之间的空隙（标点）补成独立 token。
+ */
+export function alignWordsToTranscriptText(
+  text: string,
+  words: TranscriptWord[]
+): TranscriptTextToken[] {
+  if (!text) return [];
+  if (!words.length) {
+    return [{ text, start: 0, end: 0 }];
+  }
+
+  const tokens: TranscriptTextToken[] = [];
+  let textIndex = 0;
+
+  for (const word of words) {
+    const wordText = word.text;
+    if (!wordText) continue;
+
+    let found = text.indexOf(wordText, textIndex);
+    if (found === -1 && text.startsWith(wordText, textIndex)) {
+      found = textIndex;
+    }
+    if (found === -1) {
+      // 无法对齐时仍输出该 word，避免整段丢失
+      tokens.push({ text: wordText, start: word.start, end: word.end });
+      continue;
+    }
+
+    if (found > textIndex) {
+      const gap = text.slice(textIndex, found);
+      // 空隙（多为标点）挂到当前字起点，便于选中态一并高亮
+      tokens.push({ text: gap, start: word.start, end: word.start });
+    }
+
+    tokens.push({ text: wordText, start: word.start, end: word.end });
+    textIndex = found + wordText.length;
+  }
+
+  if (textIndex < text.length) {
+    const last = words[words.length - 1];
+    const tailTime = last ? Math.max(last.end, last.start) : 0;
+    tokens.push({
+      text: text.slice(textIndex),
+      start: tailTime,
+      end: tailTime,
+    });
+  }
+
+  return tokens;
+}
+
 function rangeFromWords(
   words: TranscriptWord[],
   fallbackStart: number,
@@ -80,11 +160,15 @@ function rangeFromWords(
 ): { start: number; end: number } {
   if (!words.length) return { start: fallbackStart, end: fallbackEnd };
   const first = words[0];
-  const last = words[words.length - 1];
-  if (!first || !last) return { start: fallbackStart, end: fallbackEnd };
+  if (!first) return { start: fallbackStart, end: fallbackEnd };
+  // 取全部 words 的最大 end，避免末尾零时长字（标点）导致区间偏短
+  const end = words.reduce(
+    (max, word) => Math.max(max, word.end, word.start),
+    first.start
+  );
   return {
     start: first.start,
-    end: Math.max(last.end, first.start),
+    end,
   };
 }
 
@@ -112,7 +196,7 @@ export function splitTextToSegments(
     charOffset = partCharEnd;
 
     const partWords = words?.length
-      ? sliceWordsByCharRange(words, partCharStart, partCharEnd)
+      ? sliceWordsByCharRange(words, partCharStart, partCharEnd, text)
       : [];
     const fromWords = rangeFromWords(partWords, -1, -1);
 
@@ -320,7 +404,12 @@ export function paragraphSelectionToCopySegment(
   if (duration <= 0) return null;
 
   const allWords = paragraph.segments.flatMap((segment) => segment.words ?? []);
-  const selectedWords = sliceWordsByCharRange(allWords, offsets.start, offsets.end);
+  const selectedWords = sliceWordsByCharRange(
+    allWords,
+    offsets.start,
+    offsets.end,
+    paragraphText
+  );
   const fromWords = rangeFromWords(selectedWords, -1, -1);
 
   const start =
@@ -755,11 +844,19 @@ export function isTranscriptRangeSelected(
   end: number,
   selectedRanges: Array<{ start: number; end: number }>
 ): boolean {
-  if (!selectedRanges.length || !(end > start)) return false;
+  if (!selectedRanges.length || !Number.isFinite(start) || !Number.isFinite(end)) {
+    return false;
+  }
+
   const EPS = 1e-3;
-  return selectedRanges.some(
-    (range) => start < range.end - EPS && range.start < end - EPS
-  );
+  return selectedRanges.some((range) => {
+    // ASR 末尾字/标点常见 start===end；按点是否落在选区内判断
+    if (!(end > start)) {
+      return start >= range.start - EPS && start <= range.end + EPS;
+    }
+    // 正常区间重叠；两侧放宽 EPS，避免边界字被裁掉
+    return start < range.end + EPS && range.start < end + EPS;
+  });
 }
 
 export function reorderSegments(
