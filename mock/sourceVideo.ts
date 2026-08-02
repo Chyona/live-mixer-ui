@@ -238,20 +238,22 @@ function filterList(query: Record<string, string | string[] | undefined>) {
       : typeof query.dateEnd === 'string'
         ? query.dateEnd
         : undefined;
-  const titleKeyword =
-    typeof query.title_keyword === 'string'
-      ? query.title_keyword
-      : typeof query.keyword === 'string'
-        ? query.keyword
+  const keyword =
+    typeof query.keyword === 'string'
+      ? query.keyword
+      : typeof query.title_keyword === 'string'
+        ? query.title_keyword
         : undefined;
-  const globalKeyword =
-    typeof query.global_keyword === 'string'
-      ? query.global_keyword
-      : typeof query.globalKeyword === 'string'
-        ? query.globalKeyword
-        : undefined;
-  const titleKeywords = parseListKeywords(titleKeyword);
-  const globalKeywords = parseListKeywords(globalKeyword);
+  const asrKeyword =
+    typeof query.asr_keyword === 'string'
+      ? query.asr_keyword
+      : typeof query.global_keyword === 'string'
+        ? query.global_keyword
+        : typeof query.globalKeyword === 'string'
+          ? query.globalKeyword
+          : undefined;
+  const keywords = parseListKeywords(keyword);
+  const asrKeywords = parseListKeywords(asrKeyword);
 
   return sourceVideos.filter((item) => {
     if (item.ownerId !== CURRENT_USER_ID) return false;
@@ -261,10 +263,16 @@ function filterList(query: Record<string, string | string[] | undefined>) {
     if (endDate && createdDate > endDate) return false;
 
     const titleText = `${item.name} ${item.remark}`;
-    if (!matchListKeywords(titleText, titleKeywords)) return false;
+    if (!matchListKeywords(titleText, keywords)) return false;
 
-    const globalText = `${item.name} ${item.remark} ${item.live_url} ${item.asr_error_msg ?? ''} ${createdDate}`;
-    if (!matchListKeywords(globalText, globalKeywords)) return false;
+    // asr_keyword：仅匹配 ASR 解析后的视频文案（未完成解析则无文案可命中）
+    const asrText =
+      item.asr_status === 'completed'
+        ? getTranscript(String(item.id))
+            .map((segment) => segment.text)
+            .join(' ')
+        : '';
+    if (!matchListKeywords(asrText, asrKeywords)) return false;
 
     return true;
   });

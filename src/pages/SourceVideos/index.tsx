@@ -101,8 +101,8 @@ const SourceVideosPage = () => {
     handleDateChange,
     dateFilters,
   } = useListFilters();
-  const [globalKeyword, setGlobalKeyword] = useState('');
-  const [appliedGlobalKeyword, setAppliedGlobalKeyword] = useState('');
+  const [asrKeyword, setAsrKeyword] = useState('');
+  const [appliedAsrKeyword, setAppliedAsrKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -140,8 +140,8 @@ const SourceVideosPage = () => {
       const response = await fetchSourceVideoList({
         start_date: dateFilters.date,
         end_date: dateFilters.dateEnd,
-        title_keyword: toApiKeywords(appliedKeyword),
-        global_keyword: toApiKeywords(appliedGlobalKeyword),
+        keyword: toApiKeywords(appliedKeyword),
+        asr_keyword: toApiKeywords(appliedAsrKeyword),
         page,
         page_size: pageSize,
       });
@@ -167,7 +167,7 @@ const SourceVideosPage = () => {
         setLoading(false);
       }
     }
-  }, [appliedGlobalKeyword, appliedKeyword, dateFilters, page, pageSize]);
+  }, [appliedAsrKeyword, appliedKeyword, dateFilters, page, pageSize]);
 
   useEffect(() => {
     void loadList();
@@ -190,7 +190,7 @@ const SourceVideosPage = () => {
 
   const applySearch = () => {
     applyKeywordSearch();
-    setAppliedGlobalKeyword(globalKeyword.trim());
+    setAppliedAsrKeyword(asrKeyword.trim());
     setPage(1);
   };
 
@@ -527,7 +527,7 @@ const SourceVideosPage = () => {
     ];
   }, [deletingId, defaultVisibleKeys, navigate, retryingAsrId, setVisibleKeys, visibleKeySet, visibleKeys]);
 
-  const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedGlobalKeyword);
+  const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedAsrKeyword);
   const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
 
   const handleTableChange = (pagination: Parameters<typeof handleTablePaginationChange>[0]) => {
@@ -567,12 +567,12 @@ const SourceVideosPage = () => {
                 />
               </div>
               <div className="list-page__filter-field">
-                <span className="list-page__filter-label">全局搜索</span>
+                <span className="list-page__filter-label">视频文案</span>
                 <Input
                   allowClear
-                  placeholder="匹配所有文本字段"
-                  value={globalKeyword}
-                  onChange={(event) => setGlobalKeyword(event.target.value)}
+                  placeholder="搜索已解析文案（支持 关键词A+关键词B）"
+                  value={asrKeyword}
+                  onChange={(event) => setAsrKeyword(event.target.value)}
                   onPressEnter={applySearch}
                 />
               </div>
@@ -591,7 +591,7 @@ const SourceVideosPage = () => {
           hasActiveFilters
             ? {
               title: '未找到匹配的源视频',
-              description: '试试更换关键词，或调整日期范围与全局搜索条件',
+              description: '试试更换关键词，或调整日期范围与 ASR 文案条件',
             }
             : {
               title: '暂无源视频',
@@ -625,8 +625,8 @@ const SourceVideosPage = () => {
         }}
         onViewExisting={(name) => {
           setAddOpen(false);
-          setGlobalKeyword('');
-          setAppliedGlobalKeyword('');
+          setAsrKeyword('');
+          setAppliedAsrKeyword('');
           setKeyword(name);
           setAppliedKeyword(name);
           setPage(1);
