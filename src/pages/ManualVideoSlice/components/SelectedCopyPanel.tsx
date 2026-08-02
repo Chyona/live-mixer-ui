@@ -53,8 +53,8 @@ interface SelectedCopyPanelProps {
   maxTotalDuration: number;
   videoDuration: number;
   submitting: boolean;
-  needSubtitle: boolean;
-  onNeedSubtitleChange: (checked: boolean) => void;
+  enableCaptions: boolean;
+  onEnableCaptionsChange: (checked: boolean) => void;
   onActiveSegmentChange: (segmentId: string | null) => void;
   onSeek: (time: number) => void;
   onReorder: (segments: SelectedCopySegment[]) => void;
@@ -83,8 +83,8 @@ const SelectedCopyPanel = ({
   maxTotalDuration,
   videoDuration,
   submitting,
-  needSubtitle,
-  onNeedSubtitleChange,
+  enableCaptions,
+  onEnableCaptionsChange,
   onActiveSegmentChange,
   onSeek,
   onReorder,
@@ -229,9 +229,9 @@ const SelectedCopyPanel = ({
           </div>
           <div className="slice-editor-copy-toolbar-group slice-editor-copy-toolbar-group_primary">
             <Checkbox
-              className="slice-need-subtitle-checkbox"
-              checked={needSubtitle}
-              onChange={(event) => onNeedSubtitleChange(event.target.checked)}
+              className="slice-enable-captions-checkbox"
+              checked={enableCaptions}
+              onChange={(event) => onEnableCaptionsChange(event.target.checked)}
             >
               生成字幕
             </Checkbox>

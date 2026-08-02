@@ -43,7 +43,7 @@ export default [
         remark?: string;
         prompt_id?: number;
         project_source?: 'timeline' | 'manual';
-        need_subtitle?: boolean;
+        enable_captions?: boolean;
         clips0?: Array<{ start_time: number; end_time: number }>;
         clips1?: Array<{ start_time: number; end_time: number }>;
       };
@@ -77,7 +77,7 @@ export default [
             : manualSegments.length
               ? 'manual'
               : 'timeline',
-        needSubtitle: Boolean(body?.need_subtitle),
+        enableCaptions: Boolean(body?.enable_captions),
         segments,
       });
 
@@ -172,7 +172,7 @@ export default [
         remark?: string;
         prompt_id?: number;
         project_source?: 'timeline' | 'manual';
-        need_subtitle?: boolean;
+        enable_captions?: boolean;
         clips0?: Array<{ start_time: number; end_time: number }>;
         clips1?: Array<{ start_time: number; end_time: number }>;
       };
@@ -218,8 +218,8 @@ export default [
         remarkName: body?.remark !== undefined ? body.remark : existing.remarkName,
         projectName: name,
         projectSource,
-        needSubtitle:
-          body?.need_subtitle !== undefined ? Boolean(body.need_subtitle) : existing.needSubtitle,
+        enableCaptions:
+          body?.enable_captions !== undefined ? Boolean(body.enable_captions) : existing.enableCaptions,
         segments,
       });
 

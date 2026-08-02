@@ -1922,7 +1922,7 @@
   cursor: not-allowed;
 }
 
-.slice-need-subtitle-checkbox.ant-checkbox-wrapper {
+.slice-enable-captions-checkbox.ant-checkbox-wrapper {
   color: var(--text-secondary);
   font-size: 14px;
   white-space: nowrap;

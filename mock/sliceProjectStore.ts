@@ -8,7 +8,7 @@ export type SliceProjectRecord = {
   remarkName: string;
   projectName: string;
   projectSource: SliceProjectSource;
-  needSubtitle?: boolean;
+  enableCaptions?: boolean;
   segmentCount: number;
   createdBy: string;
   updatedAt: string;
@@ -98,7 +98,7 @@ export function upsertSliceProject(input: {
   remarkName?: string;
   projectName: string;
   projectSource?: SliceProjectSource;
-  needSubtitle?: boolean;
+  enableCaptions?: boolean;
   segmentCount: number;
   createdBy?: string;
   segments?: SelectedCopySegment[];
@@ -112,7 +112,7 @@ export function upsertSliceProject(input: {
     remarkName: input.remarkName ?? existing?.remarkName ?? '',
     projectName: input.projectName,
     projectSource: input.projectSource ?? existing?.projectSource ?? 'manual',
-    needSubtitle: input.needSubtitle ?? existing?.needSubtitle ?? false,
+    enableCaptions: input.enableCaptions ?? existing?.enableCaptions ?? false,
     segmentCount: input.segmentCount,
     createdBy: input.createdBy ?? existing?.createdBy ?? 'admin',
     updatedAt: new Date().toISOString(),
@@ -131,7 +131,7 @@ export function saveSliceProjectRecord(input: {
   remarkName?: string;
   projectName?: string;
   projectSource?: SliceProjectSource;
-  needSubtitle?: boolean;
+  enableCaptions?: boolean;
   segments: SelectedCopySegment[];
 }) {
   const existing = getSliceProject(input.id);
@@ -148,7 +148,7 @@ export function saveSliceProjectRecord(input: {
     remarkName: input.remarkName ?? existing?.remarkName,
     projectName,
     projectSource: input.projectSource ?? existing?.projectSource ?? 'manual',
-    needSubtitle: input.needSubtitle ?? existing?.needSubtitle,
+    enableCaptions: input.enableCaptions ?? existing?.enableCaptions,
     segmentCount: input.segments.length,
     segments: input.segments,
   });
@@ -231,7 +231,7 @@ export function toPublicSliceProject(project: SliceProjectRecord) {
     width: (Number(project.sourceVideoId) || 0) % 2 === 1 ? 1080 : 1920,
     height: (Number(project.sourceVideoId) || 0) % 2 === 1 ? 1920 : 1080,
     project_source: project.projectSource,
-    need_subtitle: Boolean(project.needSubtitle),
+    enable_captions: Boolean(project.enableCaptions),
     clips0: timelineClips,
     clips1: manualClips,
   };

@@ -28,7 +28,7 @@ export interface CreateSliceProjectParams {
    */
   project_source: SliceProjectSource;
   /** 是否生成字幕（成片选项） */
-  need_subtitle?: boolean;
+  enable_captions?: boolean;
   clips0?: SliceProjectClip[];
   clips1?: SliceProjectClip[];
 }
@@ -168,7 +168,7 @@ export function normalizeSliceProject(raw: Partial<SliceProject> | null | undefi
     height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],
     clips1: Array.isArray(raw?.clips1) ? raw.clips1 : [],
-    need_subtitle: Boolean(raw?.need_subtitle),
+    enable_captions: Boolean(raw?.enable_captions),
     project_source: getSliceProjectSource({
       project_source: raw?.project_source,
       clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],

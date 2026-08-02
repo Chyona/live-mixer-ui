@@ -97,7 +97,7 @@ const ManualVideoSlicePage = () => {
   const [saveModalMode, setSaveModalMode] = useState<'create' | 'saveAs' | 'export'>('saveAs');
   const [savingProject, setSavingProject] = useState(false);
   const [downloadingSubtitle, setDownloadingSubtitle] = useState(false);
-  const [needSubtitle, setNeedSubtitle] = useState(false);
+  const [enableCaptions, setEnableCaptions] = useState(false);
   const [draftName, setDraftName] = useState(() => localStorage.getItem(DRAFT_STORAGE_KEY) ?? '');
   const [projectRemark, setProjectRemark] = useState('');
 
@@ -203,7 +203,7 @@ const ManualVideoSlicePage = () => {
       if (projectRes?.code === 0 && projectRes.data) {
         setProjectId(projectRes.data.id || projectIdFromQuery);
         setProjectRemark(projectRes.data.remark || '');
-        setNeedSubtitle(Boolean(projectRes.data.need_subtitle));
+        setEnableCaptions(Boolean(projectRes.data.enable_captions));
         if (!hasAiSegments && projectRes.data.segments.length > 0) {
           setSelectedSegments(projectRes.data.segments);
           setDraftName(projectRes.data.name);
@@ -433,7 +433,7 @@ const ManualVideoSlicePage = () => {
         name: nextName,
         remark: nextRemark,
         project_source: 'manual' as const,
-        need_subtitle: needSubtitle,
+        enable_captions: enableCaptions,
         clips0: [] as ReturnType<typeof toSliceProjectClips>,
         clips1: toSliceProjectClips(selectedSegments),
       };
@@ -468,7 +468,7 @@ const ManualVideoSlicePage = () => {
         setSavingProject(false);
       }
     },
-    [draftName, needSubtitle, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
+    [draftName, enableCaptions, projectId, projectRemark, selectedSegments, syncProjectIdInUrl, video]
   );
 
   const handleSaveDraft = useCallback(
@@ -523,7 +523,7 @@ const ManualVideoSlicePage = () => {
           name,
           remark,
           project_source: 'manual',
-          need_subtitle: needSubtitle,
+          enable_captions: enableCaptions,
           clips0: [],
           clips1: toSliceProjectClips(selectedSegments),
         });
@@ -553,7 +553,7 @@ const ManualVideoSlicePage = () => {
     },
     [
       handleSaveProject,
-      needSubtitle,
+      enableCaptions,
       projectId,
       saveModalMode,
       selectedSegments,
@@ -575,7 +575,7 @@ const ManualVideoSlicePage = () => {
     try {
       const response = await submitDraft({
         video_project_id: projectId,
-        need_subtitle: needSubtitle,
+        enable_captions: enableCaptions,
       });
 
       if (response.code !== 0) {
@@ -594,7 +594,7 @@ const ManualVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, needSubtitle, projectId, selectedSegments.length, video]);
+  }, [navigate, enableCaptions, projectId, selectedSegments.length, video]);
 
   const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);
@@ -796,8 +796,8 @@ const ManualVideoSlicePage = () => {
             maxTotalDuration={MAX_TOTAL_DURATION}
             videoDuration={videoDuration}
             submitting={submitting}
-            needSubtitle={needSubtitle}
-            onNeedSubtitleChange={setNeedSubtitle}
+            enableCaptions={enableCaptions}
+            onEnableCaptionsChange={setEnableCaptions}
             onActiveSegmentChange={setActiveSegmentId}
             onSeek={handleSeek}
             onReorder={setSelectedSegments}

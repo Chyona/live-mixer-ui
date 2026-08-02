@@ -182,7 +182,7 @@ export default [
     response: ({
       body,
     }: {
-      body: { video_project_id?: string | number; need_subtitle?: boolean };
+      body: { video_project_id?: string | number; enable_captions?: boolean };
     }) => {
       const videoProjectId = body?.video_project_id;
       if (videoProjectId == null || videoProjectId === '') {
@@ -207,7 +207,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: { task_id: taskId, need_subtitle: Boolean(body?.need_subtitle) },
+        data: { task_id: taskId, enable_captions: Boolean(body?.enable_captions) },
       };
     },
   },
