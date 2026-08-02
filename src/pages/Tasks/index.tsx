@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button, DatePicker, Select } from 'antd';
 import type { TablePaginationConfig } from 'antd/es/table';
 import { LuVideo } from 'react-icons/lu';
@@ -18,6 +18,9 @@ import { CLIP_TASK_STATUS_OPTIONS } from './utils';
 import './index.css';
 
 const TasksPage = () => {
+  const [searchParams] = useSearchParams();
+  const initialKeyword = searchParams.get('keyword')?.trim() ?? '';
+
   useAppSEO({
     title: '任务管理',
     path: '/tasks',
@@ -33,7 +36,7 @@ const TasksPage = () => {
     dateRange,
     handleDateChange,
     dateFilters,
-  } = useListFilters();
+  } = useListFilters({ initialKeyword });
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -98,7 +101,7 @@ const TasksPage = () => {
         <ListSearchToolbar
           keyword={keyword}
           onKeywordChange={setKeyword}
-          keywordPlaceholder="搜索项目名称（支持 关键词A+关键词B）"
+          keywordPlaceholder="搜索项目名称 / 源视频名称（支持 关键词A+关键词B）"
           onSearch={applySearch}
           onKeywordClear={clearSearch}
           loading={loading || refreshing}

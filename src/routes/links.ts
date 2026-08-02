@@ -62,3 +62,10 @@ export function buildSlicesListLink(options?: { keyword?: string | null }) {
   if (!keyword) return '/slices';
   return `/slices?${new URLSearchParams({ keyword }).toString()}`;
 }
+
+/** 任务管理列表链接；可带 keyword 作为搜索条件（如源视频名称 / 项目名称） */
+export function buildTasksListLink(options?: { keyword?: string | null }) {
+  const keyword = options?.keyword?.trim();
+  if (!keyword) return '/tasks';
+  return `/tasks?${new URLSearchParams({ keyword }).toString()}`;
+}

@@ -59,6 +59,8 @@ export type SliceProject = CreateSliceProjectParams & {
   draft_url: string;
   video_url: string;
   ext: string;
+  /** 当前源视频关联的任务数量 */
+  task_count: number;
   /** 视频宽度（像素） */
   width?: number;
   /** 视频高度（像素） */
@@ -149,8 +151,14 @@ export function clipsToSliceSegments(
   return clipsToUiSegments(project.clips1, 'manual');
 }
 
+function normalizeTaskCount(raw: Partial<SliceProject> & Record<string, unknown>): number {
+  const value = Number(raw.task_count ?? raw.taskCount ?? 0);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
 /** 规范化接口返回，补齐默认值 */
 export function normalizeSliceProject(raw: Partial<SliceProject> | null | undefined): SliceProject {
+  const record = (raw ?? {}) as Partial<SliceProject> & Record<string, unknown>;
   return {
     id: Number(raw?.id ?? 0),
     name: String(raw?.name ?? ''),
@@ -164,6 +172,7 @@ export function normalizeSliceProject(raw: Partial<SliceProject> | null | undefi
     draft_url: String(raw?.draft_url ?? ''),
     video_url: String(raw?.video_url ?? ''),
     ext: String(raw?.ext ?? ''),
+    task_count: normalizeTaskCount(record),
     width: Number(raw?.width) > 0 ? Number(raw?.width) : undefined,
     height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     clips0: Array.isArray(raw?.clips0) ? raw.clips0 : [],

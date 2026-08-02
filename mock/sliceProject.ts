@@ -2,6 +2,7 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
+import { countClipTasksBySourceVideoId } from './clipTaskStore';
 import {
   getSliceProject,
   listSliceProjects,
@@ -9,7 +10,15 @@ import {
   toPublicSliceProject,
   updateSliceProjectName,
   deleteSliceProjectRecord,
+  type SliceProjectRecord,
 } from './sliceProjectStore';
+
+function toPublicSliceProjectWithTaskCount(project: SliceProjectRecord) {
+  return {
+    ...toPublicSliceProject(project),
+    task_count: countClipTasksBySourceVideoId(project.sourceVideoId),
+  };
+}
 
 function clipsToSegments(
   clips: Array<{ start_time?: number; end_time?: number }> | undefined,
@@ -84,7 +93,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project),
+        data: toPublicSliceProjectWithTaskCount(project),
       };
     },
   },
@@ -135,7 +144,7 @@ export default [
         code: 0,
         message: 'success',
         data: {
-          list: filtered.slice(start, start + pageSize).map((item) => toPublicSliceProject(item)),
+          list: filtered.slice(start, start + pageSize).map((item) => toPublicSliceProjectWithTaskCount(item)),
           page,
           page_size: pageSize,
           total: filtered.length,
@@ -155,7 +164,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project),
+        data: toPublicSliceProjectWithTaskCount(project),
       };
     },
   },
@@ -226,7 +235,7 @@ export default [
       return {
         code: 0,
         message: '',
-        data: toPublicSliceProject(project),
+        data: toPublicSliceProjectWithTaskCount(project),
       };
     },
   },
@@ -244,7 +253,7 @@ export default [
         return { code: 404, message: '剪辑项目不存在', data: null };
       }
 
-      return { code: 0, message: '', data: toPublicSliceProject(project) };
+      return { code: 0, message: '', data: toPublicSliceProjectWithTaskCount(project) };
     },
   },
   {

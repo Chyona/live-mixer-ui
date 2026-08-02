@@ -11,7 +11,7 @@ import ListSearchToolbar from '~/components/ListSearchToolbar';
 import RemarkEditor from '~/components/RemarkEditor';
 import { useAppSEO } from '~/hooks/useAppSEO';
 import { useListFilters } from '~/hooks/useListFilters';
-import { buildSliceProjectEditLink } from '~/routes/links';
+import { buildSliceProjectEditLink, buildTasksListLink } from '~/routes/links';
 import { AppError } from '~/services/http';
 import {
   deleteSliceProject,
@@ -26,6 +26,8 @@ import { formatToDateTime } from '~/utils/date';
 import { toApiKeywords } from '~/utils/listKeywords';
 import { DEFAULT_TABLE_PAGINATION, handleTablePaginationChange } from '~/utils/table';
 import { showAppError, showScopedError, handleRequestError, toast } from '~/utils/toast';
+
+import './index.css';
 
 const SLICES_LIST_ERROR_SCOPE = 'slices-list';
 
@@ -246,6 +248,33 @@ const SlicesPage = () => {
         render: (_, record) => getSliceProjectSegmentCount(record),
       },
       {
+        title: '关联任务',
+        dataIndex: 'task_count',
+        key: 'task_count',
+        width: 100,
+        align: 'right',
+        render: (count: number, record) => {
+          const taskCount = Number(count) > 0 ? Math.floor(Number(count)) : 0;
+          if (taskCount <= 0) {
+            return <span className="slices-task-count is-empty">0</span>;
+          }
+
+          const keyword = record.name?.trim();
+          return (
+            <Button
+              type="link"
+              className="list-page__action-btn slices-task-count"
+              title={keyword ? `查看「${keyword}」相关任务` : '查看关联任务'}
+              onClick={() => {
+                navigate(buildTasksListLink({ keyword: keyword || undefined }));
+              }}
+            >
+              {taskCount}
+            </Button>
+          );
+        },
+      },
+      {
         title: '视频比例',
         key: 'aspect_ratio',
         width: 100,
@@ -347,7 +376,7 @@ const SlicesPage = () => {
         loading={loading && list.length === 0}
         columns={columns}
         dataSource={list}
-        scrollX={1200}
+        scrollX={1300}
         empty={
           hasActiveFilters
             ? {

@@ -398,6 +398,17 @@ export function deleteClipTask(taskId: string) {
   return true;
 }
 
+/** 统计某源视频关联的任务数（兼容数字 id 与 sv-001 形式） */
+export function countClipTasksBySourceVideoId(sourceVideoId: string | number) {
+  const id = String(sourceVideoId);
+  const numericId = Number(id.replace(/\D/g, '')) || 0;
+  return clipTaskStore.filter((task) => {
+    if (task.sourceVideoId === id) return true;
+    if (numericId <= 0) return false;
+    return (Number(task.sourceVideoId.replace(/\D/g, '')) || 0) === numericId;
+  }).length;
+}
+
 export function toPublicClipTask(task: StoredClipTask) {
   const numericId = Number(String(task.taskId).replace(/\D/g, '')) || Date.now();
   const type =
