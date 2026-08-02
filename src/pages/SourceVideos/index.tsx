@@ -104,6 +104,9 @@ const SourceVideosPage = () => {
   } = useListFilters();
   const [asrKeyword, setAsrKeyword] = useState('');
   const [appliedAsrKeyword, setAppliedAsrKeyword] = useState('');
+  /** 文案搜索/清除后请求较慢，强制表格 mask（清除时 applied 已空，不能只靠 hasAsrKeyword） */
+  const [asrMaskPending, setAsrMaskPending] = useState(false);
+  const [asrMaskTip, setAsrMaskTip] = useState('正在搜索视频文案，请稍候…');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -166,6 +169,7 @@ const SourceVideosPage = () => {
         setRefreshing(false);
       } else if (!silent) {
         setLoading(false);
+        setAsrMaskPending(false);
       }
     }
   }, [appliedAsrKeyword, appliedKeyword, dateFilters, page, pageSize]);
@@ -190,12 +194,23 @@ const SourceVideosPage = () => {
   }, [hasProcessingAsr, loadList]);
 
   const applySearch = () => {
+    const nextAsr = asrKeyword.trim();
+    if (nextAsr || appliedAsrKeyword) {
+      setAsrMaskTip(
+        nextAsr ? '正在搜索视频文案，请稍候…' : '正在清除文案筛选，请稍候…'
+      );
+      setAsrMaskPending(true);
+    }
     applyKeywordSearch();
-    setAppliedAsrKeyword(asrKeyword.trim());
+    setAppliedAsrKeyword(nextAsr);
     setPage(1);
   };
 
   const clearSearch = () => {
+    if (appliedAsrKeyword) {
+      setAsrMaskTip('正在清除文案筛选，请稍候…');
+      setAsrMaskPending(true);
+    }
     clearKeywordSearch();
     setAsrKeyword('');
     setAppliedAsrKeyword('');
@@ -203,6 +218,8 @@ const SourceVideosPage = () => {
   };
 
   const clearAsrSearch = () => {
+    setAsrMaskTip('正在清除文案筛选，请稍候…');
+    setAsrMaskPending(true);
     setAsrKeyword('');
     setAppliedAsrKeyword('');
     setPage(1);
@@ -538,11 +555,11 @@ const SourceVideosPage = () => {
   const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedAsrKeyword);
   const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
   const hasAsrKeyword = Boolean(appliedAsrKeyword.trim());
-  /** 视频文案搜索较慢：有文案条件时请求中展示表格 mask */
-  const tableLoading = loading && (list.length === 0 || hasAsrKeyword);
+  /** 视频文案搜索/清除较慢：请求中展示表格 mask */
+  const tableLoading = loading && (list.length === 0 || hasAsrKeyword || asrMaskPending);
   const tableLoadingProp = tableLoading
-    ? hasAsrKeyword
-      ? { spinning: true as const, tip: '正在搜索视频文案，请稍候…' }
+    ? hasAsrKeyword || asrMaskPending
+      ? { spinning: true as const, tip: asrMaskTip }
       : true
     : false;
   const asrHitKeywords = useMemo(
@@ -599,7 +616,7 @@ const SourceVideosPage = () => {
                   allowClear
                   placeholder="搜索已解析文案（支持 关键词A+关键词B）"
                   value={asrKeyword}
-                  loading={loading && hasAsrKeyword}
+                  loading={loading && (hasAsrKeyword || asrMaskPending)}
                   onChange={(event) => setAsrKeyword(event.target.value)}
                   onSearch={applySearch}
                   onClear={clearAsrSearch}
@@ -622,6 +639,7 @@ const SourceVideosPage = () => {
           rowExpandable: (record) => (record.matched_paragraphs?.length ?? 0) > 0,
           expandedRowRender: (record) => (
             <AsrHitsPanel
+              key={`${record.id}-${asrHitKeywords.join('\u0001')}`}
               paragraphs={record.matched_paragraphs ?? []}
               keywords={asrHitKeywords}
             />
