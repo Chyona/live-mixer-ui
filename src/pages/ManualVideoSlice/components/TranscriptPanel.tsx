@@ -4,6 +4,7 @@ import type { SelectedCopySegment, TranscriptParagraph } from '../types';
 import KeywordSearchBar from './KeywordSearchBar';
 import {
   alignWordsToTranscriptText,
+  formatSliceTime,
   getParagraphRange,
   getSelectedCopyOriginRanges,
   getSpeakerColor,
@@ -247,6 +248,7 @@ const TranscriptPanel = ({
       >
         {paragraphs.map((paragraph) => {
           const color = getSpeakerColor(paragraph.speakerId, speakerIds);
+          const paragraphRange = getParagraphRange(paragraph);
           const isPlaybackParagraph = transcriptHighlight?.paragraphId === paragraph.id;
           const highlightSegmentIds = new Set(transcriptHighlight?.segmentIds ?? []);
           const isKeywordMatch = matchParagraphIds.includes(paragraph.id);
@@ -338,12 +340,14 @@ const TranscriptPanel = ({
               onDoubleClick={(event) => handleParagraphDoubleClick(event, paragraph)}
             >
               <div className="slice-editor-paragraph-head">
-                <span className="slice-editor-speaker" style={{ color }}>
-                  {paragraph.speakerName}
-                </span>
-                <span className="slice-editor-paragraph-time">
-                  {getParagraphRange(paragraph).start.toFixed(1)}s
-                </span>
+                <div className="slice-editor-paragraph-head-main">
+                  <span className="slice-editor-speaker" style={{ color }}>
+                    {paragraph.speakerName}
+                  </span>
+                  <span className="slice-editor-paragraph-time">
+                    {formatSliceTime(paragraphRange.start)} - {formatSliceTime(paragraphRange.end)}
+                  </span>
+                </div>
               </div>
               <div
                 className="slice-editor-paragraph-text"

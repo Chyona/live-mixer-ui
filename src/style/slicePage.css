@@ -535,6 +535,13 @@
   margin-bottom: 6px;
 }
 
+.slice-editor-paragraph-head-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .slice-editor-speaker {
   font-size: 12px;
   font-weight: 600;
@@ -999,6 +1006,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.7;
+  text-indent: 2em;
   user-select: text;
   cursor: text;
 }
@@ -1196,7 +1204,7 @@
 .slice-editor-preview-modal {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
   gap: 12px;
   /* 勿拉高左侧，否则控制条下方会出现大块黑底空白 */
   align-items: start;
