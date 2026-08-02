@@ -552,7 +552,7 @@ const SourceVideosPage = () => {
   const asrHitExpandedRowKeys = useMemo(
     () =>
       list
-        .filter((item) => (item.asr_hits?.length ?? 0) > 0)
+        .filter((item) => (item.matched_paragraphs?.length ?? 0) > 0)
         .map((item) => item.id),
     [list]
   );
@@ -619,9 +619,12 @@ const SourceVideosPage = () => {
         expandable={{
           showExpandColumn: false,
           expandedRowKeys: asrHitExpandedRowKeys,
-          rowExpandable: (record) => (record.asr_hits?.length ?? 0) > 0,
+          rowExpandable: (record) => (record.matched_paragraphs?.length ?? 0) > 0,
           expandedRowRender: (record) => (
-            <AsrHitsPanel hits={record.asr_hits ?? []} keywords={asrHitKeywords} />
+            <AsrHitsPanel
+              paragraphs={record.matched_paragraphs ?? []}
+              keywords={asrHitKeywords}
+            />
           ),
         }}
         empty={

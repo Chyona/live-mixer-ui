@@ -1,21 +1,22 @@
+import type { LiveAsrSegment } from '~/services/sourceVideo.model';
 import { highlightListKeywords } from '~/utils/listKeywords';
 
 interface AsrHitsPanelProps {
-  hits: string[];
+  paragraphs: LiveAsrSegment[];
   keywords: string[];
 }
 
-const AsrHitsPanel = ({ hits, keywords }: AsrHitsPanelProps) => {
-  if (!hits.length) return null;
+const AsrHitsPanel = ({ paragraphs, keywords }: AsrHitsPanelProps) => {
+  if (!paragraphs.length) return null;
 
   return (
     <div className="source-videos-asr-hits">
-      {hits.map((sentence, index) => (
+      {paragraphs.map((paragraph, index) => (
         <p
-          key={`${index}-${sentence.slice(0, 24)}`}
+          key={`${paragraph.start_time}-${paragraph.end_time}-${index}`}
           className="source-videos-asr-hits__line"
           dangerouslySetInnerHTML={{
-            __html: highlightListKeywords(sentence, keywords),
+            __html: highlightListKeywords(paragraph.text, keywords),
           }}
         />
       ))}

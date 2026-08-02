@@ -45,10 +45,10 @@ export interface SourceVideo {
   /** 关联的剪辑项目数量 */
   project_count: number;
   /**
-   * 列表按 asr_keyword 搜索时返回的命中语句（含关键词的原文句）。
-   * 无文案搜索时通常为空或不返回。
+   * 列表按 asr_keyword 搜索时返回的命中段落（视频文案正文）。
+   * 无文案搜索时通常为空或不返回。时间单位为 ms。
    */
-  asr_hits?: string[] | null;
+  matched_paragraphs?: LiveAsrSegment[] | null;
   /** 详情接口返回的 ASR 文案分段；列表接口通常不带此字段。时间单位为 ms */
   asr_paragraphs?: AsrParagraphs | null;
   /** 详情接口返回的 ASR 摘要选区；无 clips0 时用于填充时间轴 */

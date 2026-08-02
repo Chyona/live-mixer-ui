@@ -16,7 +16,7 @@ import { countSliceProjectsBySourceVideoId } from './sliceProjectStore';
 
 type MockSourceVideo = Omit<
   SourceVideo,
-  'project_count' | 'asr_hits' | 'asr_paragraphs' | 'asr_summaries'
+  'project_count' | 'matched_paragraphs' | 'asr_paragraphs' | 'asr_summaries'
 > & {
   ownerId: string;
   /** 节流 ASR 推进，避免列表轮询几秒内全部跑完 */
@@ -169,16 +169,20 @@ function toPublicItem(item: MockSourceVideo): SourceVideo {
   return {
     ...rest,
     project_count: countSliceProjectsBySourceVideoId(item.id),
-    asr_hits: null,
+    matched_paragraphs: null,
     asr_paragraphs: null,
     asr_summaries: null,
   };
 }
 
-/** 收集含任一 asr 关键词的原文句，供列表命中展示 */
-function collectAsrHits(sourceVideoId: string | number, asrKeywords: string[], max = 12): string[] {
+/** 收集含任一 asr 关键词的命中段落，字段对齐接口 matched_paragraphs */
+function collectMatchedParagraphs(
+  sourceVideoId: string | number,
+  asrKeywords: string[],
+  max = 12
+): SourceVideo['matched_paragraphs'] {
   if (!asrKeywords.length) return [];
-  const hits: string[] = [];
+  const hits: NonNullable<SourceVideo['matched_paragraphs']> = [];
   const seen = new Set<string>();
 
   for (const segment of getTranscript(String(sourceVideoId))) {
@@ -186,7 +190,12 @@ function collectAsrHits(sourceVideoId: string | number, asrKeywords: string[], m
     if (!text || seen.has(text)) continue;
     if (!matchAnyListKeyword(text, asrKeywords)) continue;
     seen.add(text);
-    hits.push(text);
+    hits.push({
+      speaker: segment.speaker,
+      start_time: segment.start_time,
+      end_time: segment.end_time,
+      text,
+    });
     if (hits.length >= max) break;
   }
 
@@ -333,7 +342,7 @@ export default [
             }
             return {
               ...publicItem,
-              asr_hits: collectAsrHits(item.id, asrKeywords),
+              matched_paragraphs: collectMatchedParagraphs(item.id, asrKeywords),
             };
           }),
           total: filtered.length,

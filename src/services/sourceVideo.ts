@@ -119,19 +119,25 @@ function normalizeAsrSummaries(raw: unknown): SourceVideo['asr_summaries'] {
   return list.length ? list : [];
 }
 
-function normalizeAsrHits(raw: unknown): string[] | null {
+function normalizeMatchedParagraphs(raw: unknown): SourceVideo['matched_paragraphs'] {
   if (!Array.isArray(raw)) return null;
-  const hits = raw
+  const list = raw
     .map((item) => {
-      if (typeof item === 'string') return item.trim();
-      if (item && typeof item === 'object') {
-        const text = String((item as { text?: unknown }).text ?? '').trim();
-        return text;
-      }
-      return '';
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const text = String(row.text ?? '').trim();
+      if (!text) return null;
+      const start = Number(row.start_time);
+      const end = Number(row.end_time);
+      return {
+        speaker: String(row.speaker ?? ''),
+        start_time: Number.isFinite(start) ? start : 0,
+        end_time: Number.isFinite(end) ? end : 0,
+        text,
+      };
     })
-    .filter(Boolean);
-  return hits.length ? hits : [];
+    .filter((item): item is NonNullable<typeof item> => item != null);
+  return list.length ? list : [];
 }
 
 export function normalizeSourceVideo(
@@ -153,7 +159,9 @@ export function normalizeSourceVideo(
     updated_at: String(raw.updated_at ?? ''),
     created_by: String(raw.created_by ?? ''),
     project_count: normalizeProjectCount(raw),
-    asr_hits: normalizeAsrHits(raw.asr_hits ?? raw.asrHits),
+    matched_paragraphs: normalizeMatchedParagraphs(
+      raw.matched_paragraphs ?? raw.matchedParagraphs
+    ),
     asr_paragraphs: (raw.asr_paragraphs as SourceVideo['asr_paragraphs']) ?? null,
     asr_summaries: normalizeAsrSummaries(raw.asr_summaries),
   };
