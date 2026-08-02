@@ -34,9 +34,10 @@ import { showAppError, showScopedError, handleRequestError, toast } from '~/util
 const SOURCE_VIDEOS_LIST_ERROR_SCOPE = 'source-videos-list';
 /** ASR 进行中时列表静默刷新间隔（秒） */
 const ASR_POLL_INTERVAL_MS = 2 * 1000;
-const SOURCE_VIDEOS_COLUMN_STORAGE_KEY = 'source-videos-table-columns-v3';
+/** v4：默认展示创建时间（旧缓存可能不含该列） */
+const SOURCE_VIDEOS_COLUMN_STORAGE_KEY = 'source-videos-table-columns-v4';
 const SOURCE_VIDEOS_LOCKED_COLUMN_KEYS = ['name', 'actions'];
-/** 默认隐藏：ASR 开始/完成时间 */
+/** 默认隐藏：ASR 开始/完成时间；创建时间默认展示 */
 const SOURCE_VIDEOS_DEFAULT_HIDDEN_COLUMN_KEYS = ['asr_started_at', 'asr_updated_at'];
 
 const SOURCE_VIDEOS_COLUMN_SETTINGS: TableColumnSettingItem[] = [

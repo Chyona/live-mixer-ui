@@ -917,12 +917,13 @@ export function isTranscriptRangeSelected(
 
   const EPS = 1e-3;
   return selectedRanges.some((range) => {
-    // ASR 末尾字/标点常见 start===end；按点是否落在选区内判断
+    // ASR 末尾字/标点常见 start===end；点落在半开区间 [start, end)
+    // 避免下一段起点/首字标点（恰等于 end）被误高亮而「超出」
     if (!(end > start)) {
-      return start >= range.start - EPS && start <= range.end + EPS;
+      return start >= range.start - EPS && start < range.end;
     }
-    // 正常区间重叠；两侧放宽 EPS，避免边界字被裁掉
-    return start < range.end + EPS && range.start < end + EPS;
+    // 正长度区间同样按半开 [start, end)
+    return start < range.end && range.start < end;
   });
 }
 

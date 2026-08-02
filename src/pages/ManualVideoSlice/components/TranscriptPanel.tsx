@@ -277,21 +277,24 @@ const TranscriptPanel = ({
               } else if (useWordHighlight) {
                 // 以完整句段文本为准对齐 words，避免 ASR 未给标点时「，。」等消失
                 const tokens = alignWordsToTranscriptText(segment.text, words);
-                inner = tokens.map((token, tokenIndex) => {
-                  const tokenSelected = isTranscriptRangeSelected(
-                    token.start,
-                    token.end,
-                    selectedOriginRanges
-                  );
-                  return (
-                    <span
-                      key={`${segment.id}-t-${tokenIndex}`}
-                      className={tokenSelected ? 'segment-selected' : undefined}
-                    >
-                      {token.text}
-                    </span>
-                  );
-                });
+                inner =
+                  tokens.length > 0
+                    ? tokens.map((token, tokenIndex) => {
+                        const tokenSelected = isTranscriptRangeSelected(
+                          token.start,
+                          token.end,
+                          selectedOriginRanges
+                        );
+                        return (
+                          <span
+                            key={`${segment.id}-t-${tokenIndex}`}
+                            className={tokenSelected ? 'segment-selected' : undefined}
+                          >
+                            {token.text}
+                          </span>
+                        );
+                      })
+                    : segment.text;
               } else {
                 inner = segment.text;
               }
