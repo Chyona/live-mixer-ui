@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Descriptions, Drawer, Progress, Typography } from 'antd';
-import { LuX } from 'react-icons/lu';
+import { Button, Descriptions, Drawer, Progress, Typography } from 'antd';
+import { LuDownload, LuPackage, LuX } from 'react-icons/lu';
 
-import type { ClipTaskItem } from '~/services/task';
+import { AppError } from '~/services/http';
+import {
+  downloadTaskClipsTar,
+  downloadTaskVideo,
+  type ClipTaskItem,
+} from '~/services/task';
 import { formatToDateTime } from '~/utils/date';
+import { showAppError, toast } from '~/utils/toast';
 import {
   getClipTaskAspectRatio,
   getClipTaskDisplayName,
@@ -18,43 +24,30 @@ interface ClipTaskDetailModalProps {
   onClose: () => void;
 }
 
+type DetailDownloadAction = 'video' | 'clips-tar';
+
 function EmptyValue() {
   return <span className="tasks-error-empty">-</span>;
 }
 
-function isHttpUrl(url: string) {
-  return /^https?:\/\//i.test(url);
-}
-
-function CopyableUrl({ url, linkable = false }: { url: string; linkable?: boolean }) {
+function CopyableUrl({ url }: { url: string }) {
   const text = url.trim();
   if (!text) return <EmptyValue />;
 
-  const content =
-    linkable && isHttpUrl(text) ? (
-      <a
-        className="tasks-detail-link"
-        href={text}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {text}
-      </a>
-    ) : (
-      text
-    );
-
   return (
     <Typography.Paragraph className="tasks-detail-draft" copyable={{ text }}>
-      {content}
+      {text}
     </Typography.Paragraph>
   );
 }
 
 const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) => {
   const [promptOpen, setPromptOpen] = useState(false);
+  const [downloadAction, setDownloadAction] = useState<DetailDownloadAction | null>(null);
   const draftUrl = task?.draft_url?.trim() || '';
   const liveUrl = task?.live_url?.trim() || '';
+  const videoUrl = task?.video_url?.trim() || '';
+  const clipsTarUrl = task?.clips_tar_url?.trim() || '';
   const errorMessage = task?.error_message?.trim() || '';
   const sysPrompt = task?.sys_prompt?.trim() || '';
   const projectName = task ? getClipTaskDisplayName(task) : '';
@@ -66,12 +59,38 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
   const progressStatus = isCompleted ? 'success' : isFailed ? 'exception' : 'normal';
 
   useEffect(() => {
-    if (!open) setPromptOpen(false);
+    if (!open) {
+      setPromptOpen(false);
+      setDownloadAction(null);
+    }
   }, [open]);
 
   const handleClose = () => {
     setPromptOpen(false);
     onClose();
+  };
+
+  const handleDownload = async (action: DetailDownloadAction) => {
+    if (!task) return;
+    const label = action === 'video' ? '视频' : '视频片段压缩包';
+    setDownloadAction(action);
+    toast.notify.info(`正在下载 ${label}，请稍候…`);
+
+    try {
+      if (action === 'video') {
+        await downloadTaskVideo(task);
+      } else {
+        await downloadTaskClipsTar(task);
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        showAppError(error);
+      } else {
+        toast.notify.error(error instanceof Error ? error.message : `${label}下载失败`);
+      }
+    } finally {
+      setDownloadAction((current) => (current === action ? null : current));
+    }
   };
 
   return (
@@ -194,6 +213,34 @@ const ClipTaskDetailModal = ({ open, task, onClose }: ClipTaskDetailModalProps) 
                 </Descriptions.Item>
                 <Descriptions.Item label="草稿地址">
                   <CopyableUrl url={draftUrl} />
+                </Descriptions.Item>
+                <Descriptions.Item label="视频下载">
+                  <Button
+                    type="link"
+                    size="small"
+                    className="tasks-detail-download-btn"
+                    icon={<LuDownload size={14} />}
+                    disabled={!videoUrl || (Boolean(downloadAction) && downloadAction !== 'video')}
+                    loading={downloadAction === 'video'}
+                    onClick={() => void handleDownload('video')}
+                  >
+                    下载视频
+                  </Button>
+                </Descriptions.Item>
+                <Descriptions.Item label="片段下载">
+                  <Button
+                    type="link"
+                    size="small"
+                    className="tasks-detail-download-btn"
+                    icon={<LuPackage size={14} />}
+                    disabled={
+                      !clipsTarUrl || (Boolean(downloadAction) && downloadAction !== 'clips-tar')
+                    }
+                    loading={downloadAction === 'clips-tar'}
+                    onClick={() => void handleDownload('clips-tar')}
+                  >
+                    下载片段
+                  </Button>
                 </Descriptions.Item>
               </Descriptions>
             </div>

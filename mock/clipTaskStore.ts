@@ -425,6 +425,11 @@ export function toPublicClipTask(task: StoredClipTask) {
       : task.status === 'running'
         ? 'processing'
         : task.status;
+  const videoUrl = task.videoUrls[0] || '';
+  const clipsTarUrl =
+    status === 'completed' && videoUrl
+      ? `https://mock.example.com/clips/${task.taskId}.tar`
+      : '';
   const ext = {
     live_id: Number(task.sourceVideoId.replace(/\D/g, '')) || 0,
     live_name: task.sourceVideoName || '',
@@ -432,6 +437,8 @@ export function toPublicClipTask(task: StoredClipTask) {
     sys_prompt_id: 0,
     target_duration_ms: 60000,
     draft_url: task.draftUrls[0] || '',
+    video_url: videoUrl,
+    clips_tar_url: clipsTarUrl,
   };
 
   return {
@@ -443,8 +450,10 @@ export function toPublicClipTask(task: StoredClipTask) {
     usr_prompt: task.taskType === 'ai_slice' || task.taskType === 'ai_slice_select' ? '请按高光片段剪辑' : '',
     video_project_name: task.clipName,
     live_name: task.sourceVideoName || '',
-    live_url: task.m3u8Url || task.videoUrls[0] || '',
+    live_url: task.m3u8Url || videoUrl || '',
     draft_url: task.draftUrls[0] || '',
+    video_url: videoUrl,
+    clips_tar_url: clipsTarUrl,
     width: 1080,
     height: 1920,
     created_by: '管理员',

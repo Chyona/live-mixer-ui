@@ -1,10 +1,17 @@
+import axios from 'axios';
+
+import { apiPath } from '~/utils/api';
+
 import type { BaseResponse } from './types';
-import { request } from './http';
+import { AppError, request } from './http';
 
 export type ClipTaskItemStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /** 任务类型 */
 export type GenerationTaskType = 'ai_slice' | 'draft' | 'ai_slice_draft' | (string & {});
+
+/** 大文件下载超时（合成视频 / 片段压缩包） */
+const TASK_DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 
 /** ext 字段解析结果 */
 export interface ClipTaskExt {
@@ -16,6 +23,9 @@ export interface ClipTaskExt {
   draft_url?: string;
   draft_urls?: string[];
   live_url?: string;
+  video_url?: string;
+  video_urls?: string[];
+  clips_tar_url?: string;
 }
 
 /**
@@ -38,6 +48,10 @@ export interface ClipTaskItem {
   live_url: string;
   /** 草稿地址（一键成片 / 生成草稿） */
   draft_url: string;
+  /** 合成后的视频地址 */
+  video_url: string;
+  /** 全部视频片段压缩包地址 */
+  clips_tar_url: string;
   /** 视频宽度（像素） */
   width?: number;
   /** 视频高度（像素） */
@@ -91,9 +105,8 @@ function resolveLiveUrl(
   raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined,
   ext: ClipTaskExt
 ): string {
-  const topLevel = String(
-    raw?.live_url ?? (raw as { video_url?: string })?.video_url ?? ''
-  ).trim();
+  // 不再回退到 video_url：该字段表示合成视频，与源视频 live_url 区分
+  const topLevel = String(raw?.live_url ?? '').trim();
   if (topLevel) return topLevel;
   if (ext.live_url?.trim()) return ext.live_url.trim();
   return '';
@@ -120,6 +133,180 @@ function resolveDraftUrl(
   }
 
   return '';
+}
+
+function resolveVideoUrl(
+  raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined,
+  ext: ClipTaskExt
+): string {
+  const topLevel = String(raw?.video_url ?? '').trim();
+  if (topLevel) return topLevel;
+
+  const videoUrls = raw?.video_urls;
+  if (Array.isArray(videoUrls) && videoUrls.length > 0) {
+    const first = String(videoUrls[0] ?? '').trim();
+    if (first) return first;
+  }
+
+  if (ext.video_url?.trim()) return ext.video_url.trim();
+  if (Array.isArray(ext.video_urls) && ext.video_urls[0]?.trim()) {
+    return ext.video_urls[0].trim();
+  }
+
+  return '';
+}
+
+function resolveClipsTarUrl(
+  raw: (Partial<ClipTaskItem> & Record<string, unknown>) | null | undefined,
+  ext: ClipTaskExt
+): string {
+  const topLevel = String(
+    raw?.clips_tar_url ??
+      (raw as { clips_zip_url?: string })?.clips_zip_url ??
+      (raw as { video_clips_tar_url?: string })?.video_clips_tar_url ??
+      (raw as { segments_tar_url?: string })?.segments_tar_url ??
+      ''
+  ).trim();
+  if (topLevel) return topLevel;
+  if (ext.clips_tar_url?.trim()) return ext.clips_tar_url.trim();
+  return '';
+}
+
+function parseContentDispositionFilename(header?: string): string | null {
+  if (!header) return null;
+
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim());
+    } catch {
+      return utf8Match[1].trim();
+    }
+  }
+
+  const plainMatch = /filename="?([^";]+)"?/i.exec(header);
+  return plainMatch?.[1]?.trim() || null;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
+function triggerUrlDownload(url: string, filename: string) {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+async function resolveBlobErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (!(error instanceof AppError)) {
+    return fallback;
+  }
+
+  const data = error.resp?.response?.data;
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      const payload = JSON.parse(text) as { message?: string; errorMessage?: string };
+      if (payload.message) return payload.message;
+      if (payload.errorMessage) return payload.errorMessage;
+    } catch {
+      // ignore parse failure
+    }
+  }
+
+  return error.errorMessage || fallback;
+}
+
+async function downloadRemoteFile(url: string, filename: string): Promise<void> {
+  try {
+    const response = await axios.request<Blob>({
+      url,
+      method: 'get',
+      responseType: 'blob',
+      timeout: TASK_DOWNLOAD_TIMEOUT_MS,
+    });
+    const blob = response.data;
+    if (!blob || blob.size === 0) {
+      throw new Error('下载文件为空');
+    }
+    const resolvedName =
+      parseContentDispositionFilename(response.headers['content-disposition']) || filename;
+    triggerBlobDownload(blob, resolvedName);
+  } catch {
+    // 跨域或直链场景：回退为浏览器打开/下载
+    triggerUrlDownload(url, filename);
+  }
+}
+
+async function downloadTaskBlob(path: string, fallbackFilename: string, fallbackError: string) {
+  try {
+    const response = await axios.request<Blob>({
+      url: apiPath(path),
+      method: 'get',
+      responseType: 'blob',
+      timeout: TASK_DOWNLOAD_TIMEOUT_MS,
+    });
+
+    const blob = response.data;
+    if (!blob || blob.size === 0) {
+      throw new Error(fallbackError);
+    }
+
+    // 兼容接口返回 JSON：{ code, data: { url } }
+    if (blob.type.includes('application/json') || blob.type.includes('text/')) {
+      try {
+        const payload = JSON.parse(await blob.text()) as {
+          code?: number;
+          message?: string;
+          data?: { url?: string } | string | null;
+        };
+        if (payload.code != null && payload.code !== 0) {
+          throw new Error(payload.message || fallbackError);
+        }
+        const url =
+          typeof payload.data === 'string'
+            ? payload.data.trim()
+            : String(payload.data?.url ?? '').trim();
+        if (!url) {
+          throw new Error(fallbackError);
+        }
+        await downloadRemoteFile(url, fallbackFilename);
+        return;
+      } catch (error) {
+        if (error instanceof Error) throw error;
+        throw new Error(fallbackError);
+      }
+    }
+
+    const filename =
+      parseContentDispositionFilename(response.headers['content-disposition']) || fallbackFilename;
+    triggerBlobDownload(blob, filename);
+  } catch (error) {
+    if (error instanceof Error && (error.message === fallbackError || error.message === '下载文件为空')) {
+      throw error;
+    }
+    const message = await resolveBlobErrorMessage(error, fallbackError);
+    if (error instanceof AppError) {
+      throw new AppError(message, error.errorCode, error.resp);
+    }
+    throw new Error(message);
+  }
+}
+
+function sanitizeDownloadFilename(name: string, fallback: string) {
+  const trimmed = name.trim() || fallback;
+  return trimmed.replace(/[\\/:*?"<>|]+/g, '_');
 }
 
 function resolveLiveName(
@@ -173,6 +360,8 @@ export function normalizeClipTaskItem(raw: Partial<ClipTaskItem> | null | undefi
     live_name: resolveLiveName(rawRecord, parsedExt),
     live_url: resolveLiveUrl(rawRecord, parsedExt),
     draft_url: resolveDraftUrl(rawRecord),
+    video_url: resolveVideoUrl(rawRecord, parsedExt),
+    clips_tar_url: resolveClipsTarUrl(rawRecord, parsedExt),
     width: Number(raw?.width) > 0 ? Number(raw?.width) : undefined,
     height: Number(raw?.height) > 0 ? Number(raw?.height) : undefined,
     created_by: String(raw?.created_by ?? ''),
@@ -225,4 +414,47 @@ export async function deleteClipTask(taskId: string): Promise<BaseResponse<null>
   return await request(`/v1/tasks/${taskId}`, {
     method: 'delete',
   });
+}
+
+/** 下载任务合成视频（优先接口文件流，其次任务上的 video_url） */
+export async function downloadTaskVideo(
+  task: Pick<ClipTaskItem, 'id' | 'video_url' | 'video_project_name'>
+): Promise<void> {
+  const filename = `${sanitizeDownloadFilename(task.video_project_name, task.id)}-合成视频.mp4`;
+  const directUrl = task.video_url?.trim();
+
+  try {
+    await downloadTaskBlob(`/v1/tasks/${task.id}/video`, filename, '暂无合成视频');
+    return;
+  } catch (error) {
+    if (directUrl) {
+      await downloadRemoteFile(directUrl, filename);
+      return;
+    }
+    throw error instanceof Error ? error : new Error('视频下载失败');
+  }
+}
+
+/** 下载任务全部视频片段压缩包 */
+export async function downloadTaskClipsTar(
+  task: Pick<ClipTaskItem, 'id' | 'clips_tar_url' | 'video_project_name'>
+): Promise<void> {
+  const filename = `${sanitizeDownloadFilename(task.video_project_name, task.id)}-视频片段.tar`;
+  const directUrl = task.clips_tar_url?.trim();
+
+  try {
+    await downloadTaskBlob(`/v1/tasks/${task.id}/clips-tar`, filename, '暂无视频片段压缩包');
+    return;
+  } catch (error) {
+    if (directUrl) {
+      await downloadRemoteFile(directUrl, filename);
+      return;
+    }
+    throw error instanceof Error ? error : new Error('视频片段下载失败');
+  }
+}
+
+export function canDownloadTaskOutputs(task: Pick<ClipTaskItem, 'status' | 'type'>) {
+  if (task.status !== 'completed') return false;
+  return task.type === 'draft' || task.type === 'ai_slice_draft';
 }

@@ -10,6 +10,14 @@ import {
 } from './clipTaskStore';
 import { getSliceProject } from './sliceProjectStore';
 
+function findTaskById(id: string) {
+  return (
+    clipTaskStore.find((item) => item.taskId === id) ??
+    clipTaskStore.find((item) => String(Number(item.taskId.replace(/\D/g, '')) || '') === id) ??
+    null
+  );
+}
+
 function filterClipTasks(query: Record<string, string | string[] | undefined>) {
   const startDate =
     typeof query.start_date === 'string'
@@ -85,15 +93,44 @@ export default [
     url: `${API_PREFIX}/v1/tasks/:id`,
     method: 'get',
     response: ({ query }: { query: { id: string } }) => {
-      const task =
-        clipTaskStore.find((item) => item.taskId === query.id) ??
-        clipTaskStore.find(
-          (item) => String(Number(item.taskId.replace(/\D/g, '')) || '') === query.id
-        );
+      const task = findTaskById(query.id);
       if (!task) {
         return { code: 404, message: '任务不存在', data: null };
       }
       return { code: 0, message: '', data: toPublicClipTask(task) };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/tasks/:id/video`,
+    method: 'get',
+    response: ({ query }: { query: { id: string } }) => {
+      const task = findTaskById(query.id);
+      if (!task) {
+        return { code: 404, message: '任务不存在', data: null };
+      }
+      const url = task.videoUrls[0]?.trim() || '';
+      if (!url) {
+        return { code: 404, message: '暂无合成视频', data: null };
+      }
+      return { code: 0, message: '', data: { url } };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/tasks/:id/clips-tar`,
+    method: 'get',
+    response: ({ query }: { query: { id: string } }) => {
+      const task = findTaskById(query.id);
+      if (!task) {
+        return { code: 404, message: '任务不存在', data: null };
+      }
+      if (task.status !== 'success' || !task.videoUrls[0]) {
+        return { code: 404, message: '暂无视频片段压缩包', data: null };
+      }
+      return {
+        code: 0,
+        message: '',
+        data: { url: `https://mock.example.com/clips/${task.taskId}.tar` },
+      };
     },
   },
   {

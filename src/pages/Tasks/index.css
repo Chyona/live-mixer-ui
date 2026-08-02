@@ -308,6 +308,16 @@
   margin-bottom: 0;
 }
 
+.tasks-detail-download-btn {
+  padding-inline: 0;
+  height: auto;
+}
+
+.tasks-detail-download-btn.ant-btn-link:disabled {
+  color: var(--text-gray);
+  opacity: 0.55;
+}
+
 .tasks-detail-draft {
   margin-bottom: 0 !important;
   word-break: break-all;
@@ -383,4 +393,14 @@
   padding: 48px 0;
   text-align: center;
   color: var(--text-gray);
+}
+
+@keyframes tasks-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tasks-action-menu-loading {
+  animation: tasks-action-spin 0.8s linear infinite;
 }
