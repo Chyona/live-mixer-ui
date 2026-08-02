@@ -197,6 +197,14 @@ const SourceVideosPage = () => {
 
   const clearSearch = () => {
     clearKeywordSearch();
+    setAsrKeyword('');
+    setAppliedAsrKeyword('');
+    setPage(1);
+  };
+
+  const clearAsrSearch = () => {
+    setAsrKeyword('');
+    setAppliedAsrKeyword('');
     setPage(1);
   };
 
@@ -529,6 +537,14 @@ const SourceVideosPage = () => {
 
   const hasActiveAdvancedFilters = Boolean(dateRange?.[0] || appliedAsrKeyword);
   const hasActiveFilters = Boolean(appliedKeyword || hasActiveAdvancedFilters);
+  const hasAsrKeyword = Boolean(appliedAsrKeyword.trim());
+  /** 视频文案搜索较慢：有文案条件时请求中展示表格 mask */
+  const tableLoading = loading && (list.length === 0 || hasAsrKeyword);
+  const tableLoadingProp = tableLoading
+    ? hasAsrKeyword
+      ? { spinning: true as const, tip: '正在搜索视频文案，请稍候…' }
+      : true
+    : false;
   const asrHitKeywords = useMemo(
     () => parseListKeywords(appliedAsrKeyword),
     [appliedAsrKeyword]
@@ -579,12 +595,14 @@ const SourceVideosPage = () => {
               </div>
               <div className="list-page__filter-field">
                 <span className="list-page__filter-label">视频文案</span>
-                <Input
+                <Input.Search
                   allowClear
                   placeholder="搜索已解析文案（支持 关键词A+关键词B）"
                   value={asrKeyword}
+                  loading={loading && hasAsrKeyword}
                   onChange={(event) => setAsrKeyword(event.target.value)}
-                  onPressEnter={applySearch}
+                  onSearch={applySearch}
+                  onClear={clearAsrSearch}
                 />
               </div>
             </>
@@ -594,7 +612,7 @@ const SourceVideosPage = () => {
     >
       <ListPageTable<SourceVideo>
         rowKey="id"
-        loading={loading && list.length === 0}
+        loading={tableLoadingProp}
         columns={columns}
         dataSource={list}
         scrollX={1600}

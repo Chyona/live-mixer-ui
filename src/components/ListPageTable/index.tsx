@@ -39,11 +39,16 @@ function ListPageTable<T extends object>({
     compact: compactPagination,
   });
 
+  const isLoading =
+    typeof loading === 'object' && loading !== null
+      ? Boolean((loading as { spinning?: boolean }).spinning)
+      : Boolean(loading);
+
   const wrapClassName = [
     'list-page__table-wrap',
     needScroll ? 'list-page__table-wrap--scrollable' : '',
     compactPagination ? 'list-page__table-wrap--compact-pagination' : '',
-    !loading && (dataSource?.length ?? 0) === 0 ? 'list-page__table-wrap--empty' : '',
+    !isLoading && (dataSource?.length ?? 0) === 0 ? 'list-page__table-wrap--empty' : '',
   ]
     .filter(Boolean)
     .join(' ');
