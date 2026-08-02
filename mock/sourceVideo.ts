@@ -274,19 +274,23 @@ function filterList(query: Record<string, string | string[] | undefined>) {
         ? query.dateEnd
         : undefined;
   const keyword =
-    typeof query.keyword === 'string'
-      ? query.keyword
-      : typeof query.title_keyword === 'string'
-        ? query.title_keyword
-        : undefined;
-  const asrKeyword =
-    typeof query.asr_keyword === 'string'
-      ? query.asr_keyword
-      : typeof query.global_keyword === 'string'
-        ? query.global_keyword
-        : typeof query.globalKeyword === 'string'
-          ? query.globalKeyword
+    typeof query.keywords === 'string'
+      ? query.keywords
+      : typeof query.keyword === 'string'
+        ? query.keyword
+        : typeof query.title_keyword === 'string'
+          ? query.title_keyword
           : undefined;
+  const asrKeyword =
+    typeof query.asr_keywords === 'string'
+      ? query.asr_keywords
+      : typeof query.asr_keyword === 'string'
+        ? query.asr_keyword
+        : typeof query.global_keyword === 'string'
+          ? query.global_keyword
+          : typeof query.globalKeyword === 'string'
+            ? query.globalKeyword
+            : undefined;
   const keywords = parseListKeywords(keyword);
   const asrKeywords = parseListKeywords(asrKeyword);
 
@@ -300,7 +304,7 @@ function filterList(query: Record<string, string | string[] | undefined>) {
     const titleText = `${item.name} ${item.remark}`;
     if (!matchListKeywords(titleText, keywords)) return false;
 
-    // asr_keyword：仅匹配 ASR 解析后的视频文案（未完成解析则无文案可命中）
+    // asr_keywords：仅匹配 ASR 解析后的视频文案（未完成解析则无文案可命中）
     const asrText =
       item.asr_status === 'completed'
         ? getTranscript(String(item.id))
@@ -324,11 +328,13 @@ export default [
       const filtered = filterList(query);
       const start = (page - 1) * pageSize;
       const asrKeywords = parseListKeywords(
-        typeof query.asr_keyword === 'string'
-          ? query.asr_keyword
-          : typeof query.global_keyword === 'string'
-            ? query.global_keyword
-            : undefined
+        typeof query.asr_keywords === 'string'
+          ? query.asr_keywords
+          : typeof query.asr_keyword === 'string'
+            ? query.asr_keyword
+            : typeof query.global_keyword === 'string'
+              ? query.global_keyword
+              : undefined
       );
 
       return {

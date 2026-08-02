@@ -45,7 +45,7 @@ export interface SourceVideo {
   /** 关联的剪辑项目数量 */
   project_count: number;
   /**
-   * 列表按 asr_keyword 搜索时返回的命中段落（视频文案正文）。
+   * 列表按 asr_keywords 搜索时返回的命中段落（视频文案正文）。
    * 无文案搜索时通常为空或不返回。时间单位为 ms。
    */
   matched_paragraphs?: LiveAsrSegment[] | null;

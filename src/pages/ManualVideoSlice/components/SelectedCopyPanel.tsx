@@ -231,10 +231,13 @@ const SelectedCopyPanel = ({
                     type="button"
                     className="slice-editor-ai-item-main"
                     onClick={() => onSeek(aiSegment.start)}
-                    title={`${label} · ${timeLabel}`}
+                    title={`${label}: ${timeLabel}`}
                   >
-                    <span className="slice-editor-ai-item-title">{label}</span>
-                    <span className="slice-editor-ai-item-time">{timeLabel}</span>
+                    <span className="slice-editor-ai-item-label">
+                      <span className="slice-editor-ai-item-title">{label}</span>
+                      <span className="slice-editor-ai-item-sep" aria-hidden>：</span>
+                      <span className="slice-editor-ai-item-time">{timeLabel}</span>
+                    </span>
                   </button>
                   {onAddAiSegment ? (
                     <button

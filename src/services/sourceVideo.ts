@@ -72,9 +72,9 @@ export interface SourceVideoListParams {
   /** 结束日期 YYYY-MM-DD */
   end_date?: string;
   /** 关键词，英文逗号分隔，匹配 name/remark */
-  keyword?: string;
+  keywords?: string;
   /** ASR 文案关键词，英文逗号分隔，匹配已解析的视频文案 */
-  asr_keyword?: string;
+  asr_keywords?: string;
   page?: number;
   /** 每页数量，默认 10 */
   page_size?: number;

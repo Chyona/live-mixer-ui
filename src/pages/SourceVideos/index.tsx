@@ -144,8 +144,8 @@ const SourceVideosPage = () => {
       const response = await fetchSourceVideoList({
         start_date: dateFilters.date,
         end_date: dateFilters.dateEnd,
-        keyword: toApiKeywords(appliedKeyword),
-        asr_keyword: toApiKeywords(appliedAsrKeyword),
+        keywords: toApiKeywords(appliedKeyword),
+        asr_keywords: toApiKeywords(appliedAsrKeyword),
         page,
         page_size: pageSize,
       });
