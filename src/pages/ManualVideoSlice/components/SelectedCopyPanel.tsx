@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Checkbox } from 'antd';
 import {
   LuArrowLeft,
@@ -29,6 +30,15 @@ import { formatVideoDuration } from '~/utils/duration';
 type DropMarker = {
   index: number;
   placement: 'before' | 'after';
+};
+
+type DragGhost = {
+  index: number;
+  x: number;
+  y: number;
+  width: number;
+  offsetX: number;
+  offsetY: number;
 };
 
 function getReorderToIndex(target: DropMarker, length: number) {
@@ -109,6 +119,7 @@ const SelectedCopyPanel = ({
 }: SelectedCopyPanelProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropMarker, setDropMarker] = useState<DropMarker | null>(null);
+  const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
   const dragIndexRef = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const pointerDraggingRef = useRef(false);
@@ -124,12 +135,14 @@ const SelectedCopyPanel = ({
       aiSegments.find((item) => currentTime >= item.start && currentTime < item.end)?.id ?? null
     );
   }, [aiSegments, currentTime]);
+  const draggingSegment = dragIndex != null ? segments[dragIndex] ?? null : null;
 
   const resetDragState = () => {
     pointerDraggingRef.current = false;
     dragIndexRef.current = null;
     setDragIndex(null);
     setDropMarker(null);
+    setDragGhost(null);
   };
 
   const getDropTarget = useCallback((clientY: number): DropMarker | null => {
@@ -174,11 +187,29 @@ const SelectedCopyPanel = ({
     dragIndexRef.current = index;
     setDragIndex(index);
     setDropMarker({ index, placement: 'before' });
+
+    const item = event.currentTarget.closest<HTMLElement>('.slice-editor-copy-item');
+    const rect = item?.getBoundingClientRect();
+    if (rect) {
+      setDragGhost({
+        index,
+        x: event.clientX,
+        y: event.clientY,
+        width: Math.min(rect.width, 360),
+        offsetX: Math.min(Math.max(event.clientX - rect.left, 12), 48),
+        offsetY: Math.min(Math.max(event.clientY - rect.top, 12), 28),
+      });
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handleDragHandlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (!pointerDraggingRef.current || dragIndexRef.current == null) return;
+
+    setDragGhost((prev) =>
+      prev ? { ...prev, x: event.clientX, y: event.clientY } : prev
+    );
 
     const target = getDropTarget(event.clientY);
     if (!target) return;
@@ -594,6 +625,40 @@ const SelectedCopyPanel = ({
             : ''}
         </p>
       ) : null}
+
+      {dragGhost && draggingSegment
+        ? createPortal(
+            <div
+              className="slice-editor-copy-drag-ghost"
+              style={{
+                left: dragGhost.x - dragGhost.offsetX,
+                top: dragGhost.y - dragGhost.offsetY,
+                width: dragGhost.width,
+              }}
+              aria-hidden
+            >
+              <div className="slice-editor-copy-drag-ghost-head">
+                <LuGripVertical size={14} />
+                <span className="slice-editor-copy-index">片段 {dragGhost.index + 1}</span>
+                <span
+                  className="slice-editor-speaker"
+                  style={{ color: getSpeakerColor(draggingSegment.speakerId, speakerIds) }}
+                >
+                  {draggingSegment.speakerName}
+                </span>
+                <span className="slice-editor-copy-time">
+                  {formatSliceTime(draggingSegment.start)} - {formatSliceTime(draggingSegment.end)}
+                </span>
+              </div>
+              <p className="slice-editor-copy-drag-ghost-text">
+                {draggingSegment.text.length > 72
+                  ? `${draggingSegment.text.slice(0, 72)}…`
+                  : draggingSegment.text}
+              </p>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 };
