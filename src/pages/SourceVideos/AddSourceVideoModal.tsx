@@ -2,9 +2,12 @@ import { Button, Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 
 import { AppError } from '~/services/http';
+import type { BaseResponse } from '~/services/types';
 import {
   createSourceVideo,
   isSourceVideoUrlDuplicateError,
+  normalizeSourceVideo,
+  type SourceVideo,
 } from '~/services/sourceVideo';
 import { showAppError, toast } from '~/utils/toast';
 
@@ -18,8 +21,14 @@ interface AddSourceVideoModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  /** URL 已存在时，点击 toast「查看」回调 */
-  onViewExisting?: (liveUrl: string) => void;
+  /** URL 已存在时，点击 toast「查看」：用接口返回的源视频名称搜索 */
+  onViewExisting?: (name: string) => void;
+}
+
+function readDuplicateSourceVideo(data: unknown): SourceVideo | null {
+  if (!data || typeof data !== 'object') return null;
+  const video = normalizeSourceVideo(data as Partial<SourceVideo> & Record<string, unknown>);
+  return video.name.trim() || video.live_url.trim() ? video : null;
 }
 
 const AddSourceVideoModal = ({
@@ -36,40 +45,40 @@ const AddSourceVideoModal = ({
     onClose();
   };
 
-  const showUrlDuplicateToast = (liveUrl: string) => {
-    const key = `source-video-url-exists:${liveUrl}`;
+  const showUrlDuplicateToast = (video: SourceVideo | null) => {
+    const name = video?.name?.trim() || '';
+    const key = `source-video-url-exists:${video?.id || video?.live_url || name || 'unknown'}`;
     toast.notify.warning('直播地址已存在', '该直播地址已添加过，可点击查看', {
       key,
       duration: 8,
-      btn: (
+      btn: name ? (
         <Button
           type="primary"
           size="small"
           onClick={() => {
             toast.notify.destroy(key);
-            onViewExisting?.(liveUrl);
+            onViewExisting?.(name);
           }}
         >
           查看
         </Button>
-      ),
+      ) : undefined,
     });
   };
 
   const handleSubmit = async (values: FormValues) => {
     setSubmitting(true);
-    const liveUrl = values.liveUrl.trim();
 
     try {
       const response = await createSourceVideo({
         name: values.name.trim(),
-        live_url: liveUrl,
+        live_url: values.liveUrl.trim(),
         remark: values.remark?.trim(),
       });
 
       if (response.code !== 0) {
         if (isSourceVideoUrlDuplicateError(response)) {
-          showUrlDuplicateToast(liveUrl);
+          showUrlDuplicateToast(readDuplicateSourceVideo(response.data));
           return;
         }
         toast.notify.error(response.message || '添加失败');
@@ -82,7 +91,8 @@ const AddSourceVideoModal = ({
     } catch (error) {
       if (error instanceof AppError) {
         if (isSourceVideoUrlDuplicateError({ code: error.errorCode })) {
-          showUrlDuplicateToast(liveUrl);
+          const payload = error.resp?.response?.data as BaseResponse<unknown> | undefined;
+          showUrlDuplicateToast(readDuplicateSourceVideo(payload?.data));
           return;
         }
         showAppError(error);

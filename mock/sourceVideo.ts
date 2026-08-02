@@ -294,31 +294,46 @@ export default [
   {
     url: `${API_PREFIX}/v1/live-materials`,
     method: 'post',
-    response: ({
-      body,
-    }: {
-      body: {
-        name?: string;
-        live_url?: string;
-        remark?: string;
-      };
-    }) => {
+    /** 重复 URL 需返回非 2xx，才能被 http 拦截器转为 AppError（与线上一致） */
+    rawResponse: async (req, res) => {
+      let raw = '';
+      await new Promise<void>((resolve) => {
+        req.on('data', (chunk) => {
+          raw += chunk;
+        });
+        req.on('end', () => resolve());
+      });
+
+      let body: { name?: string; live_url?: string; remark?: string } = {};
+      try {
+        body = JSON.parse(raw || '{}') as typeof body;
+      } catch {
+        body = {};
+      }
+
       const name = body?.name?.trim();
       const live_url = body?.live_url?.trim();
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
       if (!name || !live_url) {
-        return { code: 400, message: '请填写完整信息', data: null };
+        res.statusCode = 400;
+        res.end(JSON.stringify({ code: 400, message: '请填写完整信息', data: null }));
+        return;
       }
 
       const duplicatedByUrl = sourceVideos.find(
         (video) => video.ownerId === CURRENT_USER_ID && video.live_url === live_url
       );
       if (duplicatedByUrl) {
-        return {
-          code: SOURCE_VIDEO_URL_DUPLICATE_CODE,
-          message: '直播地址已存在',
-          data: toPublicItem(duplicatedByUrl),
-        };
+        res.statusCode = 409;
+        res.end(
+          JSON.stringify({
+            code: SOURCE_VIDEO_URL_DUPLICATE_CODE,
+            message: '直播地址已存在',
+            data: toPublicItem(duplicatedByUrl),
+          })
+        );
+        return;
       }
 
       const now = nowIso();
@@ -337,8 +352,8 @@ export default [
       };
 
       sourceVideos.unshift(item);
-
-      return { code: 0, message: '', data: toPublicItem(item) };
+      res.statusCode = 200;
+      res.end(JSON.stringify({ code: 0, message: '', data: toPublicItem(item) }));
     },
   },
   {

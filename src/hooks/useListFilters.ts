@@ -28,6 +28,7 @@ export function useListFilters(options?: { initialKeyword?: string }) {
     keyword,
     setKeyword,
     appliedKeyword,
+    setAppliedKeyword,
     applySearch,
     clearSearch,
     dateRange,

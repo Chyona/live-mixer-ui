@@ -94,6 +94,7 @@ const SourceVideosPage = () => {
     keyword,
     setKeyword,
     appliedKeyword,
+    setAppliedKeyword,
     applySearch: applyKeywordSearch,
     clearSearch: clearKeywordSearch,
     dateRange,
@@ -622,11 +623,12 @@ const SourceVideosPage = () => {
             void loadList();
           }
         }}
-        onViewExisting={(liveUrl) => {
+        onViewExisting={(name) => {
           setAddOpen(false);
-          clearKeywordSearch();
-          setGlobalKeyword(liveUrl);
-          setAppliedGlobalKeyword(liveUrl);
+          setGlobalKeyword('');
+          setAppliedGlobalKeyword('');
+          setKeyword(name);
+          setAppliedKeyword(name);
           setPage(1);
         }}
       />
