@@ -45,10 +45,10 @@ const AddSourceVideoModal = ({
     onClose();
   };
 
-  const showUrlDuplicateToast = (video: SourceVideo | null) => {
+  const showUrlDuplicateToast = (video: SourceVideo | null, message?: string) => {
     const name = video?.name?.trim() || '';
     const key = `source-video-url-exists:${video?.id || video?.live_url || name || 'unknown'}`;
-    toast.notify.warning('直播地址已存在', '该直播地址已添加过，可点击查看', {
+    toast.notify.warning(message || '直播地址已存在', '可点击查看', {
       key,
       duration: 8,
       btn: name ? (
@@ -78,7 +78,7 @@ const AddSourceVideoModal = ({
 
       if (response.code !== 0) {
         if (isSourceVideoUrlDuplicateError(response)) {
-          showUrlDuplicateToast(readDuplicateSourceVideo(response.data));
+          showUrlDuplicateToast(readDuplicateSourceVideo(response.data), response.message);
           return;
         }
         toast.notify.error(response.message || '添加失败');
@@ -92,7 +92,7 @@ const AddSourceVideoModal = ({
       if (error instanceof AppError) {
         if (isSourceVideoUrlDuplicateError({ code: error.errorCode })) {
           const payload = error.resp?.response?.data as BaseResponse<unknown> | undefined;
-          showUrlDuplicateToast(readDuplicateSourceVideo(payload?.data));
+          showUrlDuplicateToast(readDuplicateSourceVideo(payload?.data), payload?.message);
           return;
         }
         showAppError(error);

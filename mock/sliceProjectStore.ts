@@ -185,15 +185,6 @@ export function countSliceProjectsBySourceVideoId(sourceVideoId: string | number
   return listSliceProjects().filter((item) => item.sourceVideoId === id).length;
 }
 
-export function updateSliceProjectName(projectIdOrSourceVideoId: string, projectName: string) {
-  const project = getSliceProject(projectIdOrSourceVideoId);
-  if (!project) return null;
-
-  project.projectName = projectName;
-  project.updatedAt = new Date().toISOString();
-  return project;
-}
-
 export function deleteSliceProjectRecord(projectIdOrSourceVideoId: string) {
   const project = getSliceProject(projectIdOrSourceVideoId);
   if (!project) return false;

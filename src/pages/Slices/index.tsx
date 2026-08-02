@@ -19,7 +19,6 @@ import {
   getSliceProjectSegmentCount,
   getSliceProjectAspectRatio,
   updateSliceProject,
-  updateSliceProjectName,
   type SliceProject,
 } from '~/services/sliceProject';
 import { formatToDateTime } from '~/utils/date';
@@ -124,7 +123,7 @@ const SlicesPage = () => {
 
   const handleProjectNameSave = async (id: number, name: string) => {
     try {
-      const response = await updateSliceProjectName(id, name);
+      const response = await updateSliceProject(id, { name });
       if (response.code !== 0) {
         toast.notify.error(response.message || '项目名称保存失败');
         throw new Error(response.message || '项目名称保存失败');

@@ -8,7 +8,6 @@ import {
   listSliceProjects,
   saveSliceProjectRecord,
   toPublicSliceProject,
-  updateSliceProjectName,
   deleteSliceProjectRecord,
   type SliceProjectRecord,
 } from './sliceProjectStore';
@@ -237,23 +236,6 @@ export default [
         message: '',
         data: toPublicSliceProjectWithTaskCount(project),
       };
-    },
-  },
-  {
-    url: `${API_PREFIX}/v1/video-projects/:id/name`,
-    method: 'put',
-    response: ({ body, query }: { body: { name?: string; projectName?: string }; query: { id: string } }) => {
-      const projectName = (body?.name ?? body?.projectName)?.trim();
-      if (!projectName) {
-        return { code: 400, message: '项目名称不能为空', data: null };
-      }
-
-      const project = updateSliceProjectName(query.id, projectName);
-      if (!project) {
-        return { code: 404, message: '剪辑项目不存在', data: null };
-      }
-
-      return { code: 0, message: '', data: toPublicSliceProjectWithTaskCount(project) };
     },
   },
   {

@@ -277,22 +277,6 @@ export async function updateSliceProject(
   };
 }
 
-/** 按项目 id 更新名称 */
-export async function updateSliceProjectName(
-  projectId: string | number,
-  name: string
-): Promise<BaseResponse<SliceProject>> {
-  const response = await request<BaseResponse<SliceProject>>(`/v1/video-projects/${projectId}/name`, {
-    method: 'put',
-    data: { name },
-  });
-
-  return {
-    ...response,
-    data: normalizeSliceProject(response.data),
-  };
-}
-
 /** 按项目 id 删除 */
 export async function deleteSliceProject(
   projectId: string | number
