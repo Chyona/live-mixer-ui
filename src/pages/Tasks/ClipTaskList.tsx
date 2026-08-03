@@ -24,6 +24,7 @@ import {
   copyTextToClipboard,
   getClipTaskDisplayName,
   getClipTaskLiveName,
+  getClipTaskStatusLabel,
   getGenerationTaskTypeLabel,
 } from './utils';
 
@@ -136,6 +137,18 @@ function ClipTaskList({
           if (!name) return <span className="tasks-error-empty">-</span>;
           return <EllipsisTooltip text={name} className="tasks-cell-ellipsis" />;
         },
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status: ClipTaskItem['status']) => (
+          <span className={`tasks-status tasks-status_${status}`}>
+            <span className="tasks-status-dot" aria-hidden />
+            {getClipTaskStatusLabel(status)}
+          </span>
+        ),
       },
       {
         title: '进度',
@@ -255,7 +268,7 @@ function ClipTaskList({
         loading={loading}
         columns={columns}
         dataSource={tasks}
-        scrollX={1220}
+        scrollX={1330}
         empty={empty}
         pagination={pagination}
         onChange={(nextPagination) => onTableChange(nextPagination)}
