@@ -56,12 +56,14 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      chunkSizeWarningLimit: 1500,
       rollupOptions: {
         treeshake: 'recommended',
         output: {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
             antd: ['antd', '@ant-design/icons'],
+            hls: ['hls.js'],
           },
         },
       },

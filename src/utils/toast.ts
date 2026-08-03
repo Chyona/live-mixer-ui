@@ -2,6 +2,7 @@ import { message as staticMessage, notification as staticNotification } from 'an
 import type { MessageInstance } from 'antd/es/message/interface';
 import type { NotificationInstance } from 'antd/es/notification/interface';
 import type { ReactNode } from 'react';
+import { registerSessionExpiredNotifier } from '~/services/authSession';
 import { AppError, isUnauthorizedError } from '~/services/http';
 
 type ToastApis = {
@@ -160,3 +161,7 @@ export function handleRequestError(scope: string, error: unknown, fallbackMessag
   }
   showScopedError(scope, fallbackMessage);
 }
+
+registerSessionExpiredNotifier((title) => {
+  toast.notify.warning(title, undefined, { key: 'session-expired' });
+});

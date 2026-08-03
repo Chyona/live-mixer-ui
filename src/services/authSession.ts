@@ -12,6 +12,14 @@ export function clearAuthSession() {
 
 let handlingSessionExpired = false;
 
+type SessionExpiredNotifier = (message: string) => void;
+let sessionExpiredNotifier: SessionExpiredNotifier | null = null;
+
+/** 由 toast 模块注册，避免 authSession ↔ toast 循环依赖与动态导入告警 */
+export function registerSessionExpiredNotifier(notifier: SessionExpiredNotifier | null) {
+  sessionExpiredNotifier = notifier;
+}
+
 function currentFrom(): LoginFrom {
   return {
     pathname: window.location.pathname,
@@ -22,10 +30,8 @@ function currentFrom(): LoginFrom {
 
 function notifySessionExpired(message?: string) {
   const title = message?.trim() || '登录已过期';
-  // 动态导入避免与 http ↔ toast 循环依赖；固定 key 防止并发请求叠多条
-  void import('~/utils/toast').then(({ toast }) => {
-    toast.notify.warning(title, undefined, { key: 'session-expired' });
-  });
+  // 固定 key 防止并发请求叠多条
+  sessionExpiredNotifier?.(title);
 }
 
 /**
