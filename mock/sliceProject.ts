@@ -2,7 +2,7 @@ import type { MockMethod } from 'vite-plugin-mock';
 import { matchListKeywords, parseListKeywords } from '../src/utils/listKeywords';
 import { API_PREFIX } from './_config';
 import type { SelectedCopySegment } from '../src/pages/ManualVideoSlice/types';
-import { countClipTasksBySourceVideoId } from './clipTaskStore';
+import { countClipTasksByProject, countClipTasksBySourceVideoId } from './clipTaskStore';
 import {
   getSliceProject,
   listSliceProjects,
@@ -164,6 +164,26 @@ export default [
         code: 0,
         message: '',
         data: toPublicSliceProjectWithTaskCount(project),
+      };
+    },
+  },
+  {
+    url: `${API_PREFIX}/v1/video-projects/:id/running-tasks`,
+    method: 'get',
+    response: ({ query }: { query: { id: string } }) => {
+      const project = getSliceProject(query.id);
+      if (!project) {
+        return { code: 404, message: '剪辑项目不存在', data: null };
+      }
+
+      const stats = countClipTasksByProject(project);
+      return {
+        code: 0,
+        message: 'success',
+        data: {
+          list: [],
+          total: stats.active_task_count,
+        },
       };
     },
   },

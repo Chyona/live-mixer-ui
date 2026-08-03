@@ -285,3 +285,50 @@ export async function deleteSliceProject(
     method: 'delete',
   });
 }
+
+/** 项目进行中/待进行任务（切片页只读锁） */
+export interface SliceProjectRunningTaskItem {
+  id?: string | number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export interface SliceProjectRunningTasks {
+  list: SliceProjectRunningTaskItem[];
+  /** 进行中 + 待进行任务总数 */
+  total: number;
+}
+
+function normalizeRunningTasks(raw: unknown): SliceProjectRunningTasks {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { list: [], total: 0 };
+  }
+
+  const record = raw as Record<string, unknown>;
+  const list = Array.isArray(record.list)
+    ? (record.list as SliceProjectRunningTaskItem[])
+    : [];
+  const totalRaw = Number(record.total);
+  const total = Number.isFinite(totalRaw) ? Math.max(0, Math.floor(totalRaw)) : list.length;
+
+  return { list, total };
+}
+
+/**
+ * 查询剪辑项目进行中/待进行任务。
+ * GET /v1/video-projects/:id/running-tasks
+ * 返回：{ list, total }
+ */
+export async function fetchSliceProjectRunningTasks(
+  projectId: string | number
+): Promise<BaseResponse<SliceProjectRunningTasks>> {
+  const response = await request<BaseResponse<SliceProjectRunningTasks>>(
+    `/v1/video-projects/${projectId}/running-tasks`,
+    { method: 'get' }
+  );
+
+  return {
+    ...response,
+    data: normalizeRunningTasks(response.data),
+  };
+}

@@ -7,6 +7,10 @@ import SlicePageHeader from '~/components/SlicePageHeader';
 import SlicePageEmptyState from '~/components/SlicePageEmptyState';
 import ManualVideoSlicePageSkeleton from './ManualVideoSlicePageSkeleton';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useSliceProjectTaskStats } from '~/hooks/useSliceProjectTaskStats';
+import {
+  SliceProjectTaskReadOnlyAlert,
+} from '~/components/SliceProjectTaskStatus';
 import { AppError } from '~/services/http';
 import {
   downloadSourceVideoAsrSubtitle,
@@ -79,6 +83,10 @@ const ManualVideoSlicePage = () => {
   /** 项目管理进入时带 ?projectId=；源视频首次保存后也会回写 */
   const projectIdFromQuery = parseProjectId(searchParams.get('projectId'));
   const [projectId, setProjectId] = useState<number | null>(projectIdFromQuery);
+  const {
+    runningTaskCount,
+    readOnly: projectTaskReadOnly,
+  } = useSliceProjectTaskStats(projectId);
   /** 保存/另存为后回写 URL，不触发整页数据重载 */
   const skipProjectReloadRef = useRef(false);
 
@@ -583,6 +591,10 @@ const ManualVideoSlicePage = () => {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (projectTaskReadOnly) {
+      toast.notify.warning('项目有进行中任务，当前仅可查看');
+      return;
+    }
     if (!video || selectedSegments.length === 0) return;
 
     if (!projectId) {
@@ -613,7 +625,7 @@ const ManualVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [navigate, enableCaptions, projectId, selectedSegments.length, video]);
+  }, [navigate, enableCaptions, projectId, projectTaskReadOnly, selectedSegments.length, video]);
 
   const openSaveModal = (nextMode: 'create' | 'saveAs' | 'export') => {
     setSaveModalMode(nextMode);
@@ -621,6 +633,10 @@ const ManualVideoSlicePage = () => {
   };
 
   const handleSaveClick = () => {
+    if (projectTaskReadOnly) {
+      toast.notify.warning('项目有进行中任务，当前仅可查看');
+      return;
+    }
     if (selectedSegments.length === 0) {
       toast.notify.warning('请先选择至少一个片段');
       return;
@@ -731,6 +747,11 @@ const ManualVideoSlicePage = () => {
           </Space>
         }
       />
+      <SliceProjectTaskReadOnlyAlert
+        visible={projectId != null}
+        projectName={draftName}
+        runningTaskCount={runningTaskCount}
+      />
 
       {!canPreview ? (
         <div className="slice-page-empty-shell">
@@ -803,6 +824,7 @@ const ManualVideoSlicePage = () => {
                 onSeek={handleSeek}
                 onSelectSegment={handleSelectSegment}
                 selectedCopySegments={selectedSegments}
+                readOnly={projectTaskReadOnly}
               />
             </div>
           </div>
@@ -847,6 +869,7 @@ const ManualVideoSlicePage = () => {
             onSaveAs={() => openSaveModal('saveAs')}
             onExportDraft={() => openSaveModal('export')}
             onSubmit={() => void handleSubmit()}
+            readOnly={projectTaskReadOnly}
           />
         </div>
       )}

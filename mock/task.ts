@@ -174,6 +174,7 @@ export default [
         promptName: project.projectName,
         clips,
         segments: project.segments,
+        videoProjectId: String(videoProjectId),
       });
 
       return {
@@ -204,6 +205,7 @@ export default [
         sourceVideoName: project.sourceVideoName,
         m3u8Url: '',
         clipName: project.projectName,
+        videoProjectId: String(videoProjectId),
       });
 
       return {
@@ -239,6 +241,7 @@ export default [
         m3u8Url: '',
         clipName: project.projectName,
         taskType: 'draft',
+        videoProjectId: String(videoProjectId),
       });
 
       return {

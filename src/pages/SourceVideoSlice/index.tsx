@@ -7,6 +7,10 @@ import StreamVideoPlayer, { type StreamVideoPlayerHandle } from '~/components/St
 import SlicePageHeader from '~/components/SlicePageHeader';
 import SlicePageEmptyState from '~/components/SlicePageEmptyState';
 import { useAppSEO } from '~/hooks/useAppSEO';
+import { useSliceProjectTaskStats } from '~/hooks/useSliceProjectTaskStats';
+import {
+  SliceProjectTaskReadOnlyAlert,
+} from '~/components/SliceProjectTaskStatus';
 import { AppError } from '~/services/http';
 import { fetchSourceVideoDetail, type SourceVideo } from '~/services/sourceVideo';
 import { submitClip } from '~/services/slice';
@@ -98,8 +102,13 @@ const SourceVideoSlicePage = () => {
   const projectId = parseProjectId(searchParams.get('projectId'));
   const navigate = useNavigate();
   const entryFrom = useSliceEntryFrom();
+  const {
+    runningTaskCount,
+    readOnly: projectTaskReadOnly,
+  } = useSliceProjectTaskStats(projectId);
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<SourceVideo | null>(null);
+  const [projectName, setProjectName] = useState('');
   const [sourceModalVisible, setSourceModalVisible] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -139,6 +148,7 @@ const SourceVideoSlicePage = () => {
     pendingRangesRef.current = null;
     setPreferredPromptId(null);
     setSelectedPrompt(null);
+    if (!projectId) setProjectName('');
 
     try {
       // 无 projectId：源视频入口只拉详情；有 projectId：再拉项目并回填 clips0 / prompt_id
@@ -172,6 +182,7 @@ const SourceVideoSlicePage = () => {
       }
 
       if (projectRes?.code === 0 && projectRes.data) {
+        setProjectName(projectRes.data.name?.trim() || '');
         const promptId = Number(projectRes.data.prompt_id ?? 0);
         setPreferredPromptId(promptId > 0 ? promptId : null);
       } else if (projectId) {
@@ -307,6 +318,10 @@ const SourceVideoSlicePage = () => {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (projectTaskReadOnly) {
+      toast.notify.warning('项目有进行中任务，当前仅可查看');
+      return;
+    }
     if (!video) return;
 
     if (selectedRanges.length === 0) {
@@ -370,9 +385,13 @@ const SourceVideoSlicePage = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [projectId, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
+  }, [projectId, projectTaskReadOnly, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
 
   const handleAiSelect = useCallback(async () => {
+    if (projectTaskReadOnly) {
+      toast.notify.warning('项目有进行中任务，当前仅可查看');
+      return;
+    }
     if (!video) return;
 
     if (selectedRanges.length === 0) {
@@ -437,7 +456,7 @@ const SourceVideoSlicePage = () => {
     } finally {
       setAiSelecting(false);
     }
-  }, [projectId, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
+  }, [projectId, projectTaskReadOnly, selectedPrompt, selectedRanges, totalSelectedDuration, video]);
 
   const breadcrumbItems = useMemo(
     () =>
@@ -495,6 +514,11 @@ const SourceVideoSlicePage = () => {
   return (
     <div className="slice-page slice-page_timeline">
       {pageHeader}
+      <SliceProjectTaskReadOnlyAlert
+        visible={projectId != null}
+        projectName={projectName}
+        runningTaskCount={runningTaskCount}
+      />
 
       {!hasVideoUrl ? (
         <div className="slice-page-empty-shell">
@@ -546,6 +570,7 @@ const SourceVideoSlicePage = () => {
                 onClearAll={handleClearAllRanges}
                 onRangeDelete={handleRangeDelete}
                 hasSelectedPrompt={selectedPrompt != null}
+                readOnly={projectTaskReadOnly}
               />
               <VideoTimeline
                 duration={videoDuration}
@@ -560,6 +585,7 @@ const SourceVideoSlicePage = () => {
                 onRangeSelect={handleRangeSelect}
                 onRangeDelete={handleRangeDelete}
                 onRangeUpdate={handleRangeUpdate}
+                readOnly={projectTaskReadOnly}
               />
             </div>
           )}

@@ -62,6 +62,7 @@ interface SelectedSegmentsPanelProps {
   onClearAll: () => void;
   onRangeDelete: (rangeId: string) => void;
   hasSelectedPrompt: boolean;
+  readOnly?: boolean;
 }
 
 const SelectedSegmentsPanel = ({
@@ -81,24 +82,31 @@ const SelectedSegmentsPanel = ({
   onClearAll,
   onRangeDelete,
   hasSelectedPrompt,
+  readOnly = false,
 }: SelectedSegmentsPanelProps) => {
   const isUnderMin =
     selectedRanges.length > 0 && totalSelectedDuration < minTotalDuration;
   const isOverLimit = totalSelectedDuration > maxTotalDuration;
   const canAction =
-    selectedRanges.length > 0 && hasSelectedPrompt && !isUnderMin && !isOverLimit;
+    !readOnly &&
+    selectedRanges.length > 0 &&
+    hasSelectedPrompt &&
+    !isUnderMin &&
+    !isOverLimit;
   const actionLoading = submitting || aiSelecting;
 
-  const disabledReason = buildActionDisabledReason({
-    actionLoading,
-    canAction,
-    selectedRangesCount: selectedRanges.length,
-    hasSelectedPrompt,
-    isUnderMin,
-    isOverLimit,
-    minTotalDuration,
-    maxTotalDuration,
-  });
+  const disabledReason = readOnly
+    ? '项目有进行中任务，当前仅可查看'
+    : buildActionDisabledReason({
+        actionLoading,
+        canAction,
+        selectedRangesCount: selectedRanges.length,
+        hasSelectedPrompt,
+        isUnderMin,
+        isOverLimit,
+        minTotalDuration,
+        maxTotalDuration,
+      });
 
   const aiSelectButton = (
     <button
@@ -129,7 +137,9 @@ const SelectedSegmentsPanel = ({
           <div className="slice-selected-title-row">
             <h3 className="slice-selected-title">
               已选中片段
-              <span className="slice-selected-subtitle">（左键拖拽可继续新增片段）</span>
+              <span className="slice-selected-subtitle">
+                {readOnly ? '（只读查看）' : '（左键拖拽可继续新增片段）'}
+              </span>
             </h3>
             {selectedRanges.length > 0 && (
               <p className="slice-selected-stats">
@@ -154,7 +164,7 @@ const SelectedSegmentsPanel = ({
             type="button"
             className="slice-secondary-btn slice-secondary-btn_danger"
             onClick={onClearAll}
-            disabled={selectedRanges.length === 0 || actionLoading}
+            disabled={readOnly || selectedRanges.length === 0 || actionLoading}
           >
             清空
           </button>
@@ -180,25 +190,27 @@ const SelectedSegmentsPanel = ({
                 <span>
                   {label}: {formatVideoDuration(range.start)} - {formatVideoDuration(range.end)}
                 </span>
-                <span
-                  className="slice-segment-tag-remove"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`删除${label}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRangeDelete(range.id);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
+                {!readOnly ? (
+                  <span
+                    className="slice-segment-tag-remove"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`删除${label}`}
+                    onClick={(event) => {
                       event.stopPropagation();
                       onRangeDelete(range.id);
-                    }
-                  }}
-                >
-                  <LuX size={12} />
-                </span>
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onRangeDelete(range.id);
+                      }
+                    }}
+                  >
+                    <LuX size={12} />
+                  </span>
+                ) : null}
               </button>
               );
             })

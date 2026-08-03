@@ -32,6 +32,8 @@ interface TranscriptPanelProps {
   matchParagraphIds: string[];
   onSeek: (time: number) => void;
   onSelectSegment: (segment: ReturnType<typeof paragraphToCopySegment>) => void;
+  /** 只读：可定位播放，不可点选/拖选文案 */
+  readOnly?: boolean;
 }
 
 const TRANSCRIPT_AUTO_SCROLL_KEY = 'manual-slice-transcript-auto-scroll';
@@ -51,6 +53,7 @@ const TranscriptPanel = ({
   matchParagraphIds,
   onSeek,
   onSelectSegment,
+  readOnly = false,
 }: TranscriptPanelProps) => {
   const transcriptBodyRef = useRef<HTMLDivElement>(null);
   const lastAutoScrolledTargetRef = useRef<string | null>(null);
@@ -166,6 +169,7 @@ const TranscriptPanel = ({
     event: React.MouseEvent<HTMLDivElement>,
     paragraph: TranscriptParagraph
   ) => {
+    if (readOnly) return;
     event.preventDefault();
     event.stopPropagation();
     cancelPendingSeek();
@@ -182,6 +186,7 @@ const TranscriptPanel = ({
     event: React.MouseEvent<HTMLDivElement>,
     paragraph: TranscriptParagraph
   ) => {
+    if (readOnly) return;
     if (event.detail >= 2) return;
 
     const selection = window.getSelection();
@@ -363,7 +368,9 @@ const TranscriptPanel = ({
         })}
       </div>
       <p className="slice-editor-transcript-tip">
-        单击定位视频，双击选中整段；拖拽选中部分文字可提取对应片段。
+        {readOnly
+          ? '当前为只读模式，单击可定位视频，暂不可选择文案。'
+          : '单击定位视频，双击选中整段；拖拽选中部分文字可提取对应片段。'}
       </p>
     </div>
   );

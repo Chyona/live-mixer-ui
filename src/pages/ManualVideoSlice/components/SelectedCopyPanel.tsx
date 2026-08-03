@@ -87,6 +87,8 @@ interface SelectedCopyPanelProps {
   onSaveAs: () => void;
   onExportDraft: () => void;
   onSubmit: () => void;
+  /** 只读：可预览定位，不可保存/提交/增删改 */
+  readOnly?: boolean;
 }
 
 const SelectedCopyPanel = ({
@@ -116,6 +118,7 @@ const SelectedCopyPanel = ({
   onSaveAs,
   onExportDraft,
   onSubmit,
+  readOnly = false,
 }: SelectedCopyPanelProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropMarker, setDropMarker] = useState<DropMarker | null>(null);
@@ -127,7 +130,7 @@ const SelectedCopyPanel = ({
   const textSelectionRef = useRef<{ segmentId: string; start: number; end: number } | null>(null);
   const totalDuration = getTotalSelectedDuration(segments);
   const isOverLimit = totalDuration > maxTotalDuration;
-  const canDragSort = segments.length > 1;
+  const canDragSort = !readOnly && segments.length > 1;
   const hasSegments = segments.length > 0;
   const activeAiSegmentId = useMemo(() => {
     if (!aiSegments.length) return null;
@@ -270,7 +273,7 @@ const SelectedCopyPanel = ({
                       <span className="slice-editor-ai-item-time">{timeLabel}</span>
                     </span>
                   </button>
-                  {onAddAiSegment ? (
+                  {onAddAiSegment && !readOnly ? (
                     <button
                       type="button"
                       className="slice-editor-ai-item-add"
@@ -310,10 +313,14 @@ const SelectedCopyPanel = ({
               <LuPlay size={14} />
               连续预览
             </button>
-            <button type="button" onClick={onSave} disabled={!hasSegments || savingProject}>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={readOnly || !hasSegments || savingProject}
+            >
               {savingProject ? '保存中...' : '保存'}
             </button>
-            <button type="button" onClick={onSaveAs} disabled={!hasSegments}>
+            <button type="button" onClick={onSaveAs} disabled={readOnly || !hasSegments}>
               另存为
             </button>
           </div>
@@ -321,18 +328,24 @@ const SelectedCopyPanel = ({
             <Checkbox
               className="slice-enable-captions-checkbox"
               checked={enableCaptions}
+              disabled={readOnly}
               onChange={(event) => onEnableCaptionsChange(event.target.checked)}
             >
               生成字幕
             </Checkbox>
-            <button type="button" className="danger" onClick={onClearAll} disabled={!hasSegments}>
+            <button
+              type="button"
+              className="danger"
+              onClick={onClearAll}
+              disabled={readOnly || !hasSegments}
+            >
               清空
             </button>
             <button
               type="button"
               className="primary"
               onClick={onSubmit}
-              disabled={!hasSegments || submitting || isOverLimit}
+              disabled={readOnly || !hasSegments || submitting || isOverLimit}
             >
               {submitting ? '提交中...' : '提交成片'}
             </button>
@@ -457,7 +470,7 @@ const SelectedCopyPanel = ({
                   {segment.text}
                 </p>
 
-                {isActive && (
+                {isActive && !readOnly && (
                   <div className="slice-editor-copy-actions">
                     <div className="slice-editor-copy-pad" aria-label="调节片段头尾留白">
                       <span className="slice-editor-copy-pad-label">留白</span>

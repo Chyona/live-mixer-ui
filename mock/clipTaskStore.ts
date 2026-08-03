@@ -9,6 +9,8 @@ export type StoredClipTask = {
   clipName: string;
   sourceVideoId: string;
   sourceVideoName: string;
+  /** 关联剪辑项目 id（可选） */
+  videoProjectId?: string;
   m3u8Url: string;
   status: 'pending' | 'processing' | 'running' | 'success' | 'failed';
   progress: number;
@@ -52,9 +54,10 @@ function seedMockClipTasks() {
     {
       taskId: 'clip-task-seed-002',
       taskType: 'clip_generate',
-      clipName: '新品发布会直播 高光合集',
-      sourceVideoId: 'sv-002',
+      clipName: '新品发布会直播 剪辑项目',
+      sourceVideoId: '2',
       sourceVideoName: '新品发布会直播',
+      videoProjectId: 'vp-2',
       m3u8Url: 'https://example.com/live/product_launch.m3u8',
       status: 'running',
       progress: 45,
@@ -233,6 +236,7 @@ export function createClipTask(input: {
   m3u8Url: string;
   clipName?: string;
   taskType?: GenerationTaskType;
+  videoProjectId?: string;
 }) {
   clipTaskStore.unshift({
     taskId: input.taskId,
@@ -240,6 +244,7 @@ export function createClipTask(input: {
     clipName: input.clipName?.trim() || `${input.sourceVideoName} 成片`,
     sourceVideoId: input.sourceVideoId,
     sourceVideoName: input.sourceVideoName,
+    videoProjectId: input.videoProjectId,
     m3u8Url: input.m3u8Url,
     status: 'pending',
     progress: 0,
@@ -258,6 +263,7 @@ export function createAiSliceTask(input: {
   promptName: string;
   clips: Array<{ start: number; end: number }>;
   segments?: SelectedCopySegment[];
+  videoProjectId?: string;
 }) {
   clipTaskStore.unshift({
     taskId: input.taskId,
@@ -265,6 +271,7 @@ export function createAiSliceTask(input: {
     clipName: `${input.sourceVideoName} AI选片`,
     sourceVideoId: input.sourceVideoId,
     sourceVideoName: input.sourceVideoName,
+    videoProjectId: input.videoProjectId,
     m3u8Url: '',
     status: 'pending',
     progress: 0,
@@ -407,6 +414,36 @@ export function countClipTasksBySourceVideoId(sourceVideoId: string | number) {
     if (numericId <= 0) return false;
     return (Number(task.sourceVideoId.replace(/\D/g, '')) || 0) === numericId;
   }).length;
+}
+
+/** 按剪辑项目统计任务总数 / 进行中数量 */
+export function countClipTasksByProject(project: {
+  id: string;
+  sourceVideoId: string;
+  projectName: string;
+}) {
+  const projectKey = String(project.id);
+  const projectNumericId = Number(projectKey.replace(/\D/g, '')) || 0;
+  const tasks = clipTaskStore.filter((task) => {
+    if (task.videoProjectId) {
+      if (String(task.videoProjectId) === projectKey) return true;
+      if (
+        projectNumericId > 0 &&
+        (Number(String(task.videoProjectId).replace(/\D/g, '')) || 0) === projectNumericId
+      ) {
+        return true;
+      }
+    }
+    // 兼容：同源视频且名称对得上
+    if (task.sourceVideoId !== project.sourceVideoId) return false;
+    return task.clipName === project.projectName || task.promptName === project.projectName;
+  });
+
+  const active = tasks.filter(
+    (task) => task.status === 'pending' || task.status === 'processing' || task.status === 'running'
+  ).length;
+
+  return { task_count: tasks.length, active_task_count: active };
 }
 
 export function toPublicClipTask(task: StoredClipTask) {

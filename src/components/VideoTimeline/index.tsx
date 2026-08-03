@@ -23,6 +23,8 @@ export interface VideoTimelineProps {
   onRangeSelect: (range: TimeRange) => void;
   onRangeDelete: (id: string) => void;
   onRangeUpdate?: (range: TimeRange) => void;
+  /** 只读：可定位播放，不可新增/调整/删除片段 */
+  readOnly?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -274,6 +276,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   onRangeSelect,
   onRangeDelete,
   onRangeUpdate,
+  readOnly = false,
 }) => {
   const [internalZoomLevel, setInternalZoomLevel] = useState(1);
   const isZoomControlled = zoomLevelProp !== undefined && onZoomLevelChange !== undefined;
@@ -478,6 +481,11 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       if ((e.target as HTMLElement).closest('.timeline-range')) return;
 
       const time = getTimeFromX(e.clientX);
+      if (readOnly) {
+        onTimeChange(time);
+        return;
+      }
+
       dragStartX.current = e.clientX;
       dragStartY.current = e.clientY;
       setIsDragging(true);
@@ -485,7 +493,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       setDragStart(time);
       setDragEnd(time);
     },
-    [getTimeFromX]
+    [getTimeFromX, onTimeChange, readOnly]
   );
 
   useEffect(() => {
@@ -504,16 +512,18 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
   const handleRangeDeleteClick = useCallback(
     (rangeId: string) => {
+      if (readOnly) return;
       if (activeRangeId === rangeId) {
         setActiveRangeId(null);
       }
       onRangeDelete(rangeId);
     },
-    [activeRangeId, onRangeDelete, setActiveRangeId]
+    [activeRangeId, onRangeDelete, readOnly, setActiveRangeId]
   );
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, id: string, edge: 'start' | 'end') => {
+      if (readOnly) return;
       e.stopPropagation();
       e.preventDefault();
       if (e.button !== 0) return;
@@ -527,7 +537,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       dragStartX.current = e.clientX;
       dragStartY.current = e.clientY;
     },
-    [selectedRanges]
+    [readOnly, selectedRanges, setActiveRangeId]
   );
 
   const getTotalSelectedDuration = useCallback((): number => {
@@ -858,29 +868,35 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
                       width: previewWidth,
                     }}
                   >
-                    <div
-                      className="timeline-range-handle left"
-                      onMouseDown={(e) => handleResizeStart(e, range.id, 'start')}
-                      title="拖动调整起始时间"
-                    />
+                    {!readOnly ? (
+                      <div
+                        className="timeline-range-handle left"
+                        onMouseDown={(e) => handleResizeStart(e, range.id, 'start')}
+                        title="拖动调整起始时间"
+                      />
+                    ) : null}
                     <span className="timeline-range-label" aria-hidden="true">
                       {rangeLabel}
                     </span>
-                    <div
-                      className="timeline-range-handle right"
-                      onMouseDown={(e) => handleResizeStart(e, range.id, 'end')}
-                      title="拖动调整结束时间"
-                    />
-                    <button
-                      className="timeline-range-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRangeDeleteClick(range.id);
-                      }}
-                      title="删除该时间段"
-                    >
-                      ×
-                    </button>
+                    {!readOnly ? (
+                      <>
+                        <div
+                          className="timeline-range-handle right"
+                          onMouseDown={(e) => handleResizeStart(e, range.id, 'end')}
+                          title="拖动调整结束时间"
+                        />
+                        <button
+                          className="timeline-range-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRangeDeleteClick(range.id);
+                          }}
+                          title="删除该时间段"
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               );

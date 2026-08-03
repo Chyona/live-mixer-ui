@@ -51,9 +51,16 @@ interface PromptPickerPanelProps {
   /** 编辑回显：优先选中该 id（若不在首屏则继续分页查找） */
   preferredId?: number | null;
   onSelect: (prompt: AiPrompt) => void;
+  /** 只读：不可新增/编辑/切换提示词 */
+  readOnly?: boolean;
 }
 
-const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptPickerPanelProps) => {
+const PromptPickerPanel = ({
+  selectedId,
+  preferredId = null,
+  onSelect,
+  readOnly = false,
+}: PromptPickerPanelProps) => {
   const [keyword, setKeyword] = useState('');
   const [appliedKeyword, setAppliedKeyword] = useState('');
   const [list, setList] = useState<AiPrompt[]>([]);
@@ -242,7 +249,13 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
           成片前需先选择提示词，新建后即可在此快速选用
         </p>
         <div className="slice-prompt-panel__empty-actions">
-          <Button type="primary" size="middle" icon={<LuPlus size={14} />} onClick={openCreate}>
+          <Button
+            type="primary"
+            size="middle"
+            icon={<LuPlus size={14} />}
+            onClick={openCreate}
+            disabled={readOnly}
+          >
             新增提示词
           </Button>
         </div>
@@ -276,7 +289,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
             }}
             onClear={handleClearSearch}
           />
-          <Button type="primary" size="middle" icon={<LuPlus size={14} />} onClick={openCreate}>
+          <Button type="primary" size="middle" icon={<LuPlus size={14} />} onClick={openCreate} disabled={readOnly}>
             新增
           </Button>
         </div>
@@ -295,6 +308,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
             className="slice-prompt-panel__radio-group"
             value={selectedId ?? undefined}
             onChange={(event) => {
+              if (readOnly) return;
               const next = list.find((item) => item.id === event.target.value);
               if (next) onSelect(next);
             }}
@@ -304,7 +318,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
                 key={item.id}
                 className={`slice-prompt-panel__item${selectedId === item.id ? ' active' : ''}`}
               >
-                <Radio value={item.id} className="slice-prompt-panel__radio" />
+                <Radio value={item.id} className="slice-prompt-panel__radio" disabled={readOnly} />
                 <div className="slice-prompt-panel__item-body">
                   <div className="slice-prompt-panel__item-head">
                     <div className="slice-prompt-panel__item-name-wrap">
@@ -314,7 +328,7 @@ const PromptPickerPanel = ({ selectedId, preferredId = null, onSelect }: PromptP
                         placement="topLeft"
                       />
                     </div>
-                    {item.is_editable === 1 ? (
+                    {item.is_editable === 1 && !readOnly ? (
                       <button
                         type="button"
                         className="slice-prompt-panel__edit-btn"
