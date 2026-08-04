@@ -1,6 +1,6 @@
 import { Flex, Layout } from 'antd';
 import NavModule from '../Nav';
-import Logo_src from '~/assets/images/logo2.png';
+import Logo_src from '~/assets/images/logo.png';
 import { appConfig } from '~/utils/config';
 import { DEFAULT_APP_PATH } from '~/routes/const';
 
