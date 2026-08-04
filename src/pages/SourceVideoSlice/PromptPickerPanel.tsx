@@ -15,6 +15,20 @@ import './PromptPickerPanel.css';
 
 const PAGE_SIZE = 8;
 
+/** 无项目回显时，优先选中系统「默认提示词」 */
+function pickDefaultPrompt(list: AiPrompt[]): AiPrompt | undefined {
+  if (!list.length) return undefined;
+
+  const byExactName = list.find((item) => item.name.trim() === '默认提示词');
+  if (byExactName) return byExactName;
+
+  // 系统内置通常不可编辑
+  const systemItem = list.find((item) => item.is_editable === 0);
+  if (systemItem) return systemItem;
+
+  return list[0];
+}
+
 function PromptItemContent({
   name,
   content,
@@ -141,9 +155,9 @@ const PromptPickerPanel = ({
       if (hasMore || loading || loadingMore) return;
     }
 
-    const firstItem = list[0];
-    if (firstItem) {
-      onSelect(firstItem);
+    const defaultItem = pickDefaultPrompt(list);
+    if (defaultItem) {
+      onSelect(defaultItem);
     }
   }, [
     appliedKeyword,
