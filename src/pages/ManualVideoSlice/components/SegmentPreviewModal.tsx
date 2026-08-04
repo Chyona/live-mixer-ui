@@ -1,5 +1,5 @@
 import { Modal } from 'antd';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   LuMaximize,
   LuMinimize,
@@ -129,7 +129,6 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
   const [playerReady, setPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [composedCurrent, setComposedCurrent] = useState(0);
-  const [stageHeight, setStageHeight] = useState<number>();
   // const [volume, setVolume] = useState(0.8);
   // const [muted, setMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -291,26 +290,6 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
       container.scrollTop += activeRect.bottom - (containerRect.bottom - padding);
     }
   }, [currentIndex]);
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setStageHeight(undefined);
-      return;
-    }
-
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const syncHeight = () => {
-      const next = Math.round(stage.getBoundingClientRect().height);
-      setStageHeight((prev) => (prev === next ? prev : next));
-    };
-
-    syncHeight();
-    const observer = new ResizeObserver(syncHeight);
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, [open, playerReady, segments.length]);
 
   // useEffect(() => {
   //   const video = playerRef.current?.video;
@@ -621,10 +600,7 @@ const SegmentPreviewModal = ({ open, url, segments, onClose }: SegmentPreviewMod
           </div>
         </div>
 
-        <aside
-          className="slice-editor-preview-side"
-          style={stageHeight ? { height: stageHeight } : undefined}
-        >
+        <aside className="slice-editor-preview-side">
           <div className="slice-editor-preview-panel">
             <div className="slice-editor-preview-playlist-title">
               播放列表

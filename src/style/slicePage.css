@@ -1241,8 +1241,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
   gap: 12px;
-  /* 勿拉高左侧，否则控制条下方会出现大块黑底空白 */
-  align-items: start;
+  /* 行高由左侧舞台决定；右侧用 min-height:100% + height:0 跟齐且不撑开 */
+  align-items: stretch;
 }
 
 .slice-editor-preview-close {
@@ -1284,27 +1284,40 @@
 .slice-editor-preview-video-shell {
   position: relative;
   flex-shrink: 0;
+  width: 100%;
+  /* 固定比例容器，避免竖屏源视频撑开高度导致右侧列表忽高忽低 */
+  aspect-ratio: 16 / 9;
+  max-height: min(560px, calc(100vh - 280px));
+  overflow: hidden;
   background: #000;
+}
+
+.slice-editor-preview-video-shell .stream-video-player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  gap: 0;
 }
 
 .slice-editor-preview-video {
   width: 100%;
-  max-height: min(560px, calc(100vh - 220px));
+  height: 100%;
   display: block;
   background: #000;
-  aspect-ratio: 16 / 9;
   object-fit: contain;
 }
 
 @media (min-width: 1440px) {
-  .slice-editor-preview-video {
-    max-height: min(640px, calc(100vh - 200px));
+  .slice-editor-preview-video-shell {
+    max-height: min(640px, calc(100vh - 260px));
   }
 }
 
 @media (min-width: 1800px) {
-  .slice-editor-preview-video {
-    max-height: min(720px, calc(100vh - 180px));
+  .slice-editor-preview-video-shell {
+    max-height: min(720px, calc(100vh - 240px));
   }
 }
 
@@ -1457,9 +1470,18 @@
 .slice-editor-preview-stage:-webkit-full-screen .slice-editor-preview-video-shell {
   flex: 1;
   min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.slice-editor-preview-stage:fullscreen .slice-editor-preview-video-shell .stream-video-player,
+.slice-editor-preview-stage:-webkit-full-screen
+  .slice-editor-preview-video-shell
+  .stream-video-player {
+  position: relative;
 }
 
 .slice-editor-preview-stage:fullscreen .slice-editor-preview-video,
@@ -1551,7 +1573,10 @@
   display: flex;
   width: 100%;
   min-width: 0;
-  min-height: 0;
+  /* 高度跟齐左侧行高，内容再多也不撑高弹窗 */
+  height: 0;
+  min-height: 100%;
+  overflow: hidden;
 }
 
 .slice-editor-preview-panel {
@@ -1721,7 +1746,8 @@
   }
 
   .slice-editor-preview-side {
-    height: auto !important;
+    height: auto;
+    min-height: 0;
     max-height: 280px;
   }
 
