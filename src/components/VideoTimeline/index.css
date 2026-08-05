@@ -12,30 +12,29 @@
   --timeline-tick-major: rgba(0, 0, 0, 0.22);
   --timeline-tick-label: var(--text-gray);
   --timeline-tick-label-major: var(--text-gray);
-  /* 人工已选（未高亮）：浅色半透明 */
-  --timeline-range-fill: rgba(var(--primary-color-rgb), 0.08);
+  /* 人工已选：淡雅主色浅底 */
+  --timeline-range-fill: rgba(var(--primary-color-rgb), 0.09);
   --timeline-range-fill-hover: rgba(var(--primary-color-rgb), 0.14);
-  --timeline-range-fill-active: rgba(var(--primary-color-rgb), 0.34);
-  --timeline-range-fill-added: rgba(var(--primary-light-rgb), 0.12);
-  --timeline-range-fill-removed: rgba(var(--primary-color-rgb), 0.04);
-  --timeline-range-border: rgba(var(--primary-color-rgb), 0.2);
-  --timeline-range-border-hover: rgba(var(--primary-color-rgb), 0.32);
-  --timeline-range-border-added: rgba(var(--primary-light-rgb), 0.36);
+  --timeline-range-fill-active: rgba(var(--primary-color-rgb), 0.28);
+  --timeline-range-fill-added: rgba(var(--primary-light-rgb), 0.14);
+  --timeline-range-fill-removed: rgba(var(--primary-color-rgb), 0.05);
+  --timeline-range-border: rgba(var(--primary-color-rgb), 0.22);
+  --timeline-range-border-hover: rgba(var(--primary-color-rgb), 0.34);
+  --timeline-range-border-added: rgba(var(--primary-light-rgb), 0.4);
   --timeline-range-border-removed: rgba(var(--primary-color-rgb), 0.16);
-  --timeline-range-active-fill: rgba(var(--primary-color-rgb), 0.34);
-  --timeline-range-active-fill-top: rgba(var(--primary-light-rgb), 0.4);
-  --timeline-range-active-border: rgba(var(--primary-color-rgb), 0.78);
-  /* AI 预选：同主题深蓝，色重于人工选区 */
-  --timeline-preview-fill: rgba(var(--primary-dark-rgb), 0.18);
-  --timeline-preview-fill-hover: rgba(var(--primary-dark-rgb), 0.26);
-  --timeline-preview-border: rgba(var(--primary-dark-rgb), 0.55);
-  --timeline-preview-border-hover: rgba(var(--primary-color-rgb), 0.72);
-  --timeline-preview-label: var(--primary-dark);
+  --timeline-range-active-fill: rgba(var(--primary-color-rgb), 0.26);
+  --timeline-range-active-fill-top: rgba(var(--primary-light-rgb), 0.3);
+  --timeline-range-active-border: rgba(var(--primary-color-rgb), 0.65);
+  /* AI 预选：辅色蓝系稍重 + 虚线，和已选区分 */
+  --timeline-preview-fill: rgba(var(--secondary-color-rgb), 0.16);
+  --timeline-preview-fill-hover: rgba(var(--secondary-color-rgb), 0.22);
+  --timeline-preview-border: rgba(var(--secondary-dark-rgb), 0.45);
+  --timeline-preview-border-hover: rgba(var(--secondary-dark-rgb), 0.58);
+  --timeline-preview-label: var(--secondary-dark);
   --timeline-playhead: var(--primary-dark);
-  --timeline-playhead-glow: rgba(var(--primary-dark-rgb), 0.2);
-  /* 半透明保留；略高于选区浅蓝底，叠段时仍可读 */
-  --timeline-playhead-alpha: 0.85;
-  --timeline-playhead-fill-alpha: 0.34;
+  --timeline-playhead-glow: rgba(var(--primary-dark-rgb), 0.16);
+  --timeline-playhead-alpha: 0.9;
+  --timeline-playhead-fill-alpha: 0.28;
 
   background: transparent;
   border: none;
@@ -283,10 +282,7 @@
   &:not(.resizing) {
     background: var(--timeline-range-fill);
     border: 1px solid var(--timeline-range-border);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 1.5px 0 0 rgba(var(--primary-color-rgb), 0.18),
-      inset -1.5px 0 0 rgba(var(--primary-color-rgb), 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
     transition:
       background-color 0.2s,
       border-color 0.2s,
@@ -295,10 +291,6 @@
     &:hover {
       background: var(--timeline-range-fill-hover);
       border-color: var(--timeline-range-border-hover);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.5),
-        inset 2px 0 0 rgba(var(--primary-color-rgb), 0.28),
-        inset -2px 0 0 rgba(var(--primary-color-rgb), 0.28);
     }
   }
 
@@ -313,12 +305,10 @@
       var(--timeline-range-active-fill-top) 0%,
       var(--timeline-range-active-fill) 100%
     );
-    border-color: var(--timeline-range-active-border);
+    border: 1.5px solid var(--timeline-range-active-border);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      inset 2.5px 0 0 rgba(var(--primary-color-rgb), 0.55),
-      inset -2.5px 0 0 rgba(var(--primary-color-rgb), 0.55),
-      0 0 0 2px var(--timeline-playhead-glow);
+      0 0 0 1px rgba(var(--primary-color-rgb), 0.12);
 
     .timeline-range-label {
       color: var(--primary-dark);
@@ -336,7 +326,7 @@
   }
 }
 
-/* AI 预选：虚线边框 + 主题深蓝；仅占轨道区，不盖住时间刻度 */
+/* AI 预选：辅色蓝虚线、稍重；仅占轨道区 */
 .timeline-range_preview {
   top: var(--timeline-ruler-height, 38px);
   height: calc(100% - var(--timeline-ruler-height, 38px));
@@ -347,19 +337,15 @@
   &:not(.resizing) {
     background: var(--timeline-preview-fill);
     border: 1.5px dashed var(--timeline-preview-border);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    box-shadow: none;
     transition:
       background-color 0.2s,
-      border-color 0.2s,
-      box-shadow 0.2s;
+      border-color 0.2s;
 
     &:hover {
       background: var(--timeline-preview-fill-hover);
       border-color: var(--timeline-preview-border-hover);
       border-style: dashed;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.24),
-        0 0 0 1px rgba(var(--primary-color-rgb), 0.12);
     }
   }
 
