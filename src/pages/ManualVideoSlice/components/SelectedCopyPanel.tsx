@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Checkbox } from 'antd';
 import {
@@ -53,6 +53,9 @@ function measureAiBlockContentHeight(block: HTMLElement): number {
   const listHeight = list?.scrollHeight ?? 0;
   return Math.ceil(paddingTop + paddingBottom + headHeight + headMarginBottom + listHeight);
 }
+
+const AI_BLOCK_MIN_HEIGHT = 72;
+const AI_BLOCK_MAX_HEIGHT_RATIO = 0.65;
 
 function getReorderToIndex(target: DropMarker, length: number) {
   if (target.placement === 'before') return target.index;
@@ -137,6 +140,7 @@ const SelectedCopyPanel = ({
   const [dropMarker, setDropMarker] = useState<DropMarker | null>(null);
   const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
   const [aiPanelHeight, setAiPanelHeight] = useState<number | null>(null);
+  const [aiListOverflow, setAiListOverflow] = useState(false);
   const dragIndexRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const aiBlockRef = useRef<HTMLDivElement>(null);
@@ -148,6 +152,7 @@ const SelectedCopyPanel = ({
   const isOverLimit = totalDuration > maxTotalDuration;
   const canDragSort = !readOnly && segments.length > 1;
   const hasSegments = segments.length > 0;
+  const showAiResizeHandle = aiListOverflow || aiPanelHeight != null;
   const activeAiSegmentId = useMemo(() => {
     if (!aiSegments.length) return null;
     return (
@@ -155,6 +160,28 @@ const SelectedCopyPanel = ({
     );
   }, [aiSegments, currentTime]);
   const draggingSegment = dragIndex != null ? segments[dragIndex] ?? null : null;
+
+  useEffect(() => {
+    if (!aiSegments.length) {
+      setAiListOverflow(false);
+      setAiPanelHeight(null);
+      return;
+    }
+
+    const block = aiBlockRef.current;
+    const list = block?.querySelector<HTMLElement>('.slice-editor-ai-block-list');
+    if (!block || !list) return;
+
+    const checkOverflow = () => {
+      setAiListOverflow(list.scrollHeight > list.clientHeight + 1);
+    };
+
+    checkOverflow();
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(list);
+    observer.observe(block);
+    return () => observer.disconnect();
+  }, [aiSegments, aiPanelHeight]);
 
   const resetDragState = () => {
     pointerDraggingRef.current = false;
@@ -320,19 +347,23 @@ const SelectedCopyPanel = ({
             </div>
           </div>
 
-          <VideoTranscriptResizeHandle
-            isCustomized={aiPanelHeight != null}
-            onResize={setAiPanelHeight}
-            onMeasureStart={() => aiBlockRef.current?.getBoundingClientRect().height ?? 0}
-            onMeasurePanel={() => panelRef.current?.getBoundingClientRect().height ?? 0}
-            onMeasureContentMax={() =>
-              aiBlockRef.current ? measureAiBlockContentHeight(aiBlockRef.current) : Number.POSITIVE_INFINITY
-            }
-            onReset={() => setAiPanelHeight(null)}
-            minHeight={72}
-            maxHeightRatio={0.65}
-            ariaLabel="拖动调整 AI 分段区域高度，双击还原"
-          />
+          {showAiResizeHandle ? (
+            <VideoTranscriptResizeHandle
+              isCustomized={aiPanelHeight != null}
+              onResize={setAiPanelHeight}
+              onMeasureStart={() => aiBlockRef.current?.getBoundingClientRect().height ?? 0}
+              onMeasurePanel={() => panelRef.current?.getBoundingClientRect().height ?? 0}
+              onMeasureContentMax={() =>
+                aiBlockRef.current
+                  ? measureAiBlockContentHeight(aiBlockRef.current)
+                  : Number.POSITIVE_INFINITY
+              }
+              onReset={() => setAiPanelHeight(null)}
+              minHeight={AI_BLOCK_MIN_HEIGHT}
+              maxHeightRatio={AI_BLOCK_MAX_HEIGHT_RATIO}
+              ariaLabel="拖动调整 AI 分段区域高度，双击还原"
+            />
+          ) : null}
         </>
       ) : null}
 

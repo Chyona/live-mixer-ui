@@ -29,16 +29,20 @@ const VideoTranscriptResizeHandle = ({
 }: VideoTranscriptResizeHandleProps) => {
   const [active, setActive] = useState(false);
 
+  const resolveMaxHeight = useCallback(() => {
+    const panelHeight = onMeasurePanel();
+    const ratioMax = panelHeight * maxHeightRatio;
+    const contentMax = onMeasureContentMax?.() ?? Number.POSITIVE_INFINITY;
+    return Math.max(minHeight, Math.min(ratioMax, contentMax));
+  }, [maxHeightRatio, minHeight, onMeasureContentMax, onMeasurePanel]);
+
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
 
       const startY = event.clientY;
       const startHeight = onMeasureStart();
-      const panelHeight = onMeasurePanel();
-      const ratioMax = panelHeight * maxHeightRatio;
-      const contentMax = onMeasureContentMax?.() ?? Number.POSITIVE_INFINITY;
-      const maxHeight = Math.max(minHeight, Math.min(ratioMax, contentMax));
+      const maxHeight = resolveMaxHeight();
 
       setActive(true);
       document.body.style.cursor = 'ns-resize';
@@ -63,7 +67,7 @@ const VideoTranscriptResizeHandle = ({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [maxHeightRatio, minHeight, onMeasureContentMax, onMeasurePanel, onMeasureStart, onResize]
+    [minHeight, onMeasureStart, onResize, resolveMaxHeight]
   );
 
   const handleReset = (event: React.MouseEvent<HTMLButtonElement>) => {
