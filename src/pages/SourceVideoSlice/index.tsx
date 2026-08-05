@@ -47,12 +47,10 @@ function clips0ToTimeRanges(clips: SliceProjectClip[] | undefined): TimeRange[] 
   return clips.map((clip, index) => {
     const start = (clip.start_time ?? 0) / 1000;
     const end = (clip.end_time ?? 0) / 1000;
-    const title = clip.title?.trim() || undefined;
     return {
       id: `timeline-${index}-${Math.round(start * 1000)}-${Math.round(end * 1000)}`,
       start,
       end,
-      title,
     };
   });
 }
@@ -74,14 +72,9 @@ function asrSummariesToTimeRanges(
   });
 }
 
-/** 优先 clips0；无则用 asr_summaries 填充时间轴 */
-function resolveTimelineRanges(
-  clips0: SliceProjectClip[] | undefined,
-  summaries: SourceVideo['asr_summaries'] | undefined
-): TimeRange[] {
-  const fromClips = clips0ToTimeRanges(clips0);
-  if (fromClips.length > 0) return fromClips;
-  return asrSummariesToTimeRanges(summaries);
+/** 优先 clips0 作为已选片段；asr_summaries 仅作 AI 预选展示 */
+function resolveSelectedRanges(clips0: SliceProjectClip[] | undefined): TimeRange[] {
+  return clips0ToTimeRanges(clips0);
 }
 
 /** 时间轴选区 → 接口 clips0（直接传 title） */
@@ -171,7 +164,7 @@ const SourceVideoSlicePage = () => {
       const projectRes = projectId ? projectSettled : null;
       const clips0 =
         projectRes?.code === 0 && projectRes.data ? projectRes.data.clips0 : undefined;
-      const ranges = resolveTimelineRanges(clips0, videoRes.data.asr_summaries);
+      const ranges = resolveSelectedRanges(clips0);
 
       // streamUrl 不变时不会触发清理 effect，需直接回填
       if (sameStream) {
@@ -220,6 +213,11 @@ const SourceVideoSlicePage = () => {
 
   const isTimelineReady = videoDuration > 0 && !videoError;
   const isTimelineLoading = canPreview && !videoError && videoDuration === 0;
+
+  const aiPreviewRanges = useMemo(
+    () => asrSummariesToTimeRanges(video?.asr_summaries),
+    [video?.asr_summaries]
+  );
 
   const handleDurationChange = useCallback((duration: number) => {
     setVideoDuration(duration);
@@ -286,6 +284,45 @@ const SourceVideoSlicePage = () => {
       }
     },
     [autoPlayOnSelect, handleTimeChange]
+  );
+
+  const handlePreviewRangeClick = useCallback(
+    (preview: TimeRange) => {
+      if (projectTaskReadOnly) {
+        handleTimeChange(preview.start);
+        return;
+      }
+
+      const alreadySelected = selectedRanges.some(
+        (item) =>
+          Math.abs(item.start - preview.start) < 0.05 && Math.abs(item.end - preview.end) < 0.05
+      );
+      if (alreadySelected) {
+        toast.notify.info('该 AI 选片已在已选片段中');
+        handleTimeChange(preview.start);
+        return;
+      }
+
+      const duration = preview.end - preview.start;
+      const currentTotal = selectedRanges.reduce(
+        (sum, range) => sum + (range.end - range.start),
+        0
+      );
+      if (currentTotal + duration > MAX_TOTAL_DURATION) {
+        toast.notify.warning(`选中总时长不能超过 ${MAX_TOTAL_DURATION / 3600} 小时`);
+        return;
+      }
+
+        const nextRange: TimeRange = {
+          id: `range-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          start: preview.start,
+          end: preview.end,
+        };
+      setSelectedRanges((prev) => [...prev, nextRange]);
+      setActiveRangeId(nextRange.id);
+      handleTimeChange(preview.start);
+    },
+    [handleTimeChange, projectTaskReadOnly, selectedRanges]
   );
 
   const handleRangeDelete = useCallback((rangeId: string) => {
@@ -576,6 +613,7 @@ const SourceVideoSlicePage = () => {
                 duration={videoDuration}
                 currentTime={currentTime}
                 selectedRanges={selectedRanges}
+                previewRanges={aiPreviewRanges}
                 maxTotalDuration={MAX_TOTAL_DURATION}
                 zoomLevel={timelineZoomLevel}
                 onZoomLevelChange={setTimelineZoomLevel}
@@ -585,6 +623,7 @@ const SourceVideoSlicePage = () => {
                 onRangeSelect={handleRangeSelect}
                 onRangeDelete={handleRangeDelete}
                 onRangeUpdate={handleRangeUpdate}
+                onPreviewRangeClick={handlePreviewRangeClick}
                 readOnly={projectTaskReadOnly}
               />
             </div>

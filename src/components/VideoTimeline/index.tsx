@@ -14,6 +14,8 @@ export interface VideoTimelineProps {
   duration: number;
   currentTime: number;
   selectedRanges: TimeRange[];
+  /** AI 选片预选：仅展示，点击可复制为已选片段 */
+  previewRanges?: TimeRange[];
   maxTotalDuration?: number; // 选中总时长上限（秒）
   zoomLevel?: number;
   onZoomLevelChange?: (level: number) => void;
@@ -23,6 +25,8 @@ export interface VideoTimelineProps {
   onRangeSelect: (range: TimeRange) => void;
   onRangeDelete: (id: string) => void;
   onRangeUpdate?: (range: TimeRange) => void;
+  /** 点击 AI 预选片段（父级负责复制为已选） */
+  onPreviewRangeClick?: (range: TimeRange) => void;
   /** 只读：可定位播放，不可新增/调整/删除片段 */
   readOnly?: boolean;
 }
@@ -267,6 +271,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   duration,
   currentTime,
   selectedRanges,
+  previewRanges = [],
   maxTotalDuration,
   zoomLevel: zoomLevelProp,
   onZoomLevelChange,
@@ -276,6 +281,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
   onRangeSelect,
   onRangeDelete,
   onRangeUpdate,
+  onPreviewRangeClick,
   readOnly = false,
 }) => {
   const [internalZoomLevel, setInternalZoomLevel] = useState(1);
@@ -508,6 +514,17 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
       onTimeChange(range.start);
     },
     [onTimeChange, setActiveRangeId]
+  );
+
+  const handlePreviewRangeClick = useCallback(
+    (range: TimeRange) => {
+      if (onPreviewRangeClick) {
+        onPreviewRangeClick(range);
+        return;
+      }
+      onTimeChange(range.start);
+    },
+    [onPreviewRangeClick, onTimeChange]
   );
 
   const handleRangeDeleteClick = useCallback(
@@ -823,6 +840,30 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
           <div className="timeline-track" />
 
           <div className="timeline-overlays">
+            {previewRanges.map((range) => {
+              const width = Math.max((range.end - range.start) * safeScale, 4);
+              const rangeLabel = range.title?.trim() || 'AI选片';
+              const timeLabel = `${formatTime(range.start)} - ${formatTime(range.end)}`;
+              return (
+                <div
+                  key={range.id}
+                  className="timeline-range timeline-range_preview"
+                  style={{
+                    left: toTimelineX(range.start, safeScale),
+                    width,
+                  }}
+                  title={`${rangeLabel}\n${timeLabel}\n点击加入已选片段`}
+                  onClick={() => handlePreviewRangeClick(range)}
+                >
+                  <div className="timeline-range-body">
+                    <span className="timeline-range-label" aria-hidden="true">
+                      {rangeLabel}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
             {selectedRanges.map((range) => {
               const isResizing = resizingId === range.id;
               const preview = isResizing && resizePreview ? resizePreview : null;
@@ -834,8 +875,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
 
               const isActive = activeRangeId === range.id;
               const isNarrowRange = previewWidth < NARROW_RANGE_DELETE_WIDTH;
-              const rangeLabel =
-                range.title?.trim() || `片段${rangeIndexMap.get(range.id) ?? ''}`;
+              const rangeLabel = `片段${rangeIndexMap.get(range.id) ?? ''}`;
 
               return (
                 <div
@@ -845,7 +885,7 @@ const VideoTimeline: FC<VideoTimelineProps> = ({
                     left: toTimelineX(containerStart, safeScale),
                     width: containerWidth,
                   }}
-                  title={`${rangeLabel} · ${formatTime(previewStart)} - ${formatTime(previewEnd)} · 点击从该区域开始播放`}
+                  title={`${rangeLabel}\n${formatTime(previewStart)} - ${formatTime(previewEnd)}\n点击从该区域开始播放`}
                   onClick={() => handleRangeClick(range)}
                 >
                   <div className="timeline-range-segments" aria-hidden="true">

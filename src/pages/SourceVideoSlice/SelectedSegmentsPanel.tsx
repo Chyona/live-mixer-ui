@@ -179,7 +179,7 @@ const SelectedSegmentsPanel = ({
             <span className="slice-selected-empty">暂无选中片段，请在下方时间轴左键拖拽标记</span>
           ) : (
             selectedRanges.map((range, index) => {
-              const label = range.title?.trim() || `片段 ${index + 1}`;
+              const label = `片段 ${index + 1}`;
               return (
               <button
                 key={range.id}
