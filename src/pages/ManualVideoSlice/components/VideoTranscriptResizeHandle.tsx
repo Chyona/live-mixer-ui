@@ -6,9 +6,13 @@ interface VideoTranscriptResizeHandleProps {
   onResize: (height: number) => void;
   onMeasureStart: () => number;
   onMeasurePanel: () => number;
+  /** 可选：内容刚好铺满、无需滚动时的高度上限（避免拖出大片空白） */
+  onMeasureContentMax?: () => number;
   onReset: () => void;
   minHeight?: number;
   maxHeightRatio?: number;
+  ariaLabel?: string;
+  title?: string;
 }
 
 const VideoTranscriptResizeHandle = ({
@@ -16,9 +20,12 @@ const VideoTranscriptResizeHandle = ({
   onResize,
   onMeasureStart,
   onMeasurePanel,
+  onMeasureContentMax,
   onReset,
   minHeight = 120,
   maxHeightRatio = 0.78,
+  ariaLabel = '拖动调整上方区域高度，双击还原',
+  title = '拖动调整高度，双击还原',
 }: VideoTranscriptResizeHandleProps) => {
   const [active, setActive] = useState(false);
 
@@ -29,7 +36,9 @@ const VideoTranscriptResizeHandle = ({
       const startY = event.clientY;
       const startHeight = onMeasureStart();
       const panelHeight = onMeasurePanel();
-      const maxHeight = panelHeight * maxHeightRatio;
+      const ratioMax = panelHeight * maxHeightRatio;
+      const contentMax = onMeasureContentMax?.() ?? Number.POSITIVE_INFINITY;
+      const maxHeight = Math.max(minHeight, Math.min(ratioMax, contentMax));
 
       setActive(true);
       document.body.style.cursor = 'ns-resize';
@@ -54,7 +63,7 @@ const VideoTranscriptResizeHandle = ({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [maxHeightRatio, minHeight, onMeasurePanel, onMeasureStart, onResize]
+    [maxHeightRatio, minHeight, onMeasureContentMax, onMeasurePanel, onMeasureStart, onResize]
   );
 
   const handleReset = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -79,11 +88,11 @@ const VideoTranscriptResizeHandle = ({
         .join(' ')}
       role="separator"
       aria-orientation="horizontal"
-      aria-label="拖动调整视频区域高度，双击还原"
+      aria-label={ariaLabel}
     >
       <div
         className="slice-editor-section-divider-hit"
-        title="拖动调整高度，双击还原"
+        title={title}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
       />

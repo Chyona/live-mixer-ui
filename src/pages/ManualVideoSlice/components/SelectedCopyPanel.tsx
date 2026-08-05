@@ -26,6 +26,7 @@ import {
   SEGMENT_EXTEND_STEP_SEC,
 } from '../utils';
 import { formatVideoDuration } from '~/utils/duration';
+import VideoTranscriptResizeHandle from './VideoTranscriptResizeHandle';
 
 type DropMarker = {
   index: number;
@@ -40,6 +41,18 @@ type DragGhost = {
   offsetX: number;
   offsetY: number;
 };
+
+function measureAiBlockContentHeight(block: HTMLElement): number {
+  const head = block.querySelector<HTMLElement>('.slice-editor-ai-block-head');
+  const list = block.querySelector<HTMLElement>('.slice-editor-ai-block-list');
+  const style = getComputedStyle(block);
+  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+  const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
+  const headHeight = head?.offsetHeight ?? 0;
+  const headMarginBottom = head ? Number.parseFloat(getComputedStyle(head).marginBottom) || 0 : 0;
+  const listHeight = list?.scrollHeight ?? 0;
+  return Math.ceil(paddingTop + paddingBottom + headHeight + headMarginBottom + listHeight);
+}
 
 function getReorderToIndex(target: DropMarker, length: number) {
   if (target.placement === 'before') return target.index;
@@ -123,7 +136,10 @@ const SelectedCopyPanel = ({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropMarker, setDropMarker] = useState<DropMarker | null>(null);
   const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
+  const [aiPanelHeight, setAiPanelHeight] = useState<number | null>(null);
   const dragIndexRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const aiBlockRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const pointerDraggingRef = useRef(false);
   const suppressItemClickRef = useRef(false);
@@ -244,51 +260,80 @@ const SelectedCopyPanel = ({
   };
 
   return (
-    <div className="slice-editor-panel slice-editor-panel_copy">
+    <div ref={panelRef} className="slice-editor-panel slice-editor-panel_copy">
       {aiSegments.length > 0 ? (
-        <div className="slice-editor-ai-block">
-          <div className="slice-editor-ai-block-head">
-            <div className="slice-editor-panel-title">AI分段</div>
-            <span className="slice-editor-copy-stats">共 {aiSegments.length} 段</span>
-          </div>
-          <div className="slice-editor-ai-block-list">
-            {aiSegments.map((aiSegment, index) => {
-              const label = aiSegment.title?.trim() || `片段 ${index + 1}`;
-              const timeLabel = `${formatVideoDuration(aiSegment.start)} - ${formatVideoDuration(aiSegment.end)}`;
-              const isActive = activeAiSegmentId === aiSegment.id;
-              return (
-                <div
-                  key={aiSegment.id}
-                  className={`slice-editor-ai-item${isActive ? ' is-active' : ''}`}
-                >
-                  <button
-                    type="button"
-                    className="slice-editor-ai-item-main"
-                    onClick={() => onSeek(aiSegment.start)}
-                    title={`${label}: ${timeLabel}`}
+        <>
+          <div
+            ref={aiBlockRef}
+            className={[
+              'slice-editor-ai-block',
+              aiPanelHeight != null ? 'slice-editor-ai-block_customized' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            style={
+              aiPanelHeight != null
+                ? { height: aiPanelHeight, flex: `0 0 ${aiPanelHeight}px`, maxHeight: 'none' }
+                : undefined
+            }
+          >
+            <div className="slice-editor-ai-block-head">
+              <div className="slice-editor-panel-title">AI分段</div>
+              <span className="slice-editor-copy-stats">共 {aiSegments.length} 段</span>
+            </div>
+            <div className="slice-editor-ai-block-list">
+              {aiSegments.map((aiSegment, index) => {
+                const label = aiSegment.title?.trim() || `片段 ${index + 1}`;
+                const timeLabel = `${formatVideoDuration(aiSegment.start)} - ${formatVideoDuration(aiSegment.end)}`;
+                const isActive = activeAiSegmentId === aiSegment.id;
+                return (
+                  <div
+                    key={aiSegment.id}
+                    className={`slice-editor-ai-item${isActive ? ' is-active' : ''}`}
                   >
-                    <span className="slice-editor-ai-item-label">
-                      <span className="slice-editor-ai-item-title">{label}</span>
-                      <span className="slice-editor-ai-item-sep" aria-hidden>：</span>
-                      <span className="slice-editor-ai-item-time">{timeLabel}</span>
-                    </span>
-                  </button>
-                  {onAddAiSegment && !readOnly ? (
                     <button
                       type="button"
-                      className="slice-editor-ai-item-add"
-                      onClick={() => onAddAiSegment(aiSegment)}
-                      title="整段加入文案预览"
-                      aria-label={`将「${label}」加入文案预览`}
+                      className="slice-editor-ai-item-main"
+                      onClick={() => onSeek(aiSegment.start)}
+                      title={`${label}: ${timeLabel}`}
                     >
-                      <LuPlus size={14} />
+                      <span className="slice-editor-ai-item-label">
+                        <span className="slice-editor-ai-item-title">{label}</span>
+                        <span className="slice-editor-ai-item-sep" aria-hidden>：</span>
+                        <span className="slice-editor-ai-item-time">{timeLabel}</span>
+                      </span>
                     </button>
-                  ) : null}
-                </div>
-              );
-            })}
+                    {onAddAiSegment && !readOnly ? (
+                      <button
+                        type="button"
+                        className="slice-editor-ai-item-add"
+                        onClick={() => onAddAiSegment(aiSegment)}
+                        title="整段加入文案预览"
+                        aria-label={`将「${label}」加入文案预览`}
+                      >
+                        <LuPlus size={14} />
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          <VideoTranscriptResizeHandle
+            isCustomized={aiPanelHeight != null}
+            onResize={setAiPanelHeight}
+            onMeasureStart={() => aiBlockRef.current?.getBoundingClientRect().height ?? 0}
+            onMeasurePanel={() => panelRef.current?.getBoundingClientRect().height ?? 0}
+            onMeasureContentMax={() =>
+              aiBlockRef.current ? measureAiBlockContentHeight(aiBlockRef.current) : Number.POSITIVE_INFINITY
+            }
+            onReset={() => setAiPanelHeight(null)}
+            minHeight={72}
+            maxHeightRatio={0.65}
+            ariaLabel="拖动调整 AI 分段区域高度，双击还原"
+          />
+        </>
       ) : null}
 
       <div className="slice-editor-copy-top">

@@ -19,7 +19,7 @@
 
 .slice-page_manual .slice-editor-video-block {
   margin-inline: calc(-1 * var(--slice-editor-inner-padding));
-  padding-bottom: 16px;
+  padding-bottom: 4px;
 }
 
 .slice-page_manual > .slice-page-header {
@@ -115,7 +115,7 @@
 
 .slice-editor-video-block {
   flex-shrink: 0;
-  padding-bottom: 16px;
+  padding-bottom: 4px;
 
   .ant-collapse > .ant-collapse-item > .ant-collapse-header {
     padding: 0;
@@ -333,7 +333,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  padding: 0;
+  padding: 4px 0 0;
 }
 
 .slice-editor-transcript-top {
@@ -614,7 +614,7 @@
 }
 
 /* AI 分段在上方时取消上拉负边距，避免盖住 AI 区底部 */
-.slice-editor-ai-block + .slice-editor-copy-top {
+.slice-editor-ai-block ~ .slice-editor-copy-top {
   margin-top: 0;
   border-radius: 0;
 }
@@ -634,12 +634,16 @@
 /* 文案预览上方：AI 分段（grid 多列；整块限高，列表内滚动） */
 .slice-editor-panel_copy > .slice-editor-ai-block {
   flex: 0 0 auto;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   max-height: 120px;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.slice-editor-panel_copy > .slice-editor-ai-block_customized {
+  max-height: none;
 }
 
 .slice-editor-ai-block {
