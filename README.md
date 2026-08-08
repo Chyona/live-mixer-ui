@@ -47,12 +47,11 @@ pnpm dev                      # http://localhost:8008
 
 ## 环境配置
 
-| 文件                     | 用途                          |
-| ------------------------ | ----------------------------- |
-| `.env.example`           | 模板，复制为 `.env`           |
-| `.env`                   | 本地默认（gitignore）         |
-| `.env.development.local` | 本地联调覆盖（仅 `pnpm dev`） |
-| `.env.production`        | 生产打包（`pnpm build`）      |
+| 文件              | 用途                     |
+| ----------------- | ------------------------ |
+| `.env.example`    | 模板，复制为 `.env`      |
+| `.env`            | 本地默认（gitignore）    |
+| `.env.production` | 生产打包（`pnpm build`） |
 
 关键业务相关变量：
 
@@ -67,7 +66,7 @@ pnpm dev                      # http://localhost:8008
 | `VITE_JIANYING_ASSISTANT_URL` | 剪映小助手外链      | -                                        |
 | `VITE_MOCK`                   | 是否启用 Mock       | `true` / `false`                         |
 
-联调远程后端时，建议在 `.env.development.local` 中设置：
+联调远程后端时，建议在 `.env` 中设置：
 
 ```bash
 VITE_API_PROXY_TARGET=http://你的后端地址:端口
